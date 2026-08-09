@@ -58,7 +58,7 @@ _access_lock = threading.RLock()
 # ONNX in one call can exceed a 512 MB Render instance once activation tensors are
 # allocated, even though the model artifact itself is small.  Chunking preserves
 # identical logits while bounding peak inference memory.
-MAX_INFERENCE_BATCH = max(1, int(os.getenv("CNN_MAX_INFERENCE_BATCH", "4")))
+MAX_INFERENCE_BATCH = max(1, int(os.getenv("CNN_MAX_INFERENCE_BATCH", "1")))
 
 
 def _load():
@@ -134,7 +134,19 @@ def _load():
             return
 
         verify_artifact(meta, "onnx", ONNX_PATH)
-        session = onnxruntime.InferenceSession(str(ONNX_PATH))
+        session_options = onnxruntime.SessionOptions()
+        # Render's free service has a 512 MB limit.  ORT's default CPU arena can
+        # retain peak activation buffers after a request and push the process over
+        # that limit when the whitefly session is also resident.
+        session_options.enable_cpu_mem_arena = False
+        session_options.enable_mem_pattern = False
+        session_options.intra_op_num_threads = 1
+        session_options.inter_op_num_threads = 1
+        session = onnxruntime.InferenceSession(
+            str(ONNX_PATH),
+            sess_options=session_options,
+            providers=["CPUExecutionProvider"],
+        )
         inputs = session.get_inputs()
         outputs = session.get_outputs()
         expected_input_name = meta.get("input_name", "image")

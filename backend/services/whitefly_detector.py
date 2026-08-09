@@ -65,8 +65,14 @@ def _load() -> None:
         model_path = MODEL_DIR / record["file"]
         if file_sha256(model_path) != record["sha256"]:
             raise ValueError("detector ONNX SHA-256 mismatch")
+        session_options = ort.SessionOptions()
+        session_options.enable_cpu_mem_arena = False
+        session_options.enable_mem_pattern = False
+        session_options.intra_op_num_threads = 1
+        session_options.inter_op_num_threads = 1
         session = ort.InferenceSession(
             str(model_path),
+            sess_options=session_options,
             providers=["CPUExecutionProvider"],
         )
         inputs, outputs = session.get_inputs(), session.get_outputs()
