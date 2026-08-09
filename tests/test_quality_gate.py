@@ -16,6 +16,5 @@ def test_release_quality_gate_uses_task_appropriate_held_out_metrics():
     assert report["whitefly_detector"]["test_evaluated"] is False
     assert report["whitefly_detector"]["release_scope"] == "review_only"
     assert {warning["code"] for warning in report["warnings"]} == {
-        "perceptual_duplicate_retrain_required",
         "validation_only_below_target",
     }

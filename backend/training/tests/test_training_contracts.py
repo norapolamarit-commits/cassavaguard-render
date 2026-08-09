@@ -389,14 +389,15 @@ def test_wilson_interval_requires_accuracy_above_target_with_confidence():
     assert upper > lower
 
 
-def test_current_cnn_verifier_surfaces_legacy_perceptual_audit_warning():
+def test_current_cnn_verifier_accepts_current_perceptual_quarantine():
     metrics_path = Path(__file__).resolve().parents[2] / "ml_models" / "cnn_metrics.json"
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     report = _verify_cnn_evaluation_contract(metrics)
-    assert report["accuracy"] == pytest.approx(0.813767, abs=1e-6)
+    assert report["accuracy"] == pytest.approx(metrics["test"]["accuracy"], abs=1e-6)
     assert report["accuracy_wilson_95"][0] > 0.75
     assert report["synthetic_validation_or_test"] is False
-    assert report["duplicate_audit"]["status"] == "warning"
+    assert report["duplicate_audit"]["status"] == "passed_with_residual_scene_risk"
+    assert report["duplicate_audit"]["manual_review_required"] is False
     assert report["duplicate_audit"]["leakage_free_claim_allowed"] is False
 
 
@@ -419,9 +420,10 @@ def test_cnn_verifier_accepts_hashed_perceptual_manifest_but_keeps_scene_warning
     manifest_sha = hashlib.sha256(
         json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+    current_audit = upgraded["dataset"]["duplicate_audit"]
     upgraded["dataset"]["duplicate_audit"] = {
-        "method": upgraded["dataset"]["method"],
-        "removed_by_split": upgraded["dataset"]["removed_by_split"],
+        "method": current_audit["method"],
+        "removed_by_split": current_audit["removed_by_split"],
         "perceptual_duplicate_audit": {
             "cross_split_candidate_groups": 0,
             "policy": "quarantine all candidates before training/evaluation pending manual review",

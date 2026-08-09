@@ -85,12 +85,18 @@ def parse_args(argv=None):
     parser.add_argument("--epochs-head", type=int, default=5)
     parser.add_argument("--epochs-fine", type=int, default=14)
     parser.add_argument("--fine-tune-blocks", type=int, default=4)
+    parser.add_argument("--architecture", choices=("efficientnet_b0", "efficientnet_b2", "efficientnet_b3"), default="efficientnet_b0")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--patience", type=int, default=4)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", choices=("auto", "mps", "cpu"), default="auto")
+    parser.add_argument("--class-weight-power", type=float, default=1.0,
+                        help="inverse-frequency exponent; 0 disables weights, 0.5 uses sqrt balancing")
+    parser.add_argument("--label-smoothing", type=float, default=0.08)
+    parser.add_argument("--output-dir", type=Path, default=MODEL_DIR,
+                        help="write candidate artifacts outside backend/ml_models until promoted")
     return parser.parse_args(argv)
 
 
@@ -473,13 +479,20 @@ def main(argv=None):
         raise SystemExit("at least one training phase must have epochs > 0")
     if min(args.batch_size, args.image_size, args.patience, args.fine_tune_blocks) <= 0:
         raise SystemExit("batch-size, image-size, patience and fine-tune-blocks must be > 0")
+    if not 0.0 <= args.class_weight_power <= 1.0:
+        raise SystemExit("class-weight-power must be between 0 and 1")
+    if not 0.0 <= args.label_smoothing < 1.0:
+        raise SystemExit("label-smoothing must be in [0, 1)")
 
     os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
     import torch
     import torch.nn as nn
     from torch.utils.data import DataLoader, Dataset
     from torchvision import transforms
-    from torchvision.models import EfficientNet_B0_Weights, efficientnet_b0
+    from torchvision.models import (
+        EfficientNet_B0_Weights, EfficientNet_B2_Weights, EfficientNet_B3_Weights,
+        efficientnet_b0, efficientnet_b2, efficientnet_b3,
+    )
 
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -544,11 +557,14 @@ def main(argv=None):
     )
 
     counts = Counter(label for _, label in records["train"])
+    raw_weights = np.asarray([
+        len(records["train"]) / (len(ML_CLASS_ORDER) * counts[index])
+        for index in range(len(ML_CLASS_ORDER))
+    ], dtype=np.float32)
+    powered_weights = np.power(raw_weights, args.class_weight_power)
+    powered_weights /= powered_weights.mean()
     class_weights = torch.tensor(
-        [
-            len(records["train"]) / (len(ML_CLASS_ORDER) * counts[index])
-            for index in range(len(ML_CLASS_ORDER))
-        ],
+        powered_weights,
         dtype=torch.float32,
         device=device,
     )
@@ -558,7 +574,13 @@ def main(argv=None):
         flush=True,
     )
 
-    network = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
+    builders = {
+        "efficientnet_b0": (efficientnet_b0, EfficientNet_B0_Weights.IMAGENET1K_V1),
+        "efficientnet_b2": (efficientnet_b2, EfficientNet_B2_Weights.IMAGENET1K_V1),
+        "efficientnet_b3": (efficientnet_b3, EfficientNet_B3_Weights.IMAGENET1K_V1),
+    }
+    builder, pretrained_weights = builders[args.architecture]
+    network = builder(weights=pretrained_weights)
     in_features = network.classifier[1].in_features
     network.classifier[0] = nn.Dropout(p=0.35)
     network.classifier[1] = nn.Linear(in_features, len(ML_CLASS_ORDER))
@@ -581,7 +603,20 @@ def main(argv=None):
             return self.classifier(normalized)
 
     model = ServingModel(network).to(device)
-    criterion = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=0.08)
+    criterion = nn.CrossEntropyLoss(
+        weight=class_weights,
+        label_smoothing=args.label_smoothing,
+    )
+
+    output_dir = args.output_dir.expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    candidate_mode = output_dir != MODEL_DIR.resolve()
+    onnx_path = output_dir / (
+        f"cnn_{args.architecture}.onnx" if candidate_mode else ONNX_PATH.name
+    )
+    metrics_path = output_dir / (
+        f"cnn_{args.architecture}_metrics.json" if candidate_mode else METRICS_PATH.name
+    )
 
     def collect_logits(loader):
         model.eval()
@@ -596,7 +631,7 @@ def main(argv=None):
     checkpoint_fd, checkpoint_name = tempfile.mkstemp(
         prefix=".cnn-torch-best-",
         suffix=".pt",
-        dir=MODEL_DIR,
+        dir=output_dir,
     )
     os.close(checkpoint_fd)
     checkpoint_path = Path(checkpoint_name)
@@ -706,10 +741,10 @@ def main(argv=None):
         test_logits, test_labels = collect_logits(test_loader)
         test_metrics = _evaluate_logits(test_logits, test_labels, temperature)
 
-        MODEL_DIR.mkdir(parents=True, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
         model.to("cpu").eval()
-        with tempfile.TemporaryDirectory(prefix=".cnn-onnx-", dir=MODEL_DIR) as temp_dir:
-            temp_onnx = Path(temp_dir) / ONNX_PATH.name
+        with tempfile.TemporaryDirectory(prefix=".cnn-onnx-", dir=output_dir) as temp_dir:
+            temp_onnx = Path(temp_dir) / onnx_path.name
             parity_images = next(iter(validation_loader))[0][:2].cpu()
             with torch.inference_mode():
                 framework_logits = model(parity_images).numpy()
@@ -745,11 +780,11 @@ def main(argv=None):
                 raise RuntimeError(
                     f"PyTorch/ONNX parity failed (argmax_equal={argmax_equal}, max_abs={max_abs})"
                 )
-            os.replace(temp_onnx, ONNX_PATH)
+            os.replace(temp_onnx, onnx_path)
 
         metrics = {
-            "model_id": "cnn_efficientnet_b0",
-            "architecture": "Torchvision EfficientNet-B0 (ImageNet transfer learning)",
+            "model_id": f"cnn_{args.architecture}",
+            "architecture": f"Torchvision {args.architecture.replace('_', '-').title()} (ImageNet transfer learning)",
             "trained_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "classes": ML_CLASS_ORDER,
             "img_size": args.image_size,
@@ -773,8 +808,8 @@ def main(argv=None):
             },
             "artifacts": {
                 "onnx": {
-                    "file": ONNX_PATH.name,
-                    "sha256": sha256_file(ONNX_PATH),
+                    "file": onnx_path.name,
+                    "sha256": sha256_file(onnx_path),
                 }
             },
             "dataset": {
@@ -792,6 +827,7 @@ def main(argv=None):
             },
             "training": {
                 "seed": args.seed,
+                "architecture": args.architecture,
                 "device": str(device),
                 "batch_size": args.batch_size,
                 "epochs_head_requested": args.epochs_head,
@@ -801,7 +837,8 @@ def main(argv=None):
                     ML_CLASS_ORDER[index]: float(class_weights[index].detach().cpu())
                     for index in range(len(ML_CLASS_ORDER))
                 },
-                "label_smoothing": 0.08,
+                "class_weight_power": args.class_weight_power,
+                "label_smoothing": args.label_smoothing,
                 "imagenet_initialization": True,
                 "history": history,
             },
@@ -839,7 +876,7 @@ def main(argv=None):
                 "device": str(device),
             },
         }
-        atomic_write_json(METRICS_PATH, metrics)
+        atomic_write_json(metrics_path, metrics)
         print(
             json.dumps(
                 {
@@ -851,8 +888,8 @@ def main(argv=None):
             ),
             flush=True,
         )
-        print(f"Wrote {ONNX_PATH}", flush=True)
-        print(f"Wrote {METRICS_PATH}", flush=True)
+        print(f"Wrote {onnx_path}", flush=True)
+        print(f"Wrote {metrics_path}", flush=True)
     finally:
         checkpoint_path.unlink(missing_ok=True)
 
