@@ -6,6 +6,7 @@
 
   const NAV = [
     { group: 'group_monitor', items: [
+      { key: 'welcome', icon: 'leaf', label: 'nav_welcome' },
       { key: 'dashboard', icon: 'grid', label: 'nav_dashboard' },
       { key: 'map', icon: 'map', label: 'nav_map' },
     ]},
@@ -28,7 +29,7 @@
   function App() {
     const store = window.CG.Store.useStore();
     const { t, lang, theme, toggleTheme, toggleLang, user, booted } = store;
-    const [route, setRoute] = useState('dashboard');
+    const [route, setRoute] = useState('welcome');
     const [routeArg, setRouteArg] = useState(null);
     const [collapsed, setCollapsed] = useState(false);
     const [mobileNav, setMobileNav] = useState(false);
@@ -52,7 +53,7 @@
     const markOne = (id) => window.CG.API_CLIENT.markRead(id).then(() => window.CG.API_CLIENT.notifications().then(setNotifs));
 
     const pageTitle = {
-      dashboard: ['dash_title', 'dash_sub'], map: ['nav_map', 'dash_sub'],
+      welcome: ['nav_welcome', 'app_tag'], dashboard: ['dash_title', 'dash_sub'], map: ['nav_map', 'dash_sub'],
       predict: ['predict_title', 'predict_sub'], recommendations: ['nav_reco', 'dash_sub'],
       satellite: ['nav_satellite', 'veg_indices'], weather: ['nav_weather', 'forecast'],
       soil: ['nav_soil', 'soil_profile'], history: ['nav_history', 'dash_sub'], system: ['nav_system', 'model_perf'],
@@ -64,6 +65,7 @@
     //  render remounts the page and wipes its state on every App update.)
     const renderPage = () => {
       switch (route) {
+        case 'welcome': return <P.Welcome go={go} />;
         case 'dashboard': return <P.Dashboard go={go} />;
         case 'map': return <P.FieldMap go={go} />;
         case 'predict': return <P.Predict />;
@@ -149,7 +151,7 @@
         </div>
 
         {/* FAB */}
-        {route !== 'predict' && (
+        {route !== 'predict' && route !== 'welcome' && (
           <button onClick={() => go('predict')} title={t('nav_predict')}
             className="fixed bottom-6 right-6 z-[850] w-14 h-14 rounded-2xl grad-brand text-white grid place-items-center shadow-2xl shadow-brand-500/30 hover:scale-105 active:scale-95 transition animate-floaty">
             <Icon name="brain" className="w-6 h-6" />

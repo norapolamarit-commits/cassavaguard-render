@@ -14,6 +14,7 @@
     nav_history:   { th:'ประวัติ', en:'History' },
     nav_system:    { th:'ระบบ & โมเดล', en:'System & Models' },
     nav_guide:     { th:'คู่มือใช้งาน', en:'User Guide' },
+    nav_welcome:   { th:'หน้าเริ่มต้น', en:'Welcome' },
     group_monitor: { th:'การติดตาม', en:'MONITORING' },
     group_ai:      { th:'ปัญญาประดิษฐ์', en:'INTELLIGENCE' },
     group_data:    { th:'ข้อมูล', en:'DATA' },
