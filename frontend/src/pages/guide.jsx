@@ -60,6 +60,29 @@
           </p>
         </Card>
 
+        <Card className="animate-fadeup border border-brand-500/20">
+          <SectionTitle icon="play" title={th ? 'เริ่มใช้งานแบบเร็วใน 3 นาที' : 'Three-minute quick start'} />
+          <div className="grid md:grid-cols-3 gap-3 text-sm">
+            {(th ? [
+              ['1', 'เพิ่มแปลง', 'เปิด “แผนที่แปลง” เพิ่มชื่อแปลงและพิกัดจริง เพื่อให้ข้อมูลอากาศและดาวเทียมตรงพื้นที่'],
+              ['2', 'อัปโหลดภาพ', 'เปิด “วิเคราะห์ด้วย AI” เลือกแปลงและชนิดภาพ แล้วใช้ภาพ JPG/PNG ที่ชัดและไม่เกิน 10 MB'],
+              ['3', 'อ่านและยืนยันผล', 'ดู Confidence และสถานะตรวจซ้ำ เปรียบเทียบหลายภาพ แล้วบันทึกผลไว้ในประวัติ'],
+            ] : [
+              ['1', 'Add a field', 'Open Field Map and enter the real field name and coordinates so weather and satellite data match the site.'],
+              ['2', 'Upload a photo', 'Open AI Diagnosis, choose the field and image type, then use a clear JPG/PNG up to 10 MB.'],
+              ['3', 'Review and verify', 'Read confidence and review status, compare multiple photos, then retain the result in History.'],
+            ]).map(([number, title, body]) => (
+              <div key={number} className="rounded-xl border hair p-3">
+                <div className="flex items-center gap-2"><Badge tone="medium">{number}</Badge><span className="txt font-semibold">{title}</span></div>
+                <p className="txt-soft text-xs leading-relaxed mt-2">{body}</p>
+              </div>
+            ))}
+          </div>
+          <p className="txt-muted text-xs mt-3">
+            {th ? 'หากใช้งานบน Render Free หลังไม่มีผู้ใช้งาน ระบบอาจใช้เวลาประมาณหนึ่งนาทีในการเริ่มทำงานครั้งแรก ให้รอแล้วรีเฟรชอีกครั้ง' : 'On Render Free, the first request after inactivity can take about a minute. Wait and refresh once.'}
+          </p>
+        </Card>
+
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {steps.map(([title, body], index) => (
             <Card key={title} className="animate-fadeup" style={{ animationDelay: `${index * 45}ms` }}>
@@ -80,6 +103,28 @@
                 <div><div className="txt text-sm font-medium">{title}</div><div className="txt-soft text-xs leading-relaxed mt-0.5">{body}</div></div>
               </div>
             ))}
+          </div>
+        </Card>
+
+        <Card className="animate-fadeup">
+          <SectionTitle icon="activity" title={th ? 'ความหมายของสถานะผลวิเคราะห์' : 'Understanding result status'} />
+          <div className="grid md:grid-cols-2 gap-3 text-xs leading-relaxed">
+            <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3">
+              <div className="font-semibold text-emerald-300">{th ? 'พร้อมใช้งาน' : 'Ready'}</div>
+              <div className="txt-soft mt-1">{th ? 'โมเดลโหลดสำเร็จและสร้างผลได้ แต่ยังต้องเทียบกับอาการจริงในแปลง' : 'The model loaded and can produce results, which must still be checked against the field.'}</div>
+            </div>
+            <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-3">
+              <div className="font-semibold text-amber-300">{th ? 'ต้องตรวจซ้ำ / Review only' : 'Review required / Review only'}</div>
+              <div className="txt-soft mt-1">{th ? 'ผลมีความไม่แน่นอนหรือโมเดลยังไม่ผ่านการยืนยันภาคสนาม ห้ามใช้เป็นเหตุผลเดียวในการใช้สารเคมี' : 'The result is uncertain or not field-validated; never use it alone to justify chemical treatment.'}</div>
+            </div>
+            <div className="rounded-xl border border-slate-500/25 bg-slate-500/10 p-3">
+              <div className="font-semibold txt">{th ? 'ยังไม่รองรับ' : 'Unsupported'}</div>
+              <div className="txt-soft mt-1">{th ? 'ยังไม่มีข้อมูลติดป้ายเพียงพอ ระบบจึงไม่สร้างคำวินิจฉัยของคลาสนั้น' : 'There is not enough labelled evidence, so the app does not invent a diagnosis for that class.'}</div>
+            </div>
+            <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3">
+              <div className="font-semibold text-rose-300">{th ? 'โมเดลไม่พร้อม / บริการขัดข้อง' : 'Model unavailable / Service error'}</div>
+              <div className="txt-soft mt-1">{th ? 'อย่าใช้ผลเดิมแทน ให้ลองใหม่ เปิด “ระบบ & โมเดล” และแจ้งผู้ดูแลหากยังไม่พร้อม' : 'Do not substitute an old result. Retry, inspect System & Models, and notify the administrator if it persists.'}</div>
+            </div>
           </div>
         </Card>
 
