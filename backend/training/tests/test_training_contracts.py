@@ -140,6 +140,33 @@ def test_cnn_four_view_tta_uses_one_batch_and_mean_logits(monkeypatch):
     assert np.isclose(sum(probabilities.values()), 1.0)
 
 
+def test_cnn_attribution_batches_are_memory_bounded(monkeypatch):
+    metrics = {
+        "img_size": 8,
+        "input_scale": "zero_to_255",
+        "input_layout": "NCHW",
+        "normalize_mean": [0.0, 0.0, 0.0],
+        "normalize_std": [1.0, 1.0, 1.0],
+        "classes": ML_CLASS_ORDER,
+        "temperature": 1.0,
+        "input_name": "image",
+    }
+    batch_sizes = []
+
+    class FakeSession:
+        def run(self, _outputs, inputs):
+            batch_sizes.append(inputs["image"].shape[0])
+            return [np.zeros((inputs["image"].shape[0], len(ML_CLASS_ORDER)), dtype=np.float32)]
+
+    monkeypatch.setattr(cnn_classifier, "MAX_INFERENCE_BATCH", 4)
+    monkeypatch.setattr(cnn_classifier, "get_cnn_session", lambda: FakeSession())
+    monkeypatch.setattr(cnn_classifier, "get_cnn_metrics", lambda: metrics)
+    images = [Image.new("RGB", (8, 8), (index, 0, 0)) for index in range(10)]
+    probabilities = cnn_classifier.cnn_predict_proba_batch(images)
+    assert probabilities.shape == (10, len(ML_CLASS_ORDER))
+    assert batch_sizes == [4, 4, 2]
+
+
 def test_whitefly_split_keeps_contiguous_frames_across_clock_boundary_together():
     records = [
         ("IMG_20190313_061459_1", "low_abundance"),

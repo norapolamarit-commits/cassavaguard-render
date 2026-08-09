@@ -35,6 +35,7 @@ bilinear direct-square resize; augmentation is training-only. Any drift between
 these paths invalidates the measured test result.
 """
 import json
+import os
 import threading
 
 import numpy as np
@@ -52,6 +53,12 @@ _session = None
 _metrics = None
 _loaded = False
 _access_lock = threading.RLock()
+
+# Occlusion attribution evaluates 64 masked views.  Sending all of them through
+# ONNX in one call can exceed a 512 MB Render instance once activation tensors are
+# allocated, even though the model artifact itself is small.  Chunking preserves
+# identical logits while bounding peak inference memory.
+MAX_INFERENCE_BATCH = max(1, int(os.getenv("CNN_MAX_INFERENCE_BATCH", "4")))
 
 
 def _load():
@@ -266,16 +273,23 @@ def cnn_predict_proba(img: Image.Image) -> dict:
 
 
 def cnn_predict_proba_batch(imgs: list) -> np.ndarray:
-    """Batched CNN inference: preprocesses all N images and runs ONE session.run()
-    call (not N separate calls) — the same batching discipline ai_engine.py's
-    _occlusion_sensitivity() uses for the classical model (a ~50x speedup there over
-    per-cell calls); EfficientNet-B0's CPU per-call overhead is considerably higher
-    than sklearn's, so batching matters even more here (e.g. the 8x8=64 occluded crops
-    used by ai_engine.py's _cnn_occlusion_grid() for the CNN's occlusion-sensitivity
-    heatmap). Returns (N, num_classes) probabilities, column order = cnn_metrics.json's
-    "classes" order."""
+    """Run bounded batches for attribution without changing prediction results.
+
+    The 8x8 occlusion map supplies 64 images.  A single 64-image EfficientNet batch
+    has excessive peak activation memory on small Render instances, so batches are
+    capped while retaining vectorized inference and original result order.
+    """
+    if not imgs:
+        return np.empty((0, len(ML_CLASS_ORDER)), dtype=np.float64)
     session = get_cnn_session()
-    batch = np.concatenate([cnn_preprocess(img) for img in imgs], axis=0)
     meta = get_cnn_metrics()
-    logits = session.run(None, {meta.get("input_name", "image"): batch})[0]
+    input_name = meta.get("input_name", "image")
+    chunks = []
+    for start in range(0, len(imgs), MAX_INFERENCE_BATCH):
+        batch = np.concatenate([
+            cnn_preprocess(img)
+            for img in imgs[start:start + MAX_INFERENCE_BATCH]
+        ], axis=0)
+        chunks.append(np.asarray(session.run(None, {input_name: batch})[0]))
+    logits = np.concatenate(chunks, axis=0)
     return _softmax(logits.astype(np.float64) / float(meta.get("temperature", 1.0)))
