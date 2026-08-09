@@ -19,6 +19,7 @@ from backend.training.train_cnn_torch import (
     _audit_records,
     _decoded_fingerprints,
     _hamming_hex,
+    _load_extra_training_records,
     _wilson_interval,
 )
 from backend.training.verify_artifacts import _verify_cnn_evaluation_contract
@@ -56,6 +57,40 @@ def test_atomic_json_and_sha256(tmp_path):
     assert json.loads(path.read_text()) == {"classes": ML_CLASS_ORDER}
     assert len(sha256_file(path)) == 64
     assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_external_dataset_is_training_only_and_rejects_official_duplicates(tmp_path):
+    official_path = tmp_path / "official.png"
+    pixels = np.arange(32 * 32 * 3, dtype=np.uint8).reshape(32, 32, 3)
+    Image.fromarray(pixels).save(official_path)
+    official_records = {
+        "train": [(official_path, 0)],
+        "validation": [],
+        "test": [],
+    }
+
+    external = tmp_path / "external"
+    class_dir = external / ML_CLASS_ORDER[0]
+    class_dir.mkdir(parents=True)
+    Image.fromarray(pixels).save(class_dir / "duplicate.png")
+    unique = np.random.default_rng(42).integers(
+        0, 256, size=(32, 32, 3), dtype=np.uint8
+    )
+    Image.fromarray(unique).save(class_dir / "unique.png")
+    (external / "source_manifest.json").write_text(json.dumps({
+        "source_url": "https://example.invalid/real-dataset",
+        "doi": "10.example/test",
+        "license": "CC BY 4.0",
+    }))
+
+    records, reports = _load_extra_training_records([external], official_records)
+
+    assert records == [(class_dir / "unique.png", 0)]
+    assert official_records["validation"] == []
+    assert official_records["test"] == []
+    assert reports[0]["usage"] == "training_only"
+    assert reports[0]["accepted"] == 1
+    assert reports[0]["exact_duplicates_removed"] == 1
 
 
 def test_runtime_sklearn_contract_rejects_class_order_mismatch(tmp_path):
