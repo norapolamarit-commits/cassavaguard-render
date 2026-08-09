@@ -100,6 +100,20 @@
               className="w-full mt-4 grad-brand text-white font-semibold rounded-xl py-3 flex items-center justify-center gap-2 disabled:opacity-50 hover:brightness-110 transition shadow-lg shadow-brand-500/20">
               {busy ? <><Spinner className="w-5 h-5" />{t('analyzing')}</> : <><Icon name="brain" className="w-5 h-5" />{t('analyze')}</>}
             </button>
+
+            {source !== 'csv' && <div className="mt-4 grid grid-cols-2 gap-2 text-[11px]">
+              <div className="rounded-xl border border-brand-500/25 bg-brand-500/10 p-3">
+                <div className="font-semibold text-brand-300 flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" />{lang === 'th' ? 'ภาพที่เหมาะ' : 'Good photo'}</div>
+                <div className="txt-soft mt-1 leading-relaxed">{lang === 'th' ? 'แสงธรรมชาติ ภาพคม ใบกินพื้นที่ส่วนใหญ่ และถ่ายหลายมุม' : 'Natural light, sharp focus, leaf fills the frame, multiple angles.'}</div>
+              </div>
+              <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3">
+                <div className="font-semibold text-rose-300 flex items-center gap-1"><Icon name="close" className="w-3.5 h-3.5" />{lang === 'th' ? 'ควรถ่ายใหม่' : 'Retake'}</div>
+                <div className="txt-soft mt-1 leading-relaxed">{lang === 'th' ? 'ภาพสั่น ย้อนแสง ใบเล็ก พื้นหลังรก เปียกน้ำ หรือผ่านฟิลเตอร์สี' : 'Blur, backlight, tiny leaf, clutter, wet leaf, or color filters.'}</div>
+              </div>
+              {source === 'leaf' && <div className="col-span-2 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-amber-100 leading-relaxed">
+                {lang === 'th' ? 'ตรวจ Whitefly: ถ่ายใต้ใบระยะใกล้ ให้เห็นตัวแมลง และใช้ภาพความละเอียดเต็ม' : 'Whitefly check: photograph the underside closely, keep insects visible, and use full resolution.'}
+              </div>}
+            </div>}
           </Card>
 
           {/* results */}

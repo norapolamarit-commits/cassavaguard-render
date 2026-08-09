@@ -20,6 +20,18 @@
     useEffect(() => { const id = setTimeout(load, 250); return () => clearTimeout(id); }, [q, cls]);
 
     const openDetail = (id) => window.CG.API_CLIENT.historyDetail(id).then(setDetail).catch((e) => toast(e.message, 'error'));
+    const removePrediction = async (row) => {
+      const message = lang === 'th'
+        ? `ลบผลวิเคราะห์ #${row.id} และภาพที่เกี่ยวข้องอย่างถาวรหรือไม่?`
+        : `Permanently delete prediction #${row.id} and its related images?`;
+      if (!window.confirm(message)) return;
+      try {
+        await window.CG.API_CLIENT.deletePrediction(row.id);
+        if (detail?.id === row.id) setDetail(null);
+        toast(lang === 'th' ? 'ลบผลวิเคราะห์แล้ว' : 'Prediction deleted', 'success');
+        load();
+      } catch (error) { toast(error.message, 'error'); }
+    };
     const escapeHtml = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, (char) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     })[char]);
@@ -90,7 +102,10 @@
                         <td className="py-2.5 px-2"><Badge tone={r.top_class || 'slate'}>{lang === 'th' ? c.th : c.en}</Badge></td>
                         <td className="py-2.5 px-2 txt font-mono text-xs tabular-nums">{(r.confidence * 100).toFixed(1)}%</td>
                         <td className="py-2.5 px-2 txt-soft text-xs">{r.field_name || '—'}</td>
-                        <td className="py-2.5 px-2"><button onClick={() => openDetail(r.id)} className="txt-soft hover:text-brand-400"><Icon name="chevron" className="w-4 h-4" /></button></td>
+                        <td className="py-2.5 px-2"><div className="flex items-center gap-2">
+                          <button onClick={() => openDetail(r.id)} title={lang === 'th' ? 'ดูรายละเอียด' : 'View details'} className="txt-soft hover:text-brand-400"><Icon name="chevron" className="w-4 h-4" /></button>
+                          <button onClick={() => removePrediction(r)} title={lang === 'th' ? 'ลบผลและภาพ' : 'Delete result and images'} className="txt-dim hover:text-rose-400"><Icon name="close" className="w-4 h-4" /></button>
+                        </div></td>
                       </tr>
                     );
                   })}

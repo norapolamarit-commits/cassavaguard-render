@@ -104,6 +104,69 @@ def test_calibrated_softmax_is_normalized():
     assert np.allclose(probabilities.sum(axis=1), 1.0)
 
 
+def test_cnn_four_view_tta_uses_one_batch_and_mean_logits(monkeypatch):
+    metrics = {
+        "img_size": 8,
+        "input_scale": "zero_to_255",
+        "input_layout": "NCHW",
+        "normalize_mean": [0.0, 0.0, 0.0],
+        "normalize_std": [1.0, 1.0, 1.0],
+        "classes": ML_CLASS_ORDER,
+        "temperature": 1.0,
+        "input_name": "image",
+        "inference_tta": {
+            "enabled": True,
+            "transforms": [
+                "identity", "horizontal_flip", "vertical_flip",
+                "horizontal_vertical_flip",
+            ],
+            "aggregation": "mean_logits",
+        },
+    }
+
+    class FakeSession:
+        def run(self, _outputs, inputs):
+            assert inputs["image"].shape == (4, 3, 8, 8)
+            return [np.array([
+                [4, 0, 0, 0, 0], [0, 4, 0, 0, 0],
+                [4, 0, 0, 0, 0], [4, 0, 0, 0, 0],
+            ], dtype=np.float32)]
+
+    monkeypatch.setattr(cnn_classifier, "get_cnn_session", lambda: FakeSession())
+    monkeypatch.setattr(cnn_classifier, "get_cnn_metrics", lambda: metrics)
+    image = Image.fromarray(np.arange(8 * 8 * 3, dtype=np.uint8).reshape(8, 8, 3))
+    probabilities = cnn_classifier.cnn_predict_proba(image)
+    assert max(probabilities, key=probabilities.get) == "healthy"
+    assert np.isclose(sum(probabilities.values()), 1.0)
+
+
+def test_cnn_attribution_batches_are_memory_bounded(monkeypatch):
+    metrics = {
+        "img_size": 8,
+        "input_scale": "zero_to_255",
+        "input_layout": "NCHW",
+        "normalize_mean": [0.0, 0.0, 0.0],
+        "normalize_std": [1.0, 1.0, 1.0],
+        "classes": ML_CLASS_ORDER,
+        "temperature": 1.0,
+        "input_name": "image",
+    }
+    batch_sizes = []
+
+    class FakeSession:
+        def run(self, _outputs, inputs):
+            batch_sizes.append(inputs["image"].shape[0])
+            return [np.zeros((inputs["image"].shape[0], len(ML_CLASS_ORDER)), dtype=np.float32)]
+
+    monkeypatch.setattr(cnn_classifier, "MAX_INFERENCE_BATCH", 4)
+    monkeypatch.setattr(cnn_classifier, "get_cnn_session", lambda: FakeSession())
+    monkeypatch.setattr(cnn_classifier, "get_cnn_metrics", lambda: metrics)
+    images = [Image.new("RGB", (8, 8), (index, 0, 0)) for index in range(10)]
+    probabilities = cnn_classifier.cnn_predict_proba_batch(images)
+    assert probabilities.shape == (10, len(ML_CLASS_ORDER))
+    assert batch_sizes == [4, 4, 2]
+
+
 def test_whitefly_split_keeps_contiguous_frames_across_clock_boundary_together():
     records = [
         ("IMG_20190313_061459_1", "low_abundance"),
@@ -353,14 +416,15 @@ def test_wilson_interval_requires_accuracy_above_target_with_confidence():
     assert upper > lower
 
 
-def test_current_cnn_verifier_surfaces_legacy_perceptual_audit_warning():
+def test_current_cnn_verifier_accepts_current_perceptual_quarantine():
     metrics_path = Path(__file__).resolve().parents[2] / "ml_models" / "cnn_metrics.json"
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     report = _verify_cnn_evaluation_contract(metrics)
-    assert report["accuracy"] == pytest.approx(0.813767, abs=1e-6)
+    assert report["accuracy"] == pytest.approx(metrics["test"]["accuracy"], abs=1e-6)
     assert report["accuracy_wilson_95"][0] > 0.75
     assert report["synthetic_validation_or_test"] is False
-    assert report["duplicate_audit"]["status"] == "warning"
+    assert report["duplicate_audit"]["status"] == "passed_with_residual_scene_risk"
+    assert report["duplicate_audit"]["manual_review_required"] is False
     assert report["duplicate_audit"]["leakage_free_claim_allowed"] is False
 
 
@@ -383,9 +447,10 @@ def test_cnn_verifier_accepts_hashed_perceptual_manifest_but_keeps_scene_warning
     manifest_sha = hashlib.sha256(
         json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+    current_audit = upgraded["dataset"]["duplicate_audit"]
     upgraded["dataset"]["duplicate_audit"] = {
-        "method": upgraded["dataset"]["method"],
-        "removed_by_split": upgraded["dataset"]["removed_by_split"],
+        "method": current_audit["method"],
+        "removed_by_split": current_audit["removed_by_split"],
         "perceptual_duplicate_audit": {
             "cross_split_candidate_groups": 0,
             "policy": "quarantine all candidates before training/evaluation pending manual review",

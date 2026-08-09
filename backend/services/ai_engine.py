@@ -609,8 +609,8 @@ def _cnn_occlusion_grid(img: Image.Image, top_key: str, base_prob: float, grid: 
     """Same 8x8 mean-colour grid-masking occlusion-sensitivity technique as
     _occlusion_sensitivity() above (see that function's docstring for the general
     idea), but for the CNN: each occluded crop is run through the real ONNX model via
-    cnn_predict_proba_batch() — ONE batched session.run() call for all 64 cells, not 64
-    separate calls, the same batching discipline as the classical path above — instead
+    cnn_predict_proba_batch() in bounded vectorized chunks instead of one
+    activation-heavy 64-image batch or 64 separate calls — instead
     of extract_features()+clf.predict_proba(), since the CNN consumes raw pixels, not
     the 12-dim hand-crafted feature vector. Returns the RAW (grid, grid) sensitivity
     array (NOT yet resized/normalized to the source image's shape — callers needing an

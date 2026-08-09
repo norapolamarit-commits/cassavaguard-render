@@ -38,6 +38,7 @@
     get: (p) => request(p),
     post: (p, body) => request(p, { method: 'POST', body }),
     patch: (p, body) => request(p, { method: 'PATCH', body }),
+    delete: (p) => request(p, { method: 'DELETE' }),
     postForm: (p, form) => request(p, { method: 'POST', form }),
     raw: (p, opts) => request(p, { ...opts, raw: true }),
 
@@ -103,6 +104,7 @@
       return request('/api/history/predictions' + (q ? '?' + q : ''));
     },
     historyDetail: (id) => request('/api/history/predictions/' + id),
+    deletePrediction: (id) => request('/api/history/predictions/' + id, { method: 'DELETE' }),
     exportCsv: () => request('/api/history/predictions/export.csv', { raw: true }),
 
     models: () => request('/api/models'),

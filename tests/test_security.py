@@ -186,6 +186,11 @@ def test_prediction_history_and_assets_are_owner_scoped(client, farmer_headers):
     bad_url = urlunsplit((split.scheme, split.netloc, split.path, urlencode({"token": tampered}), ""))
     assert client.get(bad_url).status_code == 401
 
+    deleted = client.delete(f"/api/history/predictions/{prediction_id}", headers=farmer_headers)
+    assert deleted.status_code == 204
+    assert client.get(f"/api/history/predictions/{prediction_id}", headers=farmer_headers).status_code == 404
+    assert not (UPLOAD_DIR / image_name).exists()
+
 
 def test_upload_type_and_security_headers(client, farmer_headers):
     response = client.post(
