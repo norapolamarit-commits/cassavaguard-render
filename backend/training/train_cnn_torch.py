@@ -97,6 +97,10 @@ def parse_args(argv=None):
     parser.add_argument("--label-smoothing", type=float, default=0.08)
     parser.add_argument("--output-dir", type=Path, default=MODEL_DIR,
                         help="write candidate artifacts outside backend/ml_models until promoted")
+    parser.add_argument(
+        "--extra-data-dir", type=Path, action="append", default=[],
+        help="class-folder dataset added to training only after cross-source duplicate quarantine",
+    )
     return parser.parse_args(argv)
 
 
@@ -368,6 +372,65 @@ def _audit_records(data_dir: Path) -> tuple[dict[str, list[tuple[Path, int]]], d
     }
 
 
+def _load_extra_training_records(
+    directories: list[Path],
+    official_records: dict[str, list[tuple[Path, int]]],
+) -> tuple[list[tuple[Path, int]], list[dict]]:
+    """Load real external images for training only, quarantining overlap."""
+    if not directories:
+        return [], []
+    reference = []
+    exact_hashes = set()
+    for split in SPLITS:
+        for path, _label in official_records[split]:
+            exact, dhash, phash = _fingerprints_for_path(path)
+            exact_hashes.add(exact)
+            reference.append((dhash, phash))
+
+    accepted = []
+    reports = []
+    for raw_directory in directories:
+        directory = raw_directory.expanduser().resolve()
+        if not directory.is_dir():
+            raise RuntimeError(f"extra training directory does not exist: {directory}")
+        manifest_path = directory / "source_manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.is_file() else {}
+        counts = Counter()
+        removed_exact = 0
+        removed_perceptual = 0
+        for class_index, class_name in enumerate(ML_CLASS_ORDER):
+            for path in sorted((directory / class_name).glob("*")):
+                if not path.is_file() or path.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
+                    continue
+                exact, dhash, phash = _fingerprints_for_path(path)
+                if exact in exact_hashes:
+                    removed_exact += 1
+                    continue
+                if any(
+                    dhash == known_dhash
+                    and _hamming_hex(phash, known_phash) <= PERCEPTUAL_MAX_PHASH_HAMMING
+                    for known_dhash, known_phash in reference
+                ):
+                    removed_perceptual += 1
+                    continue
+                exact_hashes.add(exact)
+                reference.append((dhash, phash))
+                accepted.append((path, class_index))
+                counts[class_name] += 1
+        reports.append({
+            "source": manifest.get("source_url", str(directory)),
+            "doi": manifest.get("doi"),
+            "license": manifest.get("license", "unknown"),
+            "usage": "training_only",
+            "accepted": sum(counts.values()),
+            "per_class": dict(counts),
+            "exact_duplicates_removed": removed_exact,
+            "perceptual_duplicates_removed": removed_perceptual,
+            "manifest_file": manifest_path.name if manifest_path.is_file() else None,
+        })
+    return accepted, reports
+
+
 def _softmax(logits: np.ndarray, temperature: float = 1.0) -> np.ndarray:
     scaled = np.asarray(logits, dtype=np.float64) / float(temperature)
     scaled -= scaled.max(axis=1, keepdims=True)
@@ -512,6 +575,13 @@ def main(argv=None):
     print("Auditing exact-pixel duplicates across official splits...", flush=True)
     records, duplicate_audit = _audit_records(data_dir)
     print(json.dumps(duplicate_audit, indent=2), flush=True)
+    extra_records, extra_training_sources = _load_extra_training_records(
+        args.extra_data_dir,
+        records,
+    )
+    records["train"].extend(extra_records)
+    if extra_training_sources:
+        print(json.dumps({"extra_training_sources": extra_training_sources}, indent=2), flush=True)
 
     to_255 = transforms.Compose([
         transforms.PILToTensor(),
@@ -813,7 +883,10 @@ def main(argv=None):
                 }
             },
             "dataset": {
-                "source": "TensorFlow Datasets cassava:0.1.0 extracted source",
+                "source": (
+                    "TensorFlow Datasets cassava:0.1.0 extracted source"
+                    + (" + external real training-only sources" if extra_training_sources else "")
+                ),
                 "url": "https://www.tensorflow.org/datasets/catalog/cassava",
                 "license": "unknown/pending upstream image-license verification",
                 "split_policy": "official TFDS train/validation/test preserved",
@@ -823,6 +896,7 @@ def main(argv=None):
                     ML_CLASS_ORDER[index]: counts[index]
                     for index in range(len(ML_CLASS_ORDER))
                 },
+                "extra_training_sources": extra_training_sources,
                 "duplicate_audit": duplicate_audit,
             },
             "training": {
