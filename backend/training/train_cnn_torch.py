@@ -178,7 +178,8 @@ def _fingerprints_for_path(path: Path) -> tuple[str, str, str]:
 
 
 def _hamming_hex(first: str, second: str) -> int:
-    return (int(first, 16) ^ int(second, 16)).bit_count()
+    # int.bit_count() is unavailable in the Python 3.9 training environment.
+    return bin(int(first, 16) ^ int(second, 16)).count("1")
 
 
 def _perceptual_candidate_groups(rows: list[dict]) -> list[list[dict]]:
