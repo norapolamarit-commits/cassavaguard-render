@@ -1,0 +1,841 @@
+{
+  "active_model_id": "hist_gb",
+  "trained_at": "2026-07-28T17:24:16Z",
+  "classes": [
+    "healthy",
+    "cbb",
+    "cbsd",
+    "cmd",
+    "cgm"
+  ],
+  "feature_names": [
+    "green_frac",
+    "yellow_frac",
+    "brown_frac",
+    "necrosis_frac",
+    "bright_spot_frac",
+    "pseudo_ndvi",
+    "edge_density",
+    "texture_var",
+    "mottle",
+    "streak",
+    "mean_sat",
+    "mean_val"
+  ],
+  "selection": {
+    "set": "validation",
+    "metric": "macro_f1",
+    "test_used_for_selection": false,
+    "validation_metrics": {
+      "random_forest": {
+        "accuracy": 0.5984,
+        "f1": 0.418,
+        "precision": 0.4815,
+        "recall": 0.4077,
+        "confusion_matrix": [
+          [
+            26,
+            5,
+            36,
+            33,
+            5
+          ],
+          [
+            11,
+            33,
+            68,
+            34,
+            5
+          ],
+          [
+            13,
+            19,
+            290,
+            134,
+            22
+          ],
+          [
+            12,
+            5,
+            109,
+            740,
+            18
+          ],
+          [
+            13,
+            9,
+            60,
+            142,
+            33
+          ]
+        ]
+      },
+      "extra_trees": {
+        "accuracy": 0.6117,
+        "f1": 0.4435,
+        "precision": 0.5058,
+        "recall": 0.4258,
+        "confusion_matrix": [
+          [
+            26,
+            4,
+            34,
+            32,
+            9
+          ],
+          [
+            8,
+            41,
+            58,
+            35,
+            9
+          ],
+          [
+            8,
+            31,
+            286,
+            132,
+            21
+          ],
+          [
+            3,
+            5,
+            96,
+            753,
+            27
+          ],
+          [
+            10,
+            12,
+            51,
+            143,
+            41
+          ]
+        ]
+      },
+      "hist_gb": {
+        "accuracy": 0.5925,
+        "f1": 0.4575,
+        "precision": 0.4602,
+        "recall": 0.4558,
+        "confusion_matrix": [
+          [
+            37,
+            13,
+            27,
+            19,
+            9
+          ],
+          [
+            13,
+            47,
+            54,
+            26,
+            11
+          ],
+          [
+            23,
+            41,
+            274,
+            87,
+            53
+          ],
+          [
+            19,
+            14,
+            75,
+            684,
+            92
+          ],
+          [
+            18,
+            18,
+            49,
+            103,
+            69
+          ]
+        ]
+      },
+      "gradient_boosting": {
+        "accuracy": 0.6101,
+        "f1": 0.3746,
+        "precision": 0.4906,
+        "recall": 0.3692,
+        "confusion_matrix": [
+          [
+            9,
+            4,
+            47,
+            36,
+            9
+          ],
+          [
+            4,
+            24,
+            73,
+            44,
+            6
+          ],
+          [
+            9,
+            13,
+            284,
+            157,
+            15
+          ],
+          [
+            3,
+            1,
+            65,
+            801,
+            14
+          ],
+          [
+            2,
+            2,
+            57,
+            170,
+            26
+          ]
+        ]
+      },
+      "logistic_regression": {
+        "accuracy": 0.4352,
+        "f1": 0.3519,
+        "precision": 0.3632,
+        "recall": 0.4112,
+        "confusion_matrix": [
+          [
+            51,
+            16,
+            10,
+            11,
+            17
+          ],
+          [
+            28,
+            76,
+            18,
+            13,
+            16
+          ],
+          [
+            107,
+            127,
+            98,
+            59,
+            87
+          ],
+          [
+            73,
+            38,
+            79,
+            521,
+            173
+          ],
+          [
+            44,
+            33,
+            13,
+            97,
+            70
+          ]
+        ]
+      },
+      "svm_rbf": {
+        "accuracy": 0.5397,
+        "f1": 0.4435,
+        "precision": 0.4417,
+        "recall": 0.4815,
+        "confusion_matrix": [
+          [
+            50,
+            14,
+            14,
+            13,
+            14
+          ],
+          [
+            23,
+            64,
+            35,
+            12,
+            17
+          ],
+          [
+            69,
+            77,
+            230,
+            52,
+            50
+          ],
+          [
+            74,
+            40,
+            74,
+            570,
+            126
+          ],
+          [
+            40,
+            29,
+            32,
+            58,
+            98
+          ]
+        ]
+      },
+      "knn": {
+        "accuracy": 0.5915,
+        "f1": 0.3917,
+        "precision": 0.4971,
+        "recall": 0.3754,
+        "confusion_matrix": [
+          [
+            10,
+            4,
+            36,
+            47,
+            8
+          ],
+          [
+            5,
+            29,
+            60,
+            46,
+            11
+          ],
+          [
+            4,
+            14,
+            254,
+            175,
+            31
+          ],
+          [
+            2,
+            5,
+            87,
+            767,
+            23
+          ],
+          [
+            2,
+            9,
+            44,
+            153,
+            49
+          ]
+        ]
+      },
+      "mlp": {
+        "accuracy": 0.6187,
+        "f1": 0.3985,
+        "precision": 0.5114,
+        "recall": 0.3891,
+        "confusion_matrix": [
+          [
+            12,
+            0,
+            55,
+            32,
+            6
+          ],
+          [
+            3,
+            28,
+            81,
+            34,
+            5
+          ],
+          [
+            8,
+            16,
+            308,
+            125,
+            21
+          ],
+          [
+            1,
+            1,
+            80,
+            782,
+            20
+          ],
+          [
+            7,
+            3,
+            55,
+            162,
+            30
+          ]
+        ]
+      }
+    }
+  },
+  "artifacts": {
+    "random_forest": {
+      "file": "random_forest.joblib",
+      "sha256": "8dda4553eafff596e4c853dad66969fe802cea966286ab2b4df5ce5d30953435"
+    },
+    "extra_trees": {
+      "file": "extra_trees.joblib",
+      "sha256": "72936dacb1e5430ede755c089315ac097038e6946d9ffe35d206040ffcab5f31"
+    },
+    "hist_gb": {
+      "file": "hist_gb.joblib",
+      "sha256": "a35f7662de74198d87364e6412487f1ee1bfced07a5f27e21b8dfcc28f0a692b"
+    },
+    "gradient_boosting": {
+      "file": "gradient_boosting.joblib",
+      "sha256": "99ea4d82bc7d8ffedd12072641c775440b83bc5048d2bd52c3b3b733aa99aadb"
+    },
+    "logistic_regression": {
+      "file": "logistic_regression.joblib",
+      "sha256": "75e9c2f3f14bec2b1cd0f4420a21922cdcd6b099bd7b7dd268d3cc61f9d619aa"
+    },
+    "svm_rbf": {
+      "file": "svm_rbf.joblib",
+      "sha256": "b24fb1cbf278f95a777f6c5984d0c984690ee2cfc4fb37aac3f4d7a80287238e"
+    },
+    "knn": {
+      "file": "knn.joblib",
+      "sha256": "a0d115f223dea4cd8b333b1b43c29935f44f7d84be0b37130dbb2d53f3bfeadb"
+    },
+    "mlp": {
+      "file": "mlp.joblib",
+      "sha256": "70e07cd758c436223dcb0503708debca11478b6201ff68b7e530b044298e6aa6"
+    }
+  },
+  "dataset": {
+    "source": "TFDS 'cassava' (public, https://www.tensorflow.org/datasets/catalog/cassava)",
+    "split_policy": "official TFDS train/validation/test preserved; exact dHash matches retained only in earliest split",
+    "duplicate_audit": {
+      "method": "exact 64-bit dHash equality",
+      "removed_by_split": {
+        "train": 40,
+        "validation": 14,
+        "test": 14
+      },
+      "conflicting_label_groups_quarantined": 20
+    },
+    "mendeley_extra": {
+      "enabled": false
+    },
+    "train": 5616,
+    "val": 1875,
+    "test": 1871,
+    "per_class_train": {
+      "healthy": 315,
+      "cbb": 455,
+      "cbsd": 1428,
+      "cmd": 2655,
+      "cgm": 763
+    },
+    "per_class_val": {
+      "healthy": 105,
+      "cbb": 151,
+      "cbsd": 478,
+      "cmd": 884,
+      "cgm": 257
+    },
+    "per_class_test": {
+      "healthy": 105,
+      "cbb": 154,
+      "cbsd": 475,
+      "cmd": 884,
+      "cgm": 253
+    }
+  },
+  "models": {
+    "random_forest": {
+      "name": "Random Forest",
+      "accuracy": 0.6152,
+      "f1": 0.4395,
+      "precision": 0.4996,
+      "recall": 0.425,
+      "confusion_matrix": [
+        [
+          22,
+          7,
+          48,
+          21,
+          7
+        ],
+        [
+          7,
+          45,
+          65,
+          28,
+          9
+        ],
+        [
+          11,
+          28,
+          289,
+          131,
+          16
+        ],
+        [
+          4,
+          7,
+          96,
+          754,
+          23
+        ],
+        [
+          16,
+          7,
+          67,
+          122,
+          41
+        ]
+      ],
+      "size_hint": {
+        "param": "n_estimators",
+        "value": 400
+      }
+    },
+    "extra_trees": {
+      "name": "Extra Trees",
+      "accuracy": 0.6227,
+      "f1": 0.457,
+      "precision": 0.5304,
+      "recall": 0.4357,
+      "confusion_matrix": [
+        [
+          23,
+          6,
+          44,
+          23,
+          9
+        ],
+        [
+          5,
+          47,
+          60,
+          35,
+          7
+        ],
+        [
+          7,
+          36,
+          279,
+          134,
+          19
+        ],
+        [
+          2,
+          6,
+          88,
+          765,
+          23
+        ],
+        [
+          10,
+          7,
+          56,
+          129,
+          51
+        ]
+      ],
+      "size_hint": {
+        "param": "n_estimators",
+        "value": 300
+      }
+    },
+    "hist_gb": {
+      "name": "Hist Gradient Boosting",
+      "accuracy": 0.5965,
+      "f1": 0.4704,
+      "precision": 0.4745,
+      "recall": 0.4669,
+      "confusion_matrix": [
+        [
+          35,
+          8,
+          39,
+          8,
+          15
+        ],
+        [
+          8,
+          54,
+          53,
+          23,
+          16
+        ],
+        [
+          20,
+          49,
+          276,
+          89,
+          41
+        ],
+        [
+          19,
+          15,
+          83,
+          673,
+          94
+        ],
+        [
+          16,
+          14,
+          45,
+          100,
+          78
+        ]
+      ],
+      "size_hint": {
+        "param": "n_iter_",
+        "value": 300
+      }
+    },
+    "gradient_boosting": {
+      "name": "Gradient Boosting",
+      "accuracy": 0.6146,
+      "f1": 0.3945,
+      "precision": 0.5292,
+      "recall": 0.3823,
+      "confusion_matrix": [
+        [
+          12,
+          5,
+          51,
+          28,
+          9
+        ],
+        [
+          4,
+          27,
+          78,
+          41,
+          4
+        ],
+        [
+          3,
+          19,
+          279,
+          165,
+          9
+        ],
+        [
+          1,
+          1,
+          66,
+          799,
+          17
+        ],
+        [
+          4,
+          3,
+          59,
+          154,
+          33
+        ]
+      ],
+      "size_hint": {
+        "param": "n_estimators",
+        "value": 150
+      }
+    },
+    "logistic_regression": {
+      "name": "Logistic Regression",
+      "accuracy": 0.4693,
+      "f1": 0.3869,
+      "precision": 0.4045,
+      "recall": 0.4603,
+      "confusion_matrix": [
+        [
+          65,
+          13,
+          9,
+          11,
+          7
+        ],
+        [
+          38,
+          79,
+          10,
+          14,
+          13
+        ],
+        [
+          123,
+          118,
+          105,
+          55,
+          74
+        ],
+        [
+          86,
+          28,
+          60,
+          545,
+          165
+        ],
+        [
+          43,
+          33,
+          15,
+          78,
+          84
+        ]
+      ],
+      "size_hint": {
+        "param": "n_iter_",
+        "value": [
+          59
+        ]
+      }
+    },
+    "svm_rbf": {
+      "name": "SVM (RBF kernel)",
+      "accuracy": 0.5505,
+      "f1": 0.4543,
+      "precision": 0.45,
+      "recall": 0.4933,
+      "confusion_matrix": [
+        [
+          51,
+          14,
+          16,
+          13,
+          11
+        ],
+        [
+          15,
+          71,
+          41,
+          12,
+          15
+        ],
+        [
+          74,
+          84,
+          219,
+          64,
+          34
+        ],
+        [
+          57,
+          37,
+          57,
+          590,
+          143
+        ],
+        [
+          38,
+          31,
+          33,
+          52,
+          99
+        ]
+      ],
+      "size_hint": {
+        "param": "n_support_",
+        "value": 4808
+      }
+    },
+    "knn": {
+      "name": "K-Nearest Neighbors",
+      "accuracy": 0.5836,
+      "f1": 0.3748,
+      "precision": 0.4536,
+      "recall": 0.3624,
+      "confusion_matrix": [
+        [
+          7,
+          7,
+          33,
+          49,
+          9
+        ],
+        [
+          5,
+          26,
+          68,
+          48,
+          7
+        ],
+        [
+          6,
+          22,
+          232,
+          192,
+          23
+        ],
+        [
+          3,
+          2,
+          73,
+          773,
+          33
+        ],
+        [
+          7,
+          3,
+          44,
+          145,
+          54
+        ]
+      ],
+      "size_hint": {
+        "param": "n_neighbors",
+        "value": 9
+      }
+    },
+    "mlp": {
+      "name": "MLP (Neural Net)",
+      "accuracy": 0.628,
+      "f1": 0.4095,
+      "precision": 0.5436,
+      "recall": 0.3988,
+      "confusion_matrix": [
+        [
+          19,
+          2,
+          56,
+          25,
+          3
+        ],
+        [
+          7,
+          25,
+          87,
+          30,
+          5
+        ],
+        [
+          3,
+          14,
+          309,
+          139,
+          10
+        ],
+        [
+          2,
+          1,
+          68,
+          797,
+          16
+        ],
+        [
+          5,
+          4,
+          69,
+          150,
+          25
+        ]
+      ],
+      "size_hint": {
+        "param": "hidden_layer_sizes",
+        "value": [
+          64,
+          16
+        ]
+      }
+    }
+  }
+}

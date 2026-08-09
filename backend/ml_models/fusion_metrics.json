@@ -1,0 +1,280 @@
+{
+  "active_model_id": "gradient_boosting",
+  "trained_at": "2026-07-31T07:00:37Z",
+  "classes": [
+    "healthy",
+    "cbb",
+    "cbsd",
+    "cmd",
+    "cgm"
+  ],
+  "feature_names": [
+    "green_frac",
+    "yellow_frac",
+    "brown_frac",
+    "necrosis_frac",
+    "bright_spot_frac",
+    "pseudo_ndvi",
+    "edge_density",
+    "texture_var",
+    "mottle",
+    "streak",
+    "mean_sat",
+    "mean_val",
+    "ndvi",
+    "ndwi",
+    "savi",
+    "evi",
+    "ph",
+    "om_pct",
+    "n_ppm",
+    "p_ppm",
+    "k_ppm",
+    "cec",
+    "moisture_pct"
+  ],
+  "image_feature_names": [
+    "green_frac",
+    "yellow_frac",
+    "brown_frac",
+    "necrosis_frac",
+    "bright_spot_frac",
+    "pseudo_ndvi",
+    "edge_density",
+    "texture_var",
+    "mottle",
+    "streak",
+    "mean_sat",
+    "mean_val"
+  ],
+  "satellite_feature_names": [
+    "ndvi",
+    "ndwi",
+    "savi",
+    "evi"
+  ],
+  "soil_feature_names": [
+    "ph",
+    "om_pct",
+    "n_ppm",
+    "p_ppm",
+    "k_ppm",
+    "cec",
+    "moisture_pct"
+  ],
+  "production_eligible": false,
+  "reproducible": false,
+  "selection": {
+    "set": "validation",
+    "metric": "macro_f1",
+    "test_used_for_selection": false,
+    "validation_metrics": {
+      "random_forest": {
+        "accuracy": 0.4402,
+        "f1": 0.3826,
+        "precision": 0.3779,
+        "recall": 0.4318
+      },
+      "extra_trees": {
+        "accuracy": 0.4316,
+        "f1": 0.3749,
+        "precision": 0.372,
+        "recall": 0.419
+      },
+      "hist_gb": {
+        "accuracy": 0.4459,
+        "f1": 0.4058,
+        "precision": 0.3989,
+        "recall": 0.4568
+      },
+      "gradient_boosting": {
+        "accuracy": 0.4651,
+        "f1": 0.4181,
+        "precision": 0.4124,
+        "recall": 0.4701
+      },
+      "logistic_regression": {
+        "accuracy": 0.4295,
+        "f1": 0.3606,
+        "precision": 0.3775,
+        "recall": 0.4196
+      }
+    }
+  },
+  "artifacts": {
+    "random_forest": {
+      "file": "fusion_random_forest.joblib",
+      "sha256": "3db3f21e89f14d0f75554976eb22376757c3f3b4906dc9a8c8423b58df027671"
+    },
+    "extra_trees": {
+      "file": "fusion_extra_trees.joblib",
+      "sha256": "ec8d258dca8d38b3c8b69b743961fcafb6b1001213cd2a5e61da5353983a3561"
+    },
+    "hist_gb": {
+      "file": "fusion_hist_gb.joblib",
+      "sha256": "365d4bd78381f728b0a78b2aa72bcbb47729f11ec5a222bfb6e12c7628473a1e"
+    },
+    "gradient_boosting": {
+      "file": "fusion_gradient_boosting.joblib",
+      "sha256": "f27e9c6c5232053f130be10e8a636710e4c0ab07b059decc0762e844ca469be1"
+    },
+    "logistic_regression": {
+      "file": "fusion_logistic_regression.joblib",
+      "sha256": "d3ca216295549ad59ca0d5d38453abf5803e31edbea982fd26f6863afebf65ee"
+    }
+  },
+  "caveat": "health->NDVI input for training rows is derived from the photo's own disease label with wide random noise, since TFDS 'cassava' has no real geotagged field history; soil features are label-independent (lat/lon/field_id only). Downstream weather/soil engines also depend on the run date, so the fixed synthetic reference date does not make the complete fusion run reproducible. See module docstring.",
+  "dataset": {
+    "source": "TFDS 'cassava' (public) + synthetic field context via real satellite_engine.py / soil_engine.py formulas",
+    "pooling": "all 3 official splits pooled per class, deduplicated via perceptual hash, then re-split ourselves — see module docstring",
+    "mendeley_extra": {
+      "enabled": false
+    },
+    "train": 2368,
+    "val": 1404,
+    "test": 5610,
+    "per_class_total": {
+      "healthy": 526,
+      "cbb": 765,
+      "cbsd": 2386,
+      "cmd": 4424,
+      "cgm": 1281
+    },
+    "per_class_train": {
+      "healthy": 368,
+      "cbb": 500,
+      "cbsd": 500,
+      "cmd": 500,
+      "cgm": 500
+    },
+    "per_class_val": {
+      "healthy": 78,
+      "cbb": 114,
+      "cbsd": 357,
+      "cmd": 663,
+      "cgm": 192
+    },
+    "per_class_test": {
+      "healthy": 80,
+      "cbb": 151,
+      "cbsd": 1529,
+      "cmd": 3261,
+      "cgm": 589
+    },
+    "earth_engine": {
+      "enabled": false
+    },
+    "synthetic_reference_date": "2025-01-01"
+  },
+  "image_only_validation": {
+    "random_forest": {
+      "name": "Random Forest",
+      "accuracy": 0.4765,
+      "f1": 0.4104,
+      "precision": 0.403,
+      "recall": 0.4573
+    },
+    "extra_trees": {
+      "name": "Extra Trees",
+      "accuracy": 0.4729,
+      "f1": 0.4091,
+      "precision": 0.4034,
+      "recall": 0.4521
+    },
+    "hist_gb": {
+      "name": "Hist Gradient Boosting",
+      "accuracy": 0.4516,
+      "f1": 0.4036,
+      "precision": 0.4006,
+      "recall": 0.4625
+    },
+    "gradient_boosting": {
+      "name": "Gradient Boosting",
+      "accuracy": 0.453,
+      "f1": 0.4057,
+      "precision": 0.4,
+      "recall": 0.4661
+    },
+    "logistic_regression": {
+      "name": "Logistic Regression",
+      "accuracy": 0.4338,
+      "f1": 0.3631,
+      "precision": 0.3833,
+      "recall": 0.4322
+    }
+  },
+  "image_only": {
+    "random_forest": {
+      "name": "Random Forest",
+      "accuracy": 0.4943,
+      "f1": 0.3375,
+      "precision": 0.3479,
+      "recall": 0.4391
+    },
+    "extra_trees": {
+      "name": "Extra Trees",
+      "accuracy": 0.4939,
+      "f1": 0.3348,
+      "precision": 0.346,
+      "recall": 0.4265
+    },
+    "hist_gb": {
+      "name": "Hist Gradient Boosting",
+      "accuracy": 0.4743,
+      "f1": 0.3248,
+      "precision": 0.3422,
+      "recall": 0.4249
+    },
+    "gradient_boosting": {
+      "name": "Gradient Boosting",
+      "accuracy": 0.4742,
+      "f1": 0.3249,
+      "precision": 0.3432,
+      "recall": 0.4303
+    },
+    "logistic_regression": {
+      "name": "Logistic Regression",
+      "accuracy": 0.4276,
+      "f1": 0.2854,
+      "precision": 0.33,
+      "recall": 0.4177
+    }
+  },
+  "fusion": {
+    "random_forest": {
+      "name": "Random Forest",
+      "accuracy": 0.4681,
+      "f1": 0.3148,
+      "precision": 0.3276,
+      "recall": 0.4169
+    },
+    "extra_trees": {
+      "name": "Extra Trees",
+      "accuracy": 0.4594,
+      "f1": 0.3048,
+      "precision": 0.3197,
+      "recall": 0.3952
+    },
+    "hist_gb": {
+      "name": "Hist Gradient Boosting",
+      "accuracy": 0.4684,
+      "f1": 0.3246,
+      "precision": 0.3359,
+      "recall": 0.4309
+    },
+    "gradient_boosting": {
+      "name": "Gradient Boosting",
+      "accuracy": 0.472,
+      "f1": 0.334,
+      "precision": 0.348,
+      "recall": 0.4582
+    },
+    "logistic_regression": {
+      "name": "Logistic Regression",
+      "accuracy": 0.4276,
+      "f1": 0.2866,
+      "precision": 0.3298,
+      "recall": 0.4122
+    }
+  }
+}

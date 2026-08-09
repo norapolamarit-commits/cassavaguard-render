@@ -1,0 +1,49 @@
+# Training-only environment (~1.4GB, TensorFlow) — never needed to serve the app,
+# only to run backend/training/*.py locally to produce ml_models/*.joblib.
+backend/training/.venv/
+backend/training/.venv-torch/
+backend/training/.venv-py312/
+backend/training/.venv-detector/
+/.venv/
+/.venv-detector/
+backend/training/__pycache__/
+backend/training/data/
+backend/training/runs/
+yolo*.pt
+
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+.pytest_cache/
+.env
+.env.*
+!.env.example
+
+# Local dev-tool config (Claude Code's browser-preview launcher) — has an absolute
+# machine-specific path, not relevant to anyone else cloning this repo or to Render.
+.claude/
+
+# Runtime data — regenerated automatically at startup (backend/config.py creates these
+# dirs, backend/services/seed.py creates the schema + demo data on first boot). Never
+# meant to be source-controlled; on Render this lives on the mounted persistent disk
+# instead (see DATA_DIR in backend/config.py + render.yaml).
+database/
+uploads/
+
+# Two trained model files exceed GitHub's 100MB single-file limit and are NOT the
+# active models actually loaded at runtime (see backend/ml_models/metrics.json and
+# fusion_metrics.json for the real active_model_id — currently hist_gb / fusion_hist_gb,
+# both a few MB). Excluding just these two keeps the repo deployable while every other
+# trained model (used by the System & Models comparison page) stays committed.
+backend/ml_models/extra_trees.joblib
+backend/ml_models/fusion_extra_trees.joblib
+
+# Runtime deployment artifacts are deliberately committed for GitHub -> Render.
+# Every file below is below GitHub's 100 MB per-file limit and is verified from its
+# SHA-256 metadata during the Render build. Training-only Keras weights remain local.
+backend/ml_models/cnn_efficientnet_b0.keras
+
+# Generated training/evaluation output and disposable dataset caches.
+runs/
+work/cache_quarantine/

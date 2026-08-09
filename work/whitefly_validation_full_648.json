@@ -1,0 +1,46 @@
+{
+  "contract": {
+    "selection_set": "validation",
+    "test_opened": false,
+    "confidence_selected_on": "validation micro-F1",
+    "acceptance": "precision >= 0.75 AND recall >= 0.75 AND F1 >= 0.75 at IoU 0.50"
+  },
+  "model": "/Users/norapol/Documents/vita gaurd/cassavaguard/backend/ml_models/whitefly_detector.pt",
+  "data_root": "/Users/norapol/Documents/vita gaurd/cassavaguard/backend/training/data/extended_conditions/whitefly_yolo",
+  "sample_seed": 20260801,
+  "reports": [
+    {
+      "config": "full",
+      "selection_set": "validation",
+      "test_opened": false,
+      "images": 648,
+      "ground_truth_boxes": 58250,
+      "abundance_images": {
+        "low_abundance": 107,
+        "moderate_abundance": 268,
+        "super_abundance": 273
+      },
+      "abundance_boxes": {
+        "low_abundance": 645,
+        "moderate_abundance": 12456,
+        "super_abundance": 45149
+      },
+      "forward_passes": 648,
+      "elapsed_seconds": 99.61730779096251,
+      "seconds_per_image": 0.1537304132576582,
+      "iou_match": 0.5,
+      "max_detections_per_image": 700,
+      "metrics_at_validation_selected_confidence": {
+        "precision": 0.4773266884505983,
+        "recall": 0.34858369098712444,
+        "f1": 0.4029209536755003,
+        "ap50": 0.2647803623706048,
+        "confidence": 0.1682651937007904,
+        "tp": 20305,
+        "fp": 22234,
+        "fn": 37945,
+        "acceptance_met": false
+      }
+    }
+  ]
+}

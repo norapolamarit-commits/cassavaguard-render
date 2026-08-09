@@ -1,0 +1,292 @@
+{
+  "model_id": "white_leaf_spot_random_forest",
+  "active_model_id": "random_forest",
+  "trained_at": "2026-07-31T08:22:44.741121+00:00",
+  "task": "auxiliary_binary_classification",
+  "classes": [
+    "other",
+    "white_leaf_spot"
+  ],
+  "feature_names": [
+    "green_frac",
+    "yellow_frac",
+    "brown_frac",
+    "necrosis_frac",
+    "bright_spot_frac",
+    "pseudo_ndvi",
+    "edge_density",
+    "texture_var",
+    "mottle",
+    "streak",
+    "mean_sat",
+    "mean_val",
+    "cnn_prob_healthy",
+    "cnn_prob_cbb",
+    "cnn_prob_cbsd",
+    "cnn_prob_cmd",
+    "cnn_prob_cgm"
+  ],
+  "threshold": 0.5,
+  "production_eligible": false,
+  "requires_expert_review": true,
+  "field_validated": false,
+  "artifact": {
+    "file": "white_leaf_spot_random_forest.joblib",
+    "sha256": "b2e43ad3559ebf2a90491676289d54c875d7e1cbbf4a10583d7f95148855dc9b"
+  },
+  "base_cnn": {
+    "model_id": "cnn_efficientnet_b0",
+    "artifact_sha256": "b8e0eddc515c8e72ca159bea0d763394be0d67522e9ef1e0c31d945ed5205846"
+  },
+  "selection": {
+    "set": "validation",
+    "metric": "macro_f1",
+    "test_used_for_selection": false,
+    "candidate_metrics": {
+      "hist_gb": {
+        "accuracy": 0.98913,
+        "balanced_accuracy": 0.970588,
+        "macro_f1": 0.981537,
+        "roc_auc": 0.998431,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            75,
+            0
+          ],
+          [
+            1,
+            16
+          ]
+        ],
+        "per_class": {
+          "other": {
+            "precision": 0.986842,
+            "recall": 1.0,
+            "f1": 0.993377,
+            "support": 75
+          },
+          "white_leaf_spot": {
+            "precision": 1.0,
+            "recall": 0.941176,
+            "f1": 0.969697,
+            "support": 17
+          }
+        }
+      },
+      "random_forest": {
+        "accuracy": 0.98913,
+        "balanced_accuracy": 0.970588,
+        "macro_f1": 0.981537,
+        "roc_auc": 0.998431,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            75,
+            0
+          ],
+          [
+            1,
+            16
+          ]
+        ],
+        "per_class": {
+          "other": {
+            "precision": 0.986842,
+            "recall": 1.0,
+            "f1": 0.993377,
+            "support": 75
+          },
+          "white_leaf_spot": {
+            "precision": 1.0,
+            "recall": 0.941176,
+            "f1": 0.969697,
+            "support": 17
+          }
+        }
+      },
+      "extra_trees": {
+        "accuracy": 0.98913,
+        "balanced_accuracy": 0.970588,
+        "macro_f1": 0.981537,
+        "roc_auc": 0.998431,
+        "threshold": 0.5,
+        "confusion_matrix": [
+          [
+            75,
+            0
+          ],
+          [
+            1,
+            16
+          ]
+        ],
+        "per_class": {
+          "other": {
+            "precision": 0.986842,
+            "recall": 1.0,
+            "f1": 0.993377,
+            "support": 75
+          },
+          "white_leaf_spot": {
+            "precision": 1.0,
+            "recall": 0.941176,
+            "f1": 0.969697,
+            "support": 17
+          }
+        }
+      },
+      "logistic_regression": {
+        "accuracy": 0.923913,
+        "balanced_accuracy": 0.907843,
+        "macro_f1": 0.881596,
+        "roc_auc": 0.969412,
+        "threshold": 0.67,
+        "confusion_matrix": [
+          [
+            70,
+            5
+          ],
+          [
+            2,
+            15
+          ]
+        ],
+        "per_class": {
+          "other": {
+            "precision": 0.972222,
+            "recall": 0.933333,
+            "f1": 0.952381,
+            "support": 75
+          },
+          "white_leaf_spot": {
+            "precision": 0.75,
+            "recall": 0.882353,
+            "f1": 0.810811,
+            "support": 17
+          }
+        }
+      }
+    }
+  },
+  "dataset": {
+    "positive": {
+      "source": "Embrapa PDDB White Leaf Spot subset",
+      "doi": "10.48432/XA1OVL",
+      "license": "Embrapa CC BY-NC 4.0",
+      "commercial_use_allowed": false
+    },
+    "negative": {
+      "source": "CCMT raw Cassava subset",
+      "doi": "10.17632/bwh3zbpkpv.1",
+      "license": "CC BY 4.0"
+    },
+    "counts": {
+      "train": 430,
+      "validation": 92,
+      "test": 93
+    },
+    "per_source_class": {
+      "train": {
+        "bacterial_blight": 70,
+        "white_leaf_spot": 80,
+        "green_mite": 70,
+        "brown_leaf_spot": 70,
+        "healthy": 70,
+        "mosaic": 70
+      },
+      "validation": {
+        "bacterial_blight": 15,
+        "mosaic": 15,
+        "brown_leaf_spot": 15,
+        "healthy": 15,
+        "white_leaf_spot": 17,
+        "green_mite": 15
+      },
+      "test": {
+        "healthy": 15,
+        "green_mite": 15,
+        "brown_leaf_spot": 15,
+        "bacterial_blight": 15,
+        "mosaic": 15,
+        "white_leaf_spot": 18
+      }
+    },
+    "duplicate_audit": {
+      "method": "exact file SHA-256",
+      "candidate_images": 615,
+      "unique_images": 615,
+      "same_label_duplicates_removed": 0,
+      "conflicting_label_groups_quarantined": 0
+    },
+    "limitation": "Positive and negative images come from different source domains; scores may measure source/camera differences. No plant/field group identifiers or independent Thai-field test set are available."
+  },
+  "validation": {
+    "accuracy": 0.98913,
+    "balanced_accuracy": 0.970588,
+    "macro_f1": 0.981537,
+    "roc_auc": 0.998431,
+    "threshold": 0.5,
+    "confusion_matrix": [
+      [
+        75,
+        0
+      ],
+      [
+        1,
+        16
+      ]
+    ],
+    "per_class": {
+      "other": {
+        "precision": 0.986842,
+        "recall": 1.0,
+        "f1": 0.993377,
+        "support": 75
+      },
+      "white_leaf_spot": {
+        "precision": 1.0,
+        "recall": 0.941176,
+        "f1": 0.969697,
+        "support": 17
+      }
+    }
+  },
+  "test": {
+    "accuracy": 0.978495,
+    "balanced_accuracy": 0.944444,
+    "macro_f1": 0.964009,
+    "roc_auc": 0.994074,
+    "threshold": 0.5,
+    "confusion_matrix": [
+      [
+        75,
+        0
+      ],
+      [
+        2,
+        16
+      ]
+    ],
+    "per_class": {
+      "other": {
+        "precision": 0.974026,
+        "recall": 1.0,
+        "f1": 0.986842,
+        "support": 75
+      },
+      "white_leaf_spot": {
+        "precision": 1.0,
+        "recall": 0.888889,
+        "f1": 0.941176,
+        "support": 18
+      }
+    }
+  },
+  "release_blockers": [
+    "Cross-source domain confounding",
+    "Only 115 positive images",
+    "No independent Thai-field holdout",
+    "Positive source licence prohibits commercial use"
+  ]
+}

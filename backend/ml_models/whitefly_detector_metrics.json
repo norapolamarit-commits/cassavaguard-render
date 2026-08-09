@@ -1,0 +1,297 @@
+{
+  "model_id": "whitefly_detector_stage3_review",
+  "trained_at": "2026-08-08T13:27:50.439600+00:00",
+  "published_at": "2026-08-09T01:28:31.568273+00:00",
+  "deployment_scope": "review_only_validation_candidate",
+  "framework": {
+    "ultralytics": "8.4.113",
+    "torch": "2.8.0",
+    "training_code_license": "AGPL-3.0",
+    "distribution_note": "Obtain a commercial Ultralytics licence or comply with AGPL before proprietary distribution."
+  },
+  "architecture": "backend/training/runs/whitefly_tiled1000_yolo26n_640_cpu_stage2/weights/best.pt",
+  "training": {
+    "architecture": "backend/training/runs/whitefly_tiled1000_yolo26n_640_cpu_stage2/weights/best.pt",
+    "epochs": 2,
+    "image_size": 640,
+    "batch_size": 4,
+    "device": "cpu",
+    "seed": 1,
+    "run_name": "whitefly_tiled1000_yolo26n_640_cpu_stage3_e2",
+    "tile_size": 1000,
+    "tile_jpeg_quality": 92,
+    "tiled_dataset_root": "/Users/norapol/Documents/vita gaurd/cassavaguard/backend/training/data/extended_conditions/whitefly_yolo_tiled_1000",
+    "augmentation": {
+      "mosaic": 0.0,
+      "scale": 0.15,
+      "translate": 0.05
+    },
+    "reused_prepared_tiles": true,
+    "test_opening_enabled": false
+  },
+  "task": "object_detection_and_counting",
+  "classes": [
+    "whitefly"
+  ],
+  "input": {
+    "image_size": 640,
+    "max_detections": 700
+  },
+  "dataset": {
+    "doi": "10.17632/5g38399z9p.3",
+    "license": "CC BY 4.0",
+    "images": 3000,
+    "annotation": "PASCAL VOC bounding boxes",
+    "synthetic_images": 0
+  },
+  "tiling": {
+    "method": "non_overlapping_padded_edge_tiles",
+    "tile_size": 1000,
+    "jpeg_quality": 92,
+    "box_assignment": "exactly once by object center; clip at tile edge",
+    "boundary_caveat": "A center-assigned clipped object can leave an unlabeled partial fragment in the adjacent non-overlapping tile; counts are reported",
+    "padding_rgb": [
+      114,
+      114,
+      114
+    ],
+    "retain_empty_tiles": true
+  },
+  "split": {
+    "method": "source tiles inherit deterministic contiguous acquisition-run split; no run appears in more than one split",
+    "seed": 1,
+    "test_used_for_selection": false,
+    "counts": {
+      "train": {
+        "source_images": 1920,
+        "tiles": 15360,
+        "positive_tiles": 8592,
+        "negative_tiles": 6768,
+        "boxes": 121711,
+        "boundary_clipped_boxes": 4663,
+        "acquisition_runs": 5,
+        "abundance": {
+          "low_abundance": 740,
+          "moderate_abundance": 624,
+          "super_abundance": 556
+        }
+      },
+      "val": {
+        "source_images": 648,
+        "tiles": 5184,
+        "positive_tiles": 3075,
+        "negative_tiles": 2109,
+        "boxes": 58250,
+        "boundary_clipped_boxes": 2164,
+        "acquisition_runs": 2,
+        "abundance": {
+          "low_abundance": 107,
+          "moderate_abundance": 268,
+          "super_abundance": 273
+        }
+      },
+      "test": {
+        "source_images": 432,
+        "tiles": 3456,
+        "positive_tiles": 2055,
+        "negative_tiles": 1401,
+        "boxes": 32987,
+        "boundary_clipped_boxes": 1944,
+        "acquisition_runs": 2,
+        "abundance": {
+          "low_abundance": 153,
+          "moderate_abundance": 108,
+          "super_abundance": 171
+        }
+      }
+    },
+    "groups": [
+      {
+        "id": "run_20190218T230557",
+        "started_at": "2019-02-18T23:05:57",
+        "ended_at": "2019-02-19T02:49:15",
+        "images": 419,
+        "abundance": {
+          "low_abundance": 326,
+          "moderate_abundance": 93,
+          "super_abundance": 0
+        },
+        "split": "train"
+      },
+      {
+        "id": "run_20190219T031234",
+        "started_at": "2019-02-19T03:12:34",
+        "ended_at": "2019-02-19T03:43:21",
+        "images": 53,
+        "abundance": {
+          "low_abundance": 43,
+          "moderate_abundance": 10,
+          "super_abundance": 0
+        },
+        "split": "val"
+      },
+      {
+        "id": "run_20190219T221737",
+        "started_at": "2019-02-19T22:17:37",
+        "ended_at": "2019-02-20T01:03:54",
+        "images": 327,
+        "abundance": {
+          "low_abundance": 304,
+          "moderate_abundance": 23,
+          "super_abundance": 0
+        },
+        "split": "train"
+      },
+      {
+        "id": "run_20190220T020021",
+        "started_at": "2019-02-20T02:00:21",
+        "ended_at": "2019-02-20T04:38:39",
+        "images": 166,
+        "abundance": {
+          "low_abundance": 147,
+          "moderate_abundance": 19,
+          "super_abundance": 0
+        },
+        "split": "test"
+      },
+      {
+        "id": "run_20190304T233650",
+        "started_at": "2019-03-04T23:36:50",
+        "ended_at": "2019-03-05T03:13:46",
+        "images": 292,
+        "abundance": {
+          "low_abundance": 58,
+          "moderate_abundance": 194,
+          "super_abundance": 40
+        },
+        "split": "train"
+      },
+      {
+        "id": "run_20190305T033146",
+        "started_at": "2019-03-05T03:31:46",
+        "ended_at": "2019-03-05T05:18:49",
+        "images": 96,
+        "abundance": {
+          "low_abundance": 23,
+          "moderate_abundance": 49,
+          "super_abundance": 24
+        },
+        "split": "train"
+      },
+      {
+        "id": "run_20190305T234205",
+        "started_at": "2019-03-05T23:42:05",
+        "ended_at": "2019-03-06T05:38:17",
+        "images": 595,
+        "abundance": {
+          "low_abundance": 64,
+          "moderate_abundance": 258,
+          "super_abundance": 273
+        },
+        "split": "val"
+      },
+      {
+        "id": "run_20190311T222729",
+        "started_at": "2019-03-11T22:27:29",
+        "ended_at": "2019-03-12T00:30:26",
+        "images": 266,
+        "abundance": {
+          "low_abundance": 6,
+          "moderate_abundance": 89,
+          "super_abundance": 171
+        },
+        "split": "test"
+      },
+      {
+        "id": "run_20190313T015216",
+        "started_at": "2019-03-13T01:52:16",
+        "ended_at": "2019-03-13T06:22:54",
+        "images": 786,
+        "abundance": {
+          "low_abundance": 29,
+          "moderate_abundance": 265,
+          "super_abundance": 492
+        },
+        "split": "train"
+      }
+    ]
+  },
+  "integrity": {
+    "split_manifest": {
+      "file": "backend/training/data/extended_conditions/whitefly_yolo_tiled_1000/split_manifest.json",
+      "sha256": "cb9c5d726f138c33347b7346a9720e1501835de997797b217852e8a0324b1ecd",
+      "schema_version": 2
+    },
+    "source_dataset_manifest": {
+      "file": "backend/training/data/extended_conditions/dataset_manifest.json",
+      "sha256": "aae2d42cfeba00b65632c49b9bd4d3d19a8b8df2ac0532ab0b0506ec46e9f3c9"
+    }
+  },
+  "selection": {
+    "set": "validation",
+    "checkpoint": "best.pt",
+    "test_used_for_selection": false
+  },
+  "validation": {
+    "metrics/precision(B)": 0.78449414,
+    "metrics/recall(B)": 0.71929614,
+    "metrics/mAP50(B)": 0.75571742,
+    "metrics/mAP50-95(B)": 0.36389052,
+    "fitness": 0.36389052
+  },
+  "validation_operating_point": {
+    "confidence_threshold": 0.21721722,
+    "iou_threshold": 0.5,
+    "precision": 0.7473937,
+    "recall": 0.74684979,
+    "f1": 0.74712164,
+    "threshold_selection_set": "validation",
+    "test_used_for_threshold_selection": false
+  },
+  "validation_gate": {
+    "target": 0.75,
+    "metrics": {
+      "precision": 0.7473937,
+      "recall": 0.74684979,
+      "f1": 0.74712164
+    },
+    "passed": false
+  },
+  "test": {
+    "evaluated": false,
+    "reason": "sealed test was not opened because the 75% validation gate failed"
+  },
+  "evaluation_warning": {
+    "status": "validation_only_below_target",
+    "detail": "Explicitly deployed for review at validation P/R/F1 0.7474/0.7468/0.7471; the 0.75 gate failed and no test metric is available."
+  },
+  "artifacts": {
+    "pytorch": {
+      "file": "whitefly_detector.pt",
+      "sha256": "3211cecb633ffe086fe99682c9d223d17c30afb94cd05432175e23ab6d827833"
+    },
+    "onnx": {
+      "file": "whitefly_detector.onnx",
+      "sha256": "a8e5da252fa666f0894e3b07b97fd38516e583306d2313260b76776b07ffb723"
+    }
+  },
+  "production_eligible": false,
+  "field_validated": false,
+  "runtime_threshold": {
+    "value": 0.21721722,
+    "basis": "maximum min(precision, recall, F1) on validation; F1 tie-break; test was not used",
+    "validation_primary": 0.74684979,
+    "validation_f1": 0.74712164,
+    "validation_precision": 0.7473937,
+    "validation_recall": 0.74684979,
+    "selection_set": "validation",
+    "test_used_for_selection": false
+  },
+  "release_blockers": [
+    "Validation precision, recall and F1 did not all reach 0.75",
+    "Held-out test remains sealed and unevaluated",
+    "Independent Thai-field holdout is not available",
+    "Relevant negative insect/background images are not present",
+    "Distribution licensing review is required"
+  ]
+}

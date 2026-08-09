@@ -1,0 +1,78 @@
+{
+  "contract": {
+    "selection_set": "validation",
+    "test_opened": false,
+    "confidence_selected_on": "validation micro-F1",
+    "acceptance": "precision >= 0.75 AND recall >= 0.75 AND F1 >= 0.75 at IoU 0.50"
+  },
+  "model": "/Users/norapol/Documents/vita gaurd/cassavaguard/backend/ml_models/whitefly_detector.pt",
+  "data_root": "/Users/norapol/Documents/vita gaurd/cassavaguard/backend/training/data/extended_conditions/whitefly_yolo",
+  "sample_seed": 20260801,
+  "reports": [
+    {
+      "config": "full",
+      "selection_set": "validation",
+      "test_opened": false,
+      "images": 45,
+      "ground_truth_boxes": 3048,
+      "abundance_images": {
+        "low_abundance": 15,
+        "moderate_abundance": 15,
+        "super_abundance": 15
+      },
+      "abundance_boxes": {
+        "low_abundance": 98,
+        "moderate_abundance": 799,
+        "super_abundance": 2151
+      },
+      "forward_passes": 45,
+      "elapsed_seconds": 9.434401916980278,
+      "seconds_per_image": 0.20965337593289507,
+      "network_image_size": 1280,
+      "raw_prediction_confidence": 0.001,
+      "merge_iou": 0.5,
+      "iou_match": 0.5,
+      "max_detections_per_image": 700,
+      "metrics_at_validation_selected_confidence": {
+        "precision": 0.506716651046548,
+        "recall": 0.5321522309711286,
+        "f1": 0.5191230596895504,
+        "ap50": 0.4398970129962237,
+        "confidence": 0.2375197857618332,
+        "tp": 1622,
+        "fp": 1579,
+        "fn": 1426,
+        "acceptance_met": false
+      },
+      "metrics_by_abundance_at_global_selected_confidence": {
+        "low_abundance": {
+          "precision": 0.1702127659574468,
+          "recall": 0.40816326530612246,
+          "f1": 0.24024024024024024,
+          "confidence": 0.2375197857618332,
+          "tp": 40,
+          "fp": 195,
+          "fn": 58
+        },
+        "moderate_abundance": {
+          "precision": 0.460093896713615,
+          "recall": 0.490613266583229,
+          "f1": 0.4748637189582071,
+          "confidence": 0.2375197857618332,
+          "tp": 392,
+          "fp": 460,
+          "fn": 407
+        },
+        "super_abundance": {
+          "precision": 0.5629139072847682,
+          "recall": 0.5532310553231056,
+          "f1": 0.5580304806565065,
+          "confidence": 0.2375197857618332,
+          "tp": 1190,
+          "fp": 924,
+          "fn": 961
+        }
+      }
+    }
+  ]
+}

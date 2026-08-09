@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-31",
+  "tool": "OpenAI built-in ImageGen",
+  "policy": {
+    "origin": "synthetic",
+    "use": "train_only_augmentation_seed",
+    "evaluation_allowed": false,
+    "production_evidence_allowed": false,
+    "expert_review_required": true
+  },
+  "assets": [
+    {
+      "class": "cad",
+      "file": "synthetic/cad/imagegen_cad_001.png",
+      "prompt": "Photorealistic agricultural field-training image of a botanically correct cassava plant with unambiguous cassava anthracnose disease: elongated dark-brown sunken cankers on young stems and petioles, small necrotic lesions, mild shoot dieback and distorted young leaves; natural overcast smartphone documentary photography; exclude other diseases, pests, text and watermarks."
+    },
+    {
+      "class": "white_leaf_spot",
+      "file": "synthetic/white_leaf_spot/imagegen_white_leaf_spot_001.png",
+      "prompt": "Photorealistic cassava leaf with 7 narrow palmate lobes and numerous discrete small pale white or cream lesions with thin dark brown-to-purple margins; natural diffuse field smartphone photography; exclude other diseases, pests, text and watermarks."
+    },
+    {
+      "class": "sed",
+      "file": "synthetic/sed/imagegen_sed_001.png",
+      "prompt": "Photorealistic whole cassava plant showing superelongation disease: abnormally long thin internodes, tall spindly weak architecture, curved stems, distorted small young leaves and shallow tan-to-brown stem and petiole cankers; field smartphone documentary photography; exclude other diseases, pests, text and watermarks."
+    },
+    {
+      "class": "mealybug",
+      "file": "synthetic/mealybug/imagegen_mealybug_001.png",
+      "prompt": "Photorealistic object-detection seed showing multiple clearly separable small oval off-white waxy cassava mealybugs on young cassava shoot tips, stem nodes and leaf axils with modest wax and mild bunchy growth; natural field smartphone photograph; exclude whiteflies, mites, other disease, boxes, text and watermarks."
+    },
+    {
+      "class": "water_stress",
+      "file": "synthetic/water_stress/imagegen_water_stress_001.png",
+      "prompt": "Photorealistic whole-plant cassava water-stress research image showing drooping petioles, limp folded palmate leaves, modest lower-leaf yellowing, slight marginal drying and cracked dry soil in harsh natural sunlight; exclude disease, insects, labels and watermarks; must later be paired with real soil-moisture and weather readings."
+    },
+    {
+      "class": "nutrient_def",
+      "subclass": "potassium_deficiency",
+      "file": "synthetic/nutrient_def/imagegen_potassium_deficiency_001.png",
+      "prompt": "Photorealistic cassava plant with suspected potassium deficiency: turgid older lower leaves showing marginal chlorosis, narrow brown edge scorch and some interveinal yellowing while younger leaves remain greener; moist-normal soil; exclude disease, pests, drought, labels and watermarks; must later be paired with soil or tissue laboratory measurements."
+    }
+  ]
+}

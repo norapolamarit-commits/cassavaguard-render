@@ -1,0 +1,275 @@
+{
+  "model_id": "brown_leaf_spot_hist_gb",
+  "active_model_id": "hist_gb",
+  "trained_at": "2026-07-31T06:38:16.551716+00:00",
+  "task": "auxiliary_binary_classification",
+  "classes": [
+    "other",
+    "brown_leaf_spot"
+  ],
+  "feature_names": [
+    "green_frac",
+    "yellow_frac",
+    "brown_frac",
+    "necrosis_frac",
+    "bright_spot_frac",
+    "pseudo_ndvi",
+    "edge_density",
+    "texture_var",
+    "mottle",
+    "streak",
+    "mean_sat",
+    "mean_val",
+    "cnn_prob_healthy",
+    "cnn_prob_cbb",
+    "cnn_prob_cbsd",
+    "cnn_prob_cmd",
+    "cnn_prob_cgm"
+  ],
+  "threshold": 0.43,
+  "production_eligible": false,
+  "requires_expert_review": true,
+  "field_validated": false,
+  "artifact": {
+    "file": "brown_leaf_spot_hist_gb.joblib",
+    "sha256": "783c41a3877a093011aa286c47f4ecea7e3947c0864852ef8c34025bd8dffbf4"
+  },
+  "base_cnn": {
+    "model_id": "cnn_efficientnet_b0",
+    "artifact_sha256": "b8e0eddc515c8e72ca159bea0d763394be0d67522e9ef1e0c31d945ed5205846"
+  },
+  "selection": {
+    "set": "validation",
+    "metric": "macro_f1",
+    "test_used_for_selection": false,
+    "candidate_metrics": {
+      "hist_gb": {
+        "accuracy": 0.930423,
+        "balanced_accuracy": 0.882589,
+        "macro_f1": 0.889521,
+        "roc_auc": 0.968146,
+        "threshold": 0.43,
+        "confusion_matrix": [
+          [
+            564,
+            22
+          ],
+          [
+            29,
+            118
+          ]
+        ],
+        "per_class": {
+          "other": {
+            "precision": 0.951096,
+            "recall": 0.962457,
+            "f1": 0.956743,
+            "support": 586
+          },
+          "brown_leaf_spot": {
+            "precision": 0.842857,
+            "recall": 0.802721,
+            "f1": 0.8223,
+            "support": 147
+          }
+        }
+      },
+      "random_forest": {
+        "accuracy": 0.901774,
+        "balanced_accuracy": 0.851931,
+        "macro_f1": 0.848373,
+        "roc_auc": 0.954354,
+        "threshold": 0.455,
+        "confusion_matrix": [
+          [
+            548,
+            38
+          ],
+          [
+            34,
+            113
+          ]
+        ],
+        "per_class": {
+          "other": {
+            "precision": 0.941581,
+            "recall": 0.935154,
+            "f1": 0.938356,
+            "support": 586
+          },
+          "brown_leaf_spot": {
+            "precision": 0.748344,
+            "recall": 0.768707,
+            "f1": 0.758389,
+            "support": 147
+          }
+        }
+      },
+      "extra_trees": {
+        "accuracy": 0.894952,
+        "balanced_accuracy": 0.822183,
+        "macro_f1": 0.831413,
+        "roc_auc": 0.94725,
+        "threshold": 0.525,
+        "confusion_matrix": [
+          [
+            553,
+            33
+          ],
+          [
+            44,
+            103
+          ]
+        ],
+        "per_class": {
+          "other": {
+            "precision": 0.926298,
+            "recall": 0.943686,
+            "f1": 0.934911,
+            "support": 586
+          },
+          "brown_leaf_spot": {
+            "precision": 0.757353,
+            "recall": 0.70068,
+            "f1": 0.727915,
+            "support": 147
+          }
+        }
+      },
+      "logistic_regression": {
+        "accuracy": 0.843111,
+        "balanced_accuracy": 0.74899,
+        "macro_f1": 0.752185,
+        "roc_auc": 0.877423,
+        "threshold": 0.715,
+        "confusion_matrix": [
+          [
+            531,
+            55
+          ],
+          [
+            60,
+            87
+          ]
+        ],
+        "per_class": {
+          "other": {
+            "precision": 0.898477,
+            "recall": 0.906143,
+            "f1": 0.902294,
+            "support": 586
+          },
+          "brown_leaf_spot": {
+            "precision": 0.612676,
+            "recall": 0.591837,
+            "f1": 0.602076,
+            "support": 147
+          }
+        }
+      }
+    }
+  },
+  "dataset": {
+    "source": "CCMT raw Cassava subset",
+    "doi": "10.17632/bwh3zbpkpv.1",
+    "license": "CC BY 4.0",
+    "split_policy": "70/15/15 stratified by original CCMT class after exact SHA-256 deduplication",
+    "duplicate_audit": {
+      "method": "exact file SHA-256",
+      "unique_images": 4887,
+      "same_label_duplicates_removed": 109,
+      "conflicting_label_groups_quarantined": 2
+    },
+    "counts": {
+      "train": 3420,
+      "validation": 733,
+      "test": 734
+    },
+    "per_source_class": {
+      "train": {
+        "healthy": 700,
+        "bacterial_blight": 693,
+        "brown_leaf_spot": 689,
+        "green_mite": 700,
+        "mosaic": 638
+      },
+      "validation": {
+        "mosaic": 137,
+        "healthy": 150,
+        "bacterial_blight": 149,
+        "brown_leaf_spot": 147,
+        "green_mite": 150
+      },
+      "test": {
+        "bacterial_blight": 149,
+        "mosaic": 137,
+        "healthy": 150,
+        "brown_leaf_spot": 148,
+        "green_mite": 150
+      }
+    },
+    "limitation": "CCMT does not publish plant/field group identifiers. Exact duplicates were removed, but near-duplicate or same-scene leakage cannot be ruled out."
+  },
+  "validation": {
+    "accuracy": 0.930423,
+    "balanced_accuracy": 0.882589,
+    "macro_f1": 0.889521,
+    "roc_auc": 0.968146,
+    "threshold": 0.43,
+    "confusion_matrix": [
+      [
+        564,
+        22
+      ],
+      [
+        29,
+        118
+      ]
+    ],
+    "per_class": {
+      "other": {
+        "precision": 0.951096,
+        "recall": 0.962457,
+        "f1": 0.956743,
+        "support": 586
+      },
+      "brown_leaf_spot": {
+        "precision": 0.842857,
+        "recall": 0.802721,
+        "f1": 0.8223,
+        "support": 147
+      }
+    }
+  },
+  "test": {
+    "accuracy": 0.911444,
+    "balanced_accuracy": 0.846059,
+    "macro_f1": 0.857733,
+    "roc_auc": 0.958791,
+    "threshold": 0.43,
+    "confusion_matrix": [
+      [
+        560,
+        26
+      ],
+      [
+        39,
+        109
+      ]
+    ],
+    "per_class": {
+      "other": {
+        "precision": 0.934891,
+        "recall": 0.955631,
+        "f1": 0.945148,
+        "support": 586
+      },
+      "brown_leaf_spot": {
+        "precision": 0.807407,
+        "recall": 0.736486,
+        "f1": 0.770318,
+        "support": 148
+      }
+    }
+  }
+}

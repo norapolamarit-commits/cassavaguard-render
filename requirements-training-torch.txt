@@ -1,0 +1,10 @@
+# Apple-silicon accelerated raw-pixel CNN training/export environment.
+# Runtime serving still needs only onnxruntime from requirements.txt.
+torch==2.13.0
+torchvision==0.28.0
+onnx==1.22.0
+onnxruntime==1.28.0
+numpy==2.5.1
+scipy==1.18.0
+scikit-learn==1.9.0
+Pillow==12.3.0

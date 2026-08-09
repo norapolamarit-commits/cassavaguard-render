@@ -1,0 +1,56 @@
+# CassavaGuard AI production Blueprint. In Render, set Blueprint Path to
+# deploy/render/render.yaml. The root render.yaml mirrors this file for the default
+# GitHub Blueprint discovery flow.
+services:
+  - name: cassavaguard-ai
+    type: web
+    runtime: python
+    region: singapore
+    plan: starter
+    buildCommand: bash deploy/render/build.sh
+    preDeployCommand: bash deploy/render/predeploy.sh
+    startCommand: bash deploy/render/start.sh
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cassavaguard-db
+          property: connectionString
+      - key: DATA_DIR
+        value: /var/data
+      - key: SEED_DEMO_DATA
+        value: "false"
+      - key: AUTH_REQUIRED
+        value: "false"
+      - key: EXPOSE_RESET_TOKEN
+        value: "false"
+      - key: ENABLE_API_DOCS
+        value: "false"
+      - key: ENVIRONMENTAL_DATA_MODE
+        value: live
+      - key: USE_CNN
+        value: "true"
+      - key: USE_FUSION
+        value: "false"
+      - key: AI_SERVING_MODE
+        value: review_only
+      - key: AI_FIELD_VALIDATED
+        value: "false"
+      - key: PYTHON_VERSION
+        value: 3.11.9
+    disk:
+      name: cassavaguard-data
+      mountPath: /var/data
+      sizeGB: 1
+
+databases:
+  - name: cassavaguard-db
+    plan: basic-256mb
+    region: singapore
+    postgresMajorVersion: "18"
+    ipAllowList: []

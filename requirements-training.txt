@@ -1,0 +1,16 @@
+# Reproducible ML training/export environment. Use Python 3.11 or 3.12.
+# This file is intentionally standalone: the app runtime pins NumPy 2.x, while
+# tf2onnx 1.16.1 requires protobuf 3.20 and is compatible with TensorFlow 2.16.
+tensorflow==2.16.2
+keras==3.10.0
+tensorflow-datasets==4.9.3
+tensorflow-metadata==1.15.0
+numpy==1.26.4
+scipy==1.13.1
+scikit-learn==1.6.1
+Pillow==11.3.0
+joblib==1.5.3
+httpx==0.28.1
+tf2onnx==1.16.1
+onnx==1.16.2
+onnxruntime==1.19.2

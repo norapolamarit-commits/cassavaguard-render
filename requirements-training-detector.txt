@@ -1,0 +1,7 @@
+# Whitefly object detector training only.
+# Ultralytics is AGPL-3.0; obtain a commercial licence or comply with AGPL
+# before distributing a proprietary service that includes this dependency.
+ultralytics==8.4.113
+onnx>=1.12,<1.18
+onnxslim>=0.1.82
+onnxruntime>=1.28,<2

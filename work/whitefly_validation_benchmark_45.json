@@ -1,0 +1,112 @@
+{
+  "contract": {
+    "selection_set": "validation",
+    "test_opened": false,
+    "confidence_selected_on": "validation micro-F1",
+    "acceptance": "precision >= 0.75 AND recall >= 0.75 AND F1 >= 0.75 at IoU 0.50"
+  },
+  "model": "/Users/norapol/Documents/vita gaurd/cassavaguard/backend/ml_models/whitefly_detector.pt",
+  "data_root": "/Users/norapol/Documents/vita gaurd/cassavaguard/backend/training/data/extended_conditions/whitefly_yolo",
+  "sample_seed": 20260801,
+  "reports": [
+    {
+      "config": "full",
+      "selection_set": "validation",
+      "test_opened": false,
+      "images": 45,
+      "ground_truth_boxes": 3048,
+      "abundance_images": {
+        "low_abundance": 15,
+        "moderate_abundance": 15,
+        "super_abundance": 15
+      },
+      "abundance_boxes": {
+        "low_abundance": 98,
+        "moderate_abundance": 799,
+        "super_abundance": 2151
+      },
+      "forward_passes": 45,
+      "elapsed_seconds": 11.163236416003201,
+      "seconds_per_image": 0.2480719203556267,
+      "iou_match": 0.5,
+      "max_detections_per_image": 700,
+      "metrics_at_validation_selected_confidence": {
+        "precision": 0.4898242368177613,
+        "recall": 0.34744094488188976,
+        "f1": 0.40652591170825336,
+        "ap50": 0.26666921274668487,
+        "confidence": 0.18704476952552795,
+        "tp": 1059,
+        "fp": 1103,
+        "fn": 1989,
+        "acceptance_met": false
+      }
+    },
+    {
+      "config": "tile1600o20",
+      "selection_set": "validation",
+      "test_opened": false,
+      "images": 45,
+      "ground_truth_boxes": 3048,
+      "abundance_images": {
+        "low_abundance": 15,
+        "moderate_abundance": 15,
+        "super_abundance": 15
+      },
+      "abundance_boxes": {
+        "low_abundance": 98,
+        "moderate_abundance": 799,
+        "super_abundance": 2151
+      },
+      "forward_passes": 270,
+      "elapsed_seconds": 32.406862291973084,
+      "seconds_per_image": 0.7201524953771796,
+      "iou_match": 0.5,
+      "max_detections_per_image": 700,
+      "metrics_at_validation_selected_confidence": {
+        "precision": 0.27270187203129365,
+        "recall": 0.32020997375328086,
+        "f1": 0.29455258789799305,
+        "ap50": 0.16496422342804934,
+        "confidence": 0.2257784754037857,
+        "tp": 976,
+        "fp": 2603,
+        "fn": 2072,
+        "acceptance_met": false
+      }
+    },
+    {
+      "config": "tile1024o20",
+      "selection_set": "validation",
+      "test_opened": false,
+      "images": 45,
+      "ground_truth_boxes": 3048,
+      "abundance_images": {
+        "low_abundance": 15,
+        "moderate_abundance": 15,
+        "super_abundance": 15
+      },
+      "abundance_boxes": {
+        "low_abundance": 98,
+        "moderate_abundance": 799,
+        "super_abundance": 2151
+      },
+      "forward_passes": 675,
+      "elapsed_seconds": 66.71864362503402,
+      "seconds_per_image": 1.482636525000756,
+      "iou_match": 0.5,
+      "max_detections_per_image": 700,
+      "metrics_at_validation_selected_confidence": {
+        "precision": 0.015916410755748633,
+        "recall": 0.13943569553805774,
+        "f1": 0.028571428571428574,
+        "ap50": 0.0023925081302689105,
+        "confidence": 0.01714603416621685,
+        "tp": 425,
+        "fp": 26277,
+        "fn": 2623,
+        "acceptance_met": false
+      }
+    }
+  ]
+}
