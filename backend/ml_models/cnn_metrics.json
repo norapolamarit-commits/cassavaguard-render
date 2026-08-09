@@ -30,6 +30,19 @@
   "normalization_location": "inside_onnx_graph",
   "output": "logits",
   "temperature": 0.7158449941631269,
+  "inference_tta": {
+    "enabled": true,
+    "transforms": [
+      "identity",
+      "horizontal_flip",
+      "vertical_flip",
+      "horizontal_vertical_flip"
+    ],
+    "aggregation": "mean_logits",
+    "selection_set": "validation",
+    "test_used_for_selection": false,
+    "scope": "primary single-image prediction only; attribution batches remain single-view"
+  },
   "selection": {
     "set": "validation",
     "metric": "macro_f1",
@@ -409,6 +422,28 @@
         "f1": 0.758095,
         "support": 253
       }
+    }
+  },
+  "tta_evaluation": {
+    "protocol": "four deterministic serving views; mean logits; chosen on validation only",
+    "validation_after_current_exact_and_perceptual_quarantine": {
+      "images": 1875,
+      "single_view_accuracy": 0.79093333,
+      "single_view_macro_f1": 0.72196311,
+      "tta_accuracy": 0.80746667,
+      "tta_macro_f1": 0.7422614,
+      "absolute_accuracy_gain": 0.01653334,
+      "absolute_macro_f1_gain": 0.02029829
+    },
+    "official_raw_test_sensitivity_check": {
+      "images": 1885,
+      "single_view_accuracy": 0.81114058,
+      "single_view_macro_f1": 0.74445071,
+      "tta_accuracy": 0.81856764,
+      "tta_macro_f1": 0.7534814,
+      "absolute_accuracy_gain": 0.00742706,
+      "absolute_macro_f1_gain": 0.00903069,
+      "warning": "Raw official test sensitivity check includes duplicates quarantined by the canonical evaluation; canonical single-view test metrics above remain the release gate."
     }
   },
   "production_eligible": false,

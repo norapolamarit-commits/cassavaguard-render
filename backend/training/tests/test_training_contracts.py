@@ -104,6 +104,42 @@ def test_calibrated_softmax_is_normalized():
     assert np.allclose(probabilities.sum(axis=1), 1.0)
 
 
+def test_cnn_four_view_tta_uses_one_batch_and_mean_logits(monkeypatch):
+    metrics = {
+        "img_size": 8,
+        "input_scale": "zero_to_255",
+        "input_layout": "NCHW",
+        "normalize_mean": [0.0, 0.0, 0.0],
+        "normalize_std": [1.0, 1.0, 1.0],
+        "classes": ML_CLASS_ORDER,
+        "temperature": 1.0,
+        "input_name": "image",
+        "inference_tta": {
+            "enabled": True,
+            "transforms": [
+                "identity", "horizontal_flip", "vertical_flip",
+                "horizontal_vertical_flip",
+            ],
+            "aggregation": "mean_logits",
+        },
+    }
+
+    class FakeSession:
+        def run(self, _outputs, inputs):
+            assert inputs["image"].shape == (4, 3, 8, 8)
+            return [np.array([
+                [4, 0, 0, 0, 0], [0, 4, 0, 0, 0],
+                [4, 0, 0, 0, 0], [4, 0, 0, 0, 0],
+            ], dtype=np.float32)]
+
+    monkeypatch.setattr(cnn_classifier, "get_cnn_session", lambda: FakeSession())
+    monkeypatch.setattr(cnn_classifier, "get_cnn_metrics", lambda: metrics)
+    image = Image.fromarray(np.arange(8 * 8 * 3, dtype=np.uint8).reshape(8, 8, 3))
+    probabilities = cnn_classifier.cnn_predict_proba(image)
+    assert max(probabilities, key=probabilities.get) == "healthy"
+    assert np.isclose(sum(probabilities.values()), 1.0)
+
+
 def test_whitefly_split_keeps_contiguous_frames_across_clock_boundary_together():
     records = [
         ("IMG_20190313_061459_1", "low_abundance"),

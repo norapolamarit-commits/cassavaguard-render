@@ -240,7 +240,27 @@ def cnn_predict_proba(img: Image.Image) -> dict:
     session = get_cnn_session()
     meta = get_cnn_metrics()
     x = cnn_preprocess(img)
-    logits = session.run(None, {meta.get("input_name", "image"): x})[0][0]
+    tta = meta.get("inference_tta", {})
+    if tta.get("enabled") is True:
+        expected = [
+            "identity", "horizontal_flip", "vertical_flip",
+            "horizontal_vertical_flip",
+        ]
+        if tta.get("transforms") != expected or tta.get("aggregation") != "mean_logits":
+            raise ValueError("unsupported CNN inference_tta contract")
+        # One batched ONNX call keeps the four deterministic views cheaper than
+        # four independent requests. Flips happen after the serving resize and
+        # before the model's internal normalization, matching the frozen
+        # validation-selected evaluation protocol.
+        views = np.concatenate([
+            x,
+            x[:, :, :, ::-1],
+            x[:, :, ::-1, :],
+            x[:, :, ::-1, ::-1],
+        ], axis=0).astype(np.float32, copy=False)
+        logits = session.run(None, {meta.get("input_name", "image"): views})[0].mean(axis=0)
+    else:
+        logits = session.run(None, {meta.get("input_name", "image"): x})[0][0]
     probs = _softmax(logits.astype(np.float64) / float(meta.get("temperature", 1.0)))
     return dict(zip(meta["classes"], probs.tolist()))
 
