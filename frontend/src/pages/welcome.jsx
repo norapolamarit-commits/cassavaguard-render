@@ -27,7 +27,7 @@
               <Icon name="leaf" className="w-16 h-16 -rotate-6" />
             </div>
             <span className="absolute -left-8 top-9 glass rounded-2xl px-3 py-2 text-xs txt-soft">AI + Field data</span>
-            <span className="absolute -right-10 bottom-8 glass rounded-2xl px-3 py-2 text-xs text-brand-300">13 classes</span>
+            <span className="absolute -right-10 bottom-8 glass rounded-2xl px-3 py-2 text-xs text-brand-300">{th ? '5 คลาสหลัก + ผลเสริม' : '5 primary + auxiliary'}</span>
           </div>
 
           <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-20 max-w-3xl">

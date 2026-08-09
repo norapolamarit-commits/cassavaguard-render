@@ -15,6 +15,7 @@ import "./pages/recommendations.jsx";
 import "./pages/history.jsx";
 import "./pages/system.jsx";
 import "./pages/guide.jsx";
+import "./pages/legal.jsx";
 import "./pages/welcome.jsx";
 import "./App.jsx";
 import "./main.jsx";

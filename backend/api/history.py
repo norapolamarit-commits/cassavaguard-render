@@ -2,11 +2,13 @@
 import csv
 import io
 import json
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from backend.config import UPLOAD_DIR
 from backend.core.access import get_prediction, predictions_query
 from backend.core.security import create_asset_token, get_current_user
 from backend.database import get_db
@@ -93,3 +95,26 @@ def prediction_detail(pred_id: int, user: User = Depends(get_current_user),
     d["symptoms"] = json.loads(p.symptoms_json or "[]")
     d["feature_importance"] = json.loads(p.features_json or "[]")
     return d
+
+
+@router.delete("/predictions/{pred_id}", status_code=204)
+def delete_prediction(pred_id: int, user: User = Depends(get_current_user),
+                      db: Session = Depends(get_db)):
+    """Delete one accessible prediction and its generated local image artifacts."""
+    prediction = get_prediction(db, pred_id, user)
+    artifact_paths = [prediction.image_path, prediction.heatmap_path]
+    db.delete(prediction)
+    db.commit()
+    for value in artifact_paths:
+        if not value:
+            continue
+        path = (UPLOAD_DIR.parent / Path(value)).resolve()
+        try:
+            path.relative_to(UPLOAD_DIR.resolve())
+            if path.is_file():
+                path.unlink()
+        except (OSError, ValueError):
+            # The database deletion is authoritative. Missing/stale artifacts must
+            # not turn a successful privacy deletion into an API failure.
+            pass
+    return Response(status_code=204)

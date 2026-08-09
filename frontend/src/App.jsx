@@ -23,6 +23,7 @@
     ]},
     { group: 'group_help', items: [
       { key: 'guide', icon: 'book', label: 'nav_guide' },
+      { key: 'legal', icon: 'privacy', label: 'nav_legal' },
     ]},
   ];
 
@@ -57,7 +58,7 @@
       predict: ['predict_title', 'predict_sub'], recommendations: ['nav_reco', 'dash_sub'],
       satellite: ['nav_satellite', 'veg_indices'], weather: ['nav_weather', 'forecast'],
       soil: ['nav_soil', 'soil_profile'], history: ['nav_history', 'dash_sub'], system: ['nav_system', 'model_perf'],
-      guide: ['nav_guide', 'app_tag'],
+      guide: ['nav_guide', 'app_tag'], legal: ['nav_legal', 'app_tag'],
     }[route] || ['app_name', 'app_tag'];
 
     // Render the active page directly as a stable component element.
@@ -76,6 +77,7 @@
         case 'history': return <P.History />;
         case 'system': return <P.System />;
         case 'guide': return <P.Guide />;
+        case 'legal': return <P.Legal />;
         default: return <div className="txt">Not found</div>;
       }
     };
