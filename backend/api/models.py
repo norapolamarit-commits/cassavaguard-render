@@ -151,6 +151,9 @@ def _whitefly_entry():
         return None
     meta = get_whitefly_metrics()
     test = meta["test"]
+    test_evaluated = test.get("evaluated") is not False
+    evaluation = test if test_evaluated else meta["validation_operating_point"]
+    detection_metrics = test if test_evaluated else meta["validation"]
     model_path = BASE_DIR / "backend" / "ml_models" / meta["artifacts"]["onnx"]["file"]
     return {
         "id": meta["model_id"],
@@ -160,8 +163,8 @@ def _whitefly_entry():
         "classes": 1,
         "accuracy": None,
         "f1": evaluation.get("f1"),
-        "map50": test.get("metrics/mAP50(B)"),
-        "map50_95": test.get("metrics/mAP50-95(B)"),
+        "map50": detection_metrics.get("metrics/mAP50(B)"),
+        "map50_95": detection_metrics.get("metrics/mAP50-95(B)"),
         "precision": evaluation.get("metrics/precision(B)", evaluation.get("precision")),
         "recall": evaluation.get("metrics/recall(B)", evaluation.get("recall")),
         "evaluation_set": "test" if test_evaluated else "validation",

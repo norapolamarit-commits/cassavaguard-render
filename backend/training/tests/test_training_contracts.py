@@ -9,6 +9,7 @@ import pytest
 from PIL import Image
 
 from backend.services import cnn_classifier
+from backend.api import models as models_api
 from backend.training import train_whitefly_detector
 from backend.services.feature_extraction import FEATURE_NAMES, ML_CLASS_ORDER
 from backend.services.model_contract import verify_sklearn_bundle
@@ -91,6 +92,43 @@ def test_external_dataset_is_training_only_and_rejects_official_duplicates(tmp_p
     assert reports[0]["usage"] == "training_only"
     assert reports[0]["accepted"] == 1
     assert reports[0]["exact_duplicates_removed"] == 1
+
+
+def test_whitefly_registry_uses_validation_when_sealed_test_is_unopened(
+    tmp_path, monkeypatch
+):
+    artifact = tmp_path / "backend" / "ml_models" / "whitefly.onnx"
+    artifact.parent.mkdir(parents=True)
+    artifact.write_bytes(b"onnx")
+    metrics = {
+        "model_id": "whitefly_review",
+        "trained_at": "2026-08-08T00:00:00Z",
+        "test": {"evaluated": False, "reason": "validation gate failed"},
+        "validation": {
+            "metrics/mAP50(B)": 0.7557,
+            "metrics/mAP50-95(B)": 0.3639,
+        },
+        "validation_operating_point": {
+            "precision": 0.7474,
+            "recall": 0.7468,
+            "f1": 0.7471,
+        },
+        "artifacts": {"onnx": {"file": artifact.name}},
+        "dataset": {"images": 3000},
+        "evaluation_warning": {"status": "validation_only_below_target"},
+    }
+    monkeypatch.setattr(models_api, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(models_api, "get_whitefly_session", lambda: object())
+    monkeypatch.setattr(models_api, "get_whitefly_metrics", lambda: metrics)
+
+    entry = models_api._whitefly_entry()
+
+    assert entry["evaluation_set"] == "validation"
+    assert entry["accuracy"] is None
+    assert entry["map50"] == 0.7557
+    assert entry["f1"] == 0.7471
+    assert entry["precision"] == 0.7474
+    assert entry["recall"] == 0.7468
 
 
 def test_runtime_sklearn_contract_rejects_class_order_mismatch(tmp_path):
