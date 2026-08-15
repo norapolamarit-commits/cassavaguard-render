@@ -40,7 +40,7 @@ def verify_runtime() -> dict:
         raise RuntimeError("Render bundle requires USE_CNN=true")
 
     heads = {
-        "cnn_efficientnet_b0": get_cnn_session() is not None,
+        "cnn_efficientnet_b2": get_cnn_session() is not None,
         "brown_leaf_spot": get_brown_spot_classifier() is not None,
         "white_leaf_spot_review_only": get_white_leaf_spot_classifier() is not None,
         "whitefly_review_only": get_whitefly_session() is not None,

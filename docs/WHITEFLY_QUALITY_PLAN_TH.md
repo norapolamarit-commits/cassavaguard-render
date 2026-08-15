@@ -73,7 +73,7 @@ stored validation ซึ่งมาจาก split รุ่นก่อน:
 metadata ไม่บันทึก split counts หรือ hash ของ split manifest จึงยัง reproduce คะแนนนี้
 กับ tree รุ่นปัจจุบันไม่ได้
 
-Validation-only benchmark ใช้ `work/whitefly_validation_benchmark.py`, seed
+Validation-only benchmark ใช้ `backend/training/benchmarks/whitefly_validation_benchmark.py`, seed
 `20260801`, abundance ละ 15 ภาพ รวม 45 ภาพ/3,048 boxes, IoU 0.50,
 `max_det=700` และเลือก confidence จาก validation micro-F1:
 
@@ -246,7 +246,7 @@ camera และมี clean leaves/other insects ด้วย Synthetic images 
 
 ```bash
 backend/training/.venv-detector/bin/python \
-  work/whitefly_validation_benchmark.py \
+  backend/training/benchmarks/whitefly_validation_benchmark.py \
   --data-root backend/training/data/extended_conditions/whitefly_yolo \
   --model backend/ml_models/whitefly_detector.pt \
   --configs full,tile1600o20,tile1024o20 \
@@ -255,5 +255,5 @@ backend/training/.venv-detector/bin/python \
 
 ไฟล์ผล audit ปัจจุบัน:
 
-- `work/whitefly_validation_benchmark_45.json`
-- `work/whitefly_validation_full_648.json`
+- `backend/training/benchmarks/whitefly_validation_benchmark_45.json`
+- `backend/training/benchmarks/whitefly_validation_full_648.json`

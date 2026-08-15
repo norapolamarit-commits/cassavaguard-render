@@ -179,7 +179,7 @@ def class_readiness() -> list[dict]:
                 "task": "five_way_leaf_classification",
                 "status": "serving_trained_model",
                 "production_output": True,
-                "model_head": "cnn_efficientnet_b0",
+                "model_head": "cnn_efficientnet_b2",
                 "dataset": TFDS_SOURCE,
                 "reason": "Included in the verified five-class CNN probability output.",
             }

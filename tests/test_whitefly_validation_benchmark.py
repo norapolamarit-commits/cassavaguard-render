@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from work.whitefly_validation_benchmark import (
+from backend.training.benchmarks.whitefly_validation_benchmark import (
     _assert_validation_only,
     _metrics,
     _positions,

@@ -38,7 +38,7 @@
   },
   "artifacts": {
     "onnx": {
-      "file": "cnn_efficientnet_b0.onnx",
+      "file": "cnn_primary.onnx",
       "sha256": "0bc3742b97e15f52f4a6af3e9f08aa3975c69e885436558965fdf893b87e421a"
     }
   },

@@ -56,7 +56,7 @@ python deploy/render/benchmark_whitefly_tiling.py /path/to/whitefly-image.jpg --
 ไฟล์ runtime ต่อไปนี้ต้องปรากฏใน commit:
 
 ```text
-backend/ml_models/cnn_efficientnet_b0.onnx
+backend/ml_models/cnn_primary.onnx
 backend/ml_models/cnn_metrics.json
 backend/ml_models/brown_leaf_spot_hist_gb.joblib
 backend/ml_models/brown_leaf_spot_metrics.json

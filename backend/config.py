@@ -213,9 +213,9 @@ def _load_model_registry():
 
 MODEL_REGISTRY, ACTIVE_MODEL = _load_model_registry()
 
-# Optional: prefer the CNN (EfficientNet-B0 on raw pixels, backend/services/cnn_classifier.py)
+# Optional: prefer the published raw-pixel CNN (backend/services/cnn_classifier.py)
 # over the classical/fusion classifiers for the 5 ML-backed classes, when BOTH this is True
-# AND a trained CNN model actually exists on disk (backend/ml_models/cnn_efficientnet_b0.onnx +
+# AND a trained CNN model actually exists on disk (backend/ml_models/cnn_primary.onnx +
 # cnn_metrics.json — produced by train_cnn.py or train_cnn_torch.py). Defaults to False: until real
 # CNN training, artifact verification and independent Thai-field validation have happened,
 # the CNN is an experimental candidate rather than a production diagnosis model.
