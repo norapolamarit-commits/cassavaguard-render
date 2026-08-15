@@ -114,6 +114,9 @@ cassavaguard-render/
 
 ## การรันในเครื่อง
 
+> ต้องการทำตามแบบละเอียดตั้งแต่เริ่มต้นจน Deploy ให้เปิด
+> **[คู่มือทำทุกขั้นตอน (Local, AI, GitHub และ Render)](docs/COMPLETE_WORKFLOW_TH.md)**
+
 ### ความต้องการ
 
 - Python 3.11 หรือ 3.12
@@ -229,6 +232,9 @@ Pipeline จะตรวจ exact/perceptual overlap กับ official Train/Va
 6. Thai-field validation ต้องแยกตามแปลง/ต้นก่อนเปิด `AI_FIELD_VALIDATED=true`
 
 ## Deploy ไป Render
+
+คู่มือด้านล่างเป็นฉบับย่อ ส่วนขั้นตอนกดเมนู ตั้งค่าตัวแปร ตรวจ Deploy และแก้ปัญหาอยู่ใน
+[คู่มือทำทุกขั้นตอน](docs/COMPLETE_WORKFLOW_TH.md#ส่วนที่-8-deploy-ขึ้น-renderแบบ-blueprint)
 
 ### วิธีแนะนำ: Blueprint
 
