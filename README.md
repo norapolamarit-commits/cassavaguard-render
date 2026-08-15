@@ -92,6 +92,10 @@ Dataset ดิบไม่เก็บใน GitHub เนื่องจาก�
 
 ## โครงสร้างระบบ
 
+ขั้นตอนการพัฒนาแอปตั้งแต่การกำหนดโจทย์ ออกแบบหน้าจอ สร้างฐานข้อมูล/API เชื่อม AI
+ไปจนถึงทดสอบและ Deploy อธิบายไว้ใน
+**[วิธีสร้างแอป CassavaGuard ตั้งแต่ต้น](docs/COMPLETE_WORKFLOW_TH.md#ส่วนที่-12-วิธีสร้างแอป-cassavaguard-ตั้งแต่ต้น)**
+
 ```text
 cassavaguard-render/
 ├── backend/

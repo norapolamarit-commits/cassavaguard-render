@@ -351,7 +351,237 @@ backend/training/.venv-torch/bin/python backend/training/train_cnn_torch.py --he
 โมเดล ONNX โหลดครั้งแรกและบริการแบบประหยัดอาจ cold start หลีกเลี่ยง worker หลาย process,
 ตรวจว่า `WEB_CONCURRENCY=1` และเลือก plan ที่มี RAM เพียงพอ
 
-## ส่วนที่ 12 Checklist ก่อนส่งมอบ
+## ส่วนที่ 12 วิธีสร้างแอป CassavaGuard ตั้งแต่ต้น
+
+หัวข้อนี้อธิบายกระบวนการ “ทำแอป” ไม่ใช่เพียงวิธีเปิดโปรเจกต์ โดยยึดโครงสร้างที่ใช้จริง
+ใน repository ปัจจุบัน
+
+### 12.1 กำหนดปัญหาและขอบเขต
+
+1. กำหนดผู้ใช้หลัก เช่น เกษตรกร นักวิชาการเกษตร และผู้ดูแลระบบ
+2. กำหนดงานหลัก: รับภาพ ตรวจคุณภาพ วิเคราะห์ด้วย AI แสดงผลและคำแนะนำ
+3. กำหนดข้อมูลประกอบ: แปลง พิกัด ดิน อากาศ ดาวเทียม และประวัติ
+4. กำหนดว่าเป็น `decision support` ไม่ใช่ระบบยืนยันโรค
+5. สร้างรายการคลาสพร้อมเกณฑ์เปิดใช้งาน ห้ามเปิดคลาสที่ไม่มีข้อมูลประเมินเพียงพอ
+6. กำหนด metric ก่อนฝึก: classifier ใช้ Accuracy/Macro-F1/per-class recall;
+   detector ใช้ mAP50/mAP50-95/precision/recall
+7. กำหนด acceptance gate และชุดทดสอบอิสระก่อนพัฒนา เพื่อป้องกันการเลือกตัวเลขย้อนหลัง
+
+ผลลัพธ์ของขั้นนี้ควรเป็น requirement สั้น ๆ, class definitions, data policy,
+metric target และข้อจำกัดที่แสดงต่อผู้ใช้
+
+### 12.2 ออกแบบสถาปัตยกรรม
+
+ระบบนี้ใช้สถาปัตยกรรมแบบ Web Service เดียวเพื่อ deploy ง่าย:
+
+```text
+Browser (React SPA)
+        |
+        | HTTPS / JSON / multipart image
+        v
+FastAPI routes
+        |
+        +--> Services: AI / Weather / Satellite / Soil / Recommendation
+        |
+        +--> ONNX Runtime + model artifacts
+        |
+        +--> SQLAlchemy --> SQLite (local) / PostgreSQL (production)
+        |
+        +--> DATA_DIR --> uploaded images / generated assets
+```
+
+หลักการแยกส่วน:
+
+- `backend/api/` รับ request ตรวจ schema และคืน response
+- `backend/services/` ทำ business logic และเชื่อม provider/model
+- `backend/models/` และ `backend/database.py` จัดการข้อมูลถาวร
+- `backend/ml_models/` เก็บเฉพาะ artifact ที่ผ่านขั้นเผยแพร่
+- `frontend/src/` แสดงผลและเรียก API โดยไม่ฝัง logic ของโมเดล
+- `backend/training/` แยก training ออกจาก production runtime
+
+### 12.3 ออกแบบฐานข้อมูล
+
+1. ระบุ entity: ผู้ใช้ระบบ แปลง ผลวิเคราะห์ ภาพ ดิน การแจ้งเตือน และประวัติ
+2. กำหนด primary key, foreign key, timestamp และ ownership ของแต่ละ record
+3. เก็บ metadata ของผล AI เช่น model ID, artifact hash, confidence และเวลาวิเคราะห์
+4. หลีกเลี่ยงเก็บภาพเป็น binary ในฐานข้อมูล ให้เก็บไฟล์ใน `DATA_DIR` และบันทึก path/metadata
+5. สร้าง migration ใหม่ทุกครั้งที่ schema เปลี่ยน ห้ามแก้ production DB ด้วยมือ
+
+ตัวอย่างสร้าง migration หลังแก้ models:
+
+```bash
+alembic revision --autogenerate -m "add field observation"
+alembic upgrade head
+```
+
+ตรวจไฟล์ migration ที่สร้างทุกครั้ง เพราะ autogenerate อาจไม่เข้าใจ data migration ทั้งหมด
+
+### 12.4 สร้าง Backend และ API
+
+1. กำหนด configuration ใน `backend/config.py` และอ่านค่าจาก environment
+2. สร้าง FastAPI app, middleware, security headers และ lifecycle ใน `backend/main.py`
+3. สร้าง route แยกตามโดเมนใน `backend/api/`
+4. สร้าง request/response schema เพื่อ validate ชนิดและขนาดข้อมูล
+5. ย้าย logic หนักไป `backend/services/` ไม่เขียนทั้งหมดใน route
+6. จำกัดขนาดไฟล์ จำนวนพิกเซล rate และ timeout ก่อนเรียก provider/model
+7. คืน error ที่ผู้ใช้เข้าใจได้ แต่ไม่เปิดเผย stack trace หรือ path ภายในใน production
+
+รูปแบบ route ใหม่:
+
+```python
+from fastapi import APIRouter, HTTPException
+
+router = APIRouter(prefix="/api/example", tags=["example"])
+
+@router.get("/status")
+def status():
+    return {"status": "ok"}
+```
+
+จากนั้น import และเพิ่ม router ในรายการที่ `backend/main.py` ใช้ `app.include_router(...)`
+พร้อมเพิ่ม test ของ success, invalid input และ provider/model failure
+
+### 12.5 สร้าง AI pipeline
+
+ลำดับ inference ที่ปลอดภัยควรเป็น:
+
+1. รับ JPEG/PNG และตรวจ MIME จากเนื้อไฟล์ ไม่เชื่อ extension อย่างเดียว
+2. จำกัด byte size และ pixel count ป้องกัน decompression bomb
+3. แก้ EXIF orientation และแปลงเป็น RGB
+4. ตรวจคุณภาพ เช่น blur, ความสว่าง และพื้นที่ใบ
+5. resize/normalize ด้วยค่าเดียวกับ training contract
+6. เรียก ONNX Runtime จาก service ที่ cache model ใน process
+7. แปลง logits เป็น probability ตาม contract และใช้ threshold/margin ที่ล็อกไว้
+8. เรียกโมเดลเสริมเฉพาะหน้าที่ของมัน ไม่รวม score ต่างชนิดเป็น probability เดียว
+9. สร้าง attribution เพื่อช่วยตรวจผล แต่ไม่อ้างว่าเป็นเหตุผลเชิงสาเหตุ
+10. บันทึก model ID, version, hash, output และ latency เพื่อ audit ย้อนหลัง
+11. ถ้า confidence ต่ำหรือ artifact ไม่พร้อม ให้ตอบ review-required/unknown แทนการเดา
+
+ไฟล์หลักที่ใช้จริง:
+
+- `backend/services/ai_engine.py` ควบคุม workflow
+- `backend/services/cnn_classifier.py` โหลด classifier ONNX
+- `backend/services/whitefly_detector.py` ทำ object detection
+- `backend/services/model_contract.py` ตรวจ metadata และ integrity
+- `backend/services/model_readiness.py` สรุปความพร้อมรายคลาส
+
+ทุก artifact ต้องมี metric/manifest ที่ระบุ preprocessing, labels, evaluation split,
+metrics และ SHA-256 เพื่อป้องกันการจับคู่ model/label ผิด
+
+### 12.6 เชื่อมข้อมูลจริง
+
+1. Weather ใช้ Open-Meteo ผ่าน `backend/services/weather_engine.py`
+2. Satellite ใช้ Earth Search STAC/Sentinel-2 ผ่าน `satellite_engine.py`
+3. Soil รับค่าจากแล็บ เซนเซอร์ หรือผู้ใช้ผ่าน `soil_engine.py`
+4. Provider ทุกตัวต้องมี timeout, cache, source name, observation time และ error state
+5. ถ้าข้อมูลจริงไม่มี ห้ามสร้างค่าปลอมโดยไม่ติดป้าย `synthetic`
+6. คำแนะนำต้องระบุหลักฐานที่ใช้ ความเชื่อมั่น และสิ่งที่ยังขาด
+
+ทดสอบทั้งกรณี provider ตอบสำเร็จ, timeout, ไม่มีข้อมูล และ response ผิดรูปแบบ
+
+### 12.7 สร้าง Frontend
+
+1. วาง app shell และ navigation ใน `frontend/src/App.jsx`
+2. สร้างหน้าแยกใน `frontend/src/pages/`
+3. รวมการเรียก Backend ไว้ใน `frontend/src/api.js`
+4. เก็บ state ที่แชร์กันใน `frontend/src/store.js`
+5. เก็บข้อความไทย/อังกฤษใน `frontend/src/i18n.js`
+6. แสดง loading, empty, success และ error state ทุกหน้า
+7. แสดง source/time/confidence และคำเตือนใกล้ผลวิเคราะห์
+8. รองรับมือถือ keyboard navigation contrast และข้อความที่อ่านได้
+9. ห้ามใส่ secret หรือ provider credential ใน JavaScript เพราะผู้ใช้ดาวน์โหลดได้ทั้งหมด
+10. รัน `npm run build` เพื่อสร้าง `frontend/dist` สำหรับ production
+
+เมื่อต้องเพิ่มหน้าใหม่ ให้สร้าง component ใน `pages`, export จากส่วนรวมที่โครงการใช้,
+เพิ่ม route/menu ใน `App.jsx`, เพิ่มคำแปล และเชื่อม endpoint ผ่าน `api.js`
+
+### 12.8 เชื่อม Frontend กับ Backend
+
+ตัวอย่าง flow การวิเคราะห์ภาพ:
+
+```text
+ผู้ใช้เลือกภาพ
+  -> Frontend ตรวจชนิด/ขนาดเบื้องต้น
+  -> POST /api/predict/image แบบ multipart/form-data
+  -> Backend ตรวจไฟล์และเรียก AI service
+  -> Model คืนผล + readiness + warnings
+  -> Backend บันทึก history
+  -> Frontend แสดงผล ความมั่นใจ และคำแนะนำ
+```
+
+อย่าเรียกโมเดลโดยตรงจาก UI ใน architecture นี้ เพราะจะข้าม validation, audit,
+rate limit และ model contract ของ Backend
+
+### 12.9 สร้างระบบความปลอดภัยและความเป็นส่วนตัว
+
+1. เก็บ secret ใน `.env`/Render Environment เท่านั้น
+2. ตั้ง upload limit, pixel limit, CSV row limit และ rate limit
+3. sanitize filename และสร้างชื่อไฟล์ใหม่ ไม่ใช้ path จากผู้ใช้
+4. ตรวจสิทธิ์การอ่านไฟล์และ record แม้ปัจจุบันตั้ง `AUTH_REQUIRED=false`
+5. จำกัด CORS ให้เฉพาะ origin ที่ต้องใช้
+6. เปิด proxy headers เฉพาะเมื่ออยู่หลัง trusted proxy
+7. ไม่บันทึก secret, token หรือภาพผู้ใช้ลง application log
+8. กำหนด retention และวิธีลบข้อมูลผู้ใช้
+9. แสดง privacy notice และข้อจำกัดของ AI
+10. สแกน dependency และอัปเดต patch อย่างมี test รองรับ
+
+การเอา Login ออกทำให้ทุกคนที่เข้าถึง URL ใช้ข้อมูลร่วมกัน จึงไม่เหมาะกับข้อมูลส่วนบุคคล
+หากใช้จริงหลายองค์กรควรเปิด auth และทำ tenant/record authorization ก่อน
+
+### 12.10 เขียนการทดสอบ
+
+สร้าง test อย่างน้อย 5 ระดับ:
+
+1. Unit test สำหรับ preprocessing, thresholds และ services
+2. API test สำหรับ input ปกติ/ผิดรูปแบบ/ขนาดเกิน/provider ล้มเหลว
+3. Artifact contract test สำหรับ hash, labels, shapes และ self-test
+4. Data leakage test สำหรับ exact/perceptual duplicate ระหว่าง split
+5. Deployment smoke test สำหรับหน้า SPA, health, database และ model loading
+
+ก่อน commit:
+
+```bash
+git diff --check
+python -m pytest -q
+python backend/training/verify_artifacts.py --require-cnn --include-fusion
+```
+
+ถ้าแก้ UI ให้ build และทดลองทั้ง desktop/mobile พร้อมตรวจ browser console/network
+
+### 12.11 ทำให้พร้อม Production
+
+1. build `frontend/dist`
+2. ล็อก runtime dependencies ใน `requirements.txt`
+3. ตั้ง migration ผ่าน pre-deploy command
+4. ใช้ PostgreSQL แทน SQLite เมื่อมีหลาย request/instance
+5. ใช้ persistent/object storage สำหรับภาพ
+6. ตั้ง `APP_ENV=production` และสุ่ม `SECRET_KEY`
+7. ปิด API docs ถ้าไม่ต้องเปิดสาธารณะ
+8. ใช้ worker เดียวเมื่อแต่ละ process ต้องโหลดโมเดลขนาดใหญ่
+9. ตั้ง health check และตรวจ readiness ของ model/database/provider
+10. deploy ผ่าน Pull Request และ commit ที่ตรวจสอบย้อนกลับได้
+11. หลัง deploy ทำ smoke test ด้วยภาพตัวอย่างที่อนุญาตให้ใช้
+12. เฝ้าดู error, latency, memory, drift และ distribution ของ unknown/low-confidence
+
+### 12.12 วงจรพัฒนารอบถัดไป
+
+```text
+เก็บ feedback/ข้อผิดพลาด
+  -> ขอ consent และติดป้ายโดยผู้เชี่ยวชาญ
+  -> audit provenance/license/duplicates
+  -> สร้าง split ตามแปลงหรือต้น
+  -> ฝึก Candidate
+  -> validation เลือกค่า
+  -> sealed test หนึ่งครั้ง
+  -> runtime/security tests
+  -> review และ promote
+  -> monitor หลัง deploy
+```
+
+ห้ามนำภาพ production เข้า Train อัตโนมัติ เพราะ label จาก prediction เดิมไม่ใช่ ground truth
+ต้องผ่าน consent, de-identification และ expert annotation ก่อนเสมอ
+
+## ส่วนที่ 13 Checklist ก่อนส่งมอบ
 
 - [ ] หน้าเว็บหลักเปิดได้และไม่บังคับ Login
 - [ ] `/api/health` ผ่าน
