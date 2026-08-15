@@ -29,12 +29,16 @@
 
 ตรวจบริการ: [Production Health Check](https://cassavaguard-render.onrender.com/api/health)
 
+ตรวจ Production ล่าสุดเมื่อ **15 สิงหาคม 2026**: หน้าเว็บตอบ HTTP 200, Health เป็น `ok`,
+`environment=production`, `environmental_data_mode=live` และ `ai_serving_mode=review_only`
+
 ## สารบัญ
 
 - [สิ่งที่แอปทำได้](#สิ่งที่แอปทำได้)
 - [เริ่มใช้งานภายใน 5 นาที](#เริ่มใช้งานภายใน-5-นาที)
 - [วิธีใช้วิเคราะห์ภาพ](#วิธีใช้วิเคราะห์ภาพ)
 - [ผลประเมิน AI](#ผลประเมิน-ai)
+- [ความพร้อมของแต่ละคลาส](#ความพร้อมของแต่ละคลาส)
 - [ข้อมูลที่ใช้](#ข้อมูลที่ใช้)
 - [สถาปัตยกรรม](#สถาปัตยกรรม)
 - [พัฒนาและทดสอบ](#พัฒนาและทดสอบ)
@@ -57,6 +61,16 @@
 | คำแนะนำ | รวมหลักฐานจากภาพ ดิน อากาศ และดาวเทียม พร้อมระดับความเชื่อมั่น |
 | ประวัติ | บันทึก ดูย้อนหลัง และส่งออกผลการวิเคราะห์ |
 | การใช้งาน | ไทย/อังกฤษ, Dark/Light และ Responsive |
+
+### หลักการที่ระบบยึดถือ
+
+- **ไม่สร้างผลปลอม:** คลาสที่ไม่มีโมเดลหรือข้อมูลเพียงพอจะแสดงว่าไม่พร้อม
+- **แยกงานให้ถูกประเภท:** classifier, auxiliary classifier, detector และ stress estimator
+  ไม่ถูกรวมเป็น probability 13 คลาสแบบผิดความหมาย
+- **ตรวจสอบย้อนหลังได้:** artifact, preprocessing, labels, metrics และ hash อยู่ใน model contract
+- **ป้องกัน leakage:** ตรวจ exact/perceptual duplicates และแยก Train/Validation/Test ตามนโยบาย
+- **ยอมรับความไม่แน่นอน:** confidence ต่ำหรือหลักฐานไม่พอจะส่งให้ตรวจทานแทนการเดา
+- **ข้อมูลจริงมีที่มา:** weather/satellite ต้องระบุ provider และเวลาสังเกตการณ์
 
 ## เริ่มใช้งานภายใน 5 นาที
 
@@ -133,6 +147,25 @@ Windows PowerShell ใช้คำสั่งเปิด environment ต่อ
 Whitefly เป็นงาน Object Detection จึงประเมินด้วย mAP, Precision, Recall และ F1
 ไม่ใช้ Accuracy แทน ผลเต็มและ artifact contracts อยู่ใน
 [`backend/ml_models`](backend/ml_models)
+
+## ความพร้อมของแต่ละคลาส
+
+ระบบใช้ taxonomy แบบ multi-head และรายงานสถานะจาก `/api/models/readiness` โดยตรง
+
+| คลาส | งาน | สถานะ | ผลที่แอปใช้ได้ |
+|---|---|---|---|
+| Healthy, CBB, CBSD, CMD, CGM | 5-way classification | Trained model | Production output แบบ review-required |
+| Brown Leaf Spot | Auxiliary binary classification | Trained auxiliary | Production output แบบ review-required |
+| White Leaf Spot | Experimental auxiliary | ทำงานได้แต่ยังไม่ผ่าน field/license gate | Experimental review เท่านั้น |
+| Whitefly | Object detection/counting | Validation-only detector | Review-only; ยังไม่มี sealed-test metric |
+| CAD | Auxiliary classification | ข้อมูลจริง 1 ภาพ | ไม่เปิดผลวิเคราะห์ |
+| SED | Whole-plant multiview | มีเพียง synthetic seed | ไม่เปิดผลวิเคราะห์ |
+| Mealybug | Object detection | ข้อมูลจริง 3 ภาพ ไม่มี bounding boxes | ไม่เปิดผลวิเคราะห์ |
+| Water Stress | Multimodal estimation | ไม่มีข้อมูลจริงแบบจับคู่ภาพ/ดิน/อากาศ | ไม่เปิดผลวิเคราะห์ |
+| Nutrient Deficiency | Multimodal estimation | ข้อมูลจริงแบบจับคู่ไม่เพียงพอ | ไม่เปิดผลวิเคราะห์ |
+
+คำว่า “แสดง 13 คลาส” จึงไม่ได้หมายความว่ามีโมเดล Production ครบ 13 คลาส
+สถานะล่าสุดตรวจได้จาก [Model Readiness API](https://cassavaguard-render.onrender.com/api/models/readiness)
 
 ## ข้อมูลที่ใช้
 
@@ -319,6 +352,17 @@ Schema และตัวอย่าง request อยู่ใน [API Referen
 - การปิด Login หมายถึงผู้เข้าถึง URL ใช้พื้นที่ข้อมูลร่วมกัน ไม่ควรใส่ข้อมูลส่วนบุคคล
 - Runtime artifacts ต้องตรงกับ metric contract และ SHA-256 ที่ตรวจระหว่าง build
 
+### Threat model โดยย่อ
+
+| ความเสี่ยง | การควบคุม |
+|---|---|
+| ไฟล์อัปโหลดอันตราย/ใหญ่เกิน | ตรวจ MIME, byte limit, pixel limit และชื่อไฟล์ |
+| Model artifact ถูกสลับ | ตรวจ SHA-256, label contract และ self-test |
+| Request มากผิดปกติ | Rate limiting, provider timeout และ bounded inference |
+| ข้อมูลจาก provider ขาดหาย | แสดง unavailable/source/time ไม่สร้างค่าจริงเทียม |
+| ผล AI มั่นใจเกินจริง | confidence/margin gate, review-only mode และคำเตือน |
+| Leakage ในการทดลอง | duplicate quarantine และล็อกบทบาท Validation/Test |
+
 สิ่งที่ตั้งใจไม่เก็บใน GitHub:
 
 - `.env`, secrets, tokens และ credentials
@@ -336,6 +380,12 @@ Schema และตัวอย่าง request อยู่ใน [API Referen
 - Cassava Whitefly Dataset: CC BY 4.0
 - Embrapa White Leaf Spot subset: CC BY-NC 4.0 — ไม่อนุญาตการใช้เชิงพาณิชย์
 - TFDS Cassava: ต้องตรวจสิทธิ์ภาพต้นทางก่อนแจกจ่ายซ้ำหรือใช้เชิงพาณิชย์
+
+> [!CAUTION]
+> Repository ยังไม่มี `LICENSE` ระดับโครงการ จึง **ไม่ควรตีความว่าโค้ดทั้งหมดเป็น
+> open source หรือได้รับอนุญาตให้นำไปใช้เชิงพาณิชย์** ผู้ดูแลต้องเลือก license ของโค้ด
+> และตรวจ compatibility ของ dataset/model dependencies ก่อนเผยแพร่ต่อ โดยเฉพาะ
+> Embrapa CC BY-NC และ Ultralytics AGPL/commercial licensing
 
 ไม่มีการรับประกันความเหมาะสมสำหรับการวินิจฉัยหรือการตัดสินใจทางการเกษตรที่มีความเสี่ยงสูง
 
