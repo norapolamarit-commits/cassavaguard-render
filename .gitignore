@@ -47,3 +47,8 @@ backend/ml_models/cnn_efficientnet_b0.keras
 # Generated training/evaluation output and disposable dataset caches.
 runs/
 work/cache_quarantine/
+
+# Local reports/build products. Curated final reports belong in docs/reports/.
+/output/
+/reports/
+/tmp/
