@@ -1,198 +1,241 @@
 # CassavaGuard AI
 
-แพลตฟอร์มเว็บสำหรับช่วยคัดกรองโรคและศัตรูมันสำปะหลังจากภาพใบพืช พร้อมข้อมูลดาวเทียม สภาพอากาศ ดิน ประวัติการวิเคราะห์ และคำแนะนำเชิงเกษตร
+> ระบบช่วยคัดกรองโรคและศัตรูมันสำปะหลังจากภาพใบพืช พร้อมข้อมูลอากาศ ดาวเทียม ดิน
+> ประวัติการวิเคราะห์ และคำแนะนำที่ตรวจสอบแหล่งข้อมูลย้อนหลังได้
 
-> **สถานะสำคัญ:** ระบบเปิดให้ใช้งานแบบไม่ต้อง Login และโมเดลทุกตัวเป็นเครื่องมือช่วยคัดกรอง (`decision support`) ไม่ใช่ผลยืนยันจากห้องปฏิบัติการ ผลวิเคราะห์ต้องได้รับการตรวจซ้ำ โดยเฉพาะก่อนตัดสินใจใช้สารเคมีหรือทำลายพืช
+[เปิดแอป](https://cassavaguard-render.onrender.com/) ·
+[คู่มือทุกขั้นตอน](docs/COMPLETE_WORKFLOW_TH.md) ·
+[คู่มือผู้ใช้](docs/USER_GUIDE_TH.md) ·
+[ผลการทดลอง](docs/reports/CassavaGuard_Experiment_Report_TH.docx) ·
+[API](docs/API.md)
 
-## ทดลองใช้งาน
+> [!IMPORTANT]
+> CassavaGuard เป็น **เครื่องมือช่วยตัดสินใจ (decision support)** ไม่ใช่ผลวินิจฉัยยืนยัน
+> จากห้องปฏิบัติการหรือผู้เชี่ยวชาญ ห้ามใช้ผลเพียงอย่างเดียวเพื่อตัดสินใจใช้สารเคมี
+> ถอนต้น หรือทำลายแปลง
 
-- เว็บไซต์: [cassavaguard-render.onrender.com](https://cassavaguard-render.onrender.com/)
-- Health check: [cassavaguard-render.onrender.com/api/health](https://cassavaguard-render.onrender.com/api/health)
-- API documentation เปิดเฉพาะ Development ที่ `/api/docs`
+## สถานะปัจจุบัน
 
-Render Free อาจ sleep เมื่อไม่มีการใช้งาน คำขอแรกจึงอาจใช้เวลาประมาณ 30-60 วินาที
-
-## ความสามารถหลัก
-
-| ส่วน | รายละเอียด |
+| รายการ | สถานะ |
 |---|---|
-| วิเคราะห์ด้วย AI | อัปโหลดภาพใบมันสำปะหลัง ตรวจคุณภาพภาพ และวิเคราะห์ด้วยโมเดลจริง |
-| โมเดลหลัก | EfficientNet-B2 + Test-Time Augmentation สำหรับ Healthy, CBB, CBSD, CMD และ CGM |
-| โมเดลเสริม | Brown Leaf Spot, White Leaf Spot และ Whitefly แยกจาก probability 5 คลาสหลัก |
-| ความพร้อม 13 คลาส | แสดงสถานะจริงของแต่ละคลาส ไม่สร้าง probability ปลอมให้คลาสที่ข้อมูลไม่พอ |
+| เว็บ Production | [cassavaguard-render.onrender.com](https://cassavaguard-render.onrender.com/) |
+| การเข้าสู่ระบบ | ปิด — เปิดหน้าแอปและวิเคราะห์ได้ทันที |
+| AI serving | `review_only` — ทุกผลต้องตรวจซ้ำ |
+| โมเดลหลัก | EfficientNet-B2 + TTA, 5 คลาส |
+| ผล Test หลัก | **Accuracy 88.20%, Macro-F1 83.63%** |
+| เป้าหมาย 95% | **ยังไม่บรรลุ** |
+| Thai-field validation | ยังไม่มีชุดทดสอบอิสระที่ครอบคลุมเพียงพอ |
+| Automated tests | 74 tests ผ่านในการตรวจล่าสุดของเอกสารชุดนี้ |
+
+ตรวจบริการ: [Production Health Check](https://cassavaguard-render.onrender.com/api/health)
+
+## สารบัญ
+
+- [สิ่งที่แอปทำได้](#สิ่งที่แอปทำได้)
+- [เริ่มใช้งานภายใน 5 นาที](#เริ่มใช้งานภายใน-5-นาที)
+- [วิธีใช้วิเคราะห์ภาพ](#วิธีใช้วิเคราะห์ภาพ)
+- [ผลประเมิน AI](#ผลประเมิน-ai)
+- [ข้อมูลที่ใช้](#ข้อมูลที่ใช้)
+- [สถาปัตยกรรม](#สถาปัตยกรรม)
+- [พัฒนาและทดสอบ](#พัฒนาและทดสอบ)
+- [Deploy บน Render](#deploy-บน-render)
+- [เอกสารทั้งหมด](#เอกสารทั้งหมด)
+- [ข้อจำกัดและความปลอดภัย](#ข้อจำกัดและความปลอดภัย)
+
+## สิ่งที่แอปทำได้
+
+| ความสามารถ | การทำงาน |
+|---|---|
+| วิเคราะห์ภาพ | ตรวจชนิด ขนาด จำนวนพิกเซล และคุณภาพภาพ ก่อนเรียกโมเดล ONNX จริง |
+| โรคหลัก 5 คลาส | Healthy, CBB, CBSD, CMD และ CGM |
+| โมเดลเสริม | Brown Leaf Spot, White Leaf Spot และ Whitefly แยกจาก probability ของโมเดลหลัก |
+| ความพร้อมรายคลาส | แสดงสถานะจริงของ 13 คลาส และไม่สร้างคะแนนปลอมให้คลาสที่ข้อมูลไม่พอ |
+| อธิบายผล | แสดง confidence, review warning และ attribution map แบบ occlusion sensitivity |
+| สภาพอากาศ | Open-Meteo พร้อมชื่อ provider และเวลาของข้อมูล |
 | ดาวเทียม | Sentinel-2 L2A จาก Earth Search พร้อม NDVI, NDMI, SAVI และ EVI |
-| สภาพอากาศ | Open-Meteo พร้อมชื่อแหล่งข้อมูลและเวลาของข้อมูล |
-| ดิน | รับค่าจากผลแล็บ เซนเซอร์ หรือชุดตรวจภาคสนาม; ค่าที่ไม่มีจะไม่ถูกสร้างแทน |
+| ดิน | รับค่าจากแล็บ เซนเซอร์ หรือชุดตรวจ; ค่าที่ไม่มีจะไม่ถูกสมมติแทน |
 | คำแนะนำ | รวมหลักฐานจากภาพ ดิน อากาศ และดาวเทียม พร้อมระดับความเชื่อมั่น |
-| ประวัติ | เก็บและส่งออกผลวิเคราะห์ พร้อม attribution map แบบ occlusion sensitivity |
-| ระบบและโมเดล | แสดงทะเบียนโมเดล ผลวัด ขนาด ความเร็ว และความพร้อมของทุกคลาส |
-| ภาษาและหน้าจอ | ไทย/อังกฤษ, Dark/Light, Responsive |
+| ประวัติ | บันทึก ดูย้อนหลัง และส่งออกผลการวิเคราะห์ |
+| การใช้งาน | ไทย/อังกฤษ, Dark/Light และ Responsive |
 
-## ผลการทดลองที่ยืนยันได้
+## เริ่มใช้งานภายใน 5 นาที
 
-### โมเดลจำแนกหลัก
+### สิ่งที่ต้องมี
 
-| รายการ | ชุดประเมิน | Accuracy | Macro-F1 | หมายเหตุ |
-|---|---:|---:|---:|---|
-| EfficientNet-B2 ภาพเดียว | Test 1,873 ภาพ | 86.60% | 80.82% | โมเดลฐาน |
-| **EfficientNet-B2 + TTA** | **Test 1,873 ภาพ** | **88.20%** | **83.63%** | โมเดลที่ระบบใช้ |
-| Candidate + ข้อมูลจริง 225 ภาพ | Test 1,873 ภาพ | 85.80% | 79.78% | ไม่โปรโมต เพราะต่ำกว่าเดิม |
-
-- Wilson 95% CI ของ Accuracy โมเดลหลัก + TTA: **86.66%-89.58%**
-- F1 รายคลาส: Healthy 82.51%, CBB 72.73%, CBSD 87.69%, CMD 93.56%, CGM 81.68%
-- จุดอ่อนหลักคือ CBB: Recall 67.53%
-- เป้าหมาย 95% **ยังไม่บรรลุ** และจะไม่รายงานว่าได้ 95% จนกว่าจะผ่าน independent Thai-field test
-
-### โมเดลเสริมและ Object Detector
-
-| โมเดล | ชุดประเมิน | ผลหลัก | สถานะ |
-|---|---|---|---|
-| Brown Leaf Spot | Test | Accuracy 92.78%, Macro-F1 88.70% | ใช้เป็นหัวเสริม; ยังไม่มี Thai-field validation |
-| White Leaf Spot | Test | Accuracy 96.77%, Macro-F1 94.94% | Experimental; เสี่ยง cross-source/domain confounding และ CC BY-NC |
-| Whitefly detector | Validation | mAP50 75.57%, mAP50-95 36.39% | Review-only; sealed test ยังไม่เปิด |
-| Whitefly operating point | Validation | Precision 74.74%, Recall 74.68%, F1 74.71% | ต่ำกว่า gate 75% เล็กน้อย |
-
-Whitefly เป็นงาน Object Detection จึงวัดด้วย mAP/Precision/Recall/F1 ไม่ใช่ Accuracy
-
-Artifacts และผลเต็มอยู่ใน [`backend/ml_models`](backend/ml_models) และรายงานอยู่ใน [`docs/reports`](docs/reports)
-
-## Dataset และการป้องกัน Data Leakage
-
-### TFDS Cassava 5 คลาส
-
-- แหล่งข้อมูล: [TensorFlow Datasets Cassava](https://www.tensorflow.org/datasets/catalog/cassava)
-- Raw splits: Train 5,656 / Validation 1,889 / Test 1,885
-- หลังตรวจซ้ำ: Train 5,619 / Validation 1,875 / Test 1,873
-- ตรวจ exact duplicates จาก SHA-256 ของ decoded RGB pixels
-- ตรวจภาพคล้ายด้วย dHash และ pHash
-- กักกลุ่มฉลากขัดแย้งและไม่ใช้ผล Test เลือก checkpoint
-
-### ข้อมูลจริงที่เพิ่มสำหรับการทดลอง
-
-- [Mendeley India Cassava Dataset](https://data.mendeley.com/datasets/3832tx2cb2/1)
-- DOI `10.17632/3832tx2cb2.1`, CC BY 4.0
-- เผยแพร่ 228 ภาพ; รับเข้า Train 225 ภาพ; กักภาพคล้ายซ้ำ 3 ภาพ
-- Healthy 91 / CBB 46 / CMD 88
-- ใช้เฉพาะ Train และไม่แตะ Validation/Test
-- Candidate ที่ฝึกด้วยชุดนี้ไม่ดีกว่าโมเดลเดิม จึงไม่ถูกนำขึ้น Production
-
-Dataset ดิบไม่เก็บใน GitHub เนื่องจากขนาด สัญญาอนุญาต และความสามารถในการทำซ้ำผ่าน downloader/DOI
-
-## เอกสารและรายงาน
-
-- [รายงานผลการทดลองภาษาไทย](docs/reports/CassavaGuard_Experiment_Report_TH.docx)
-- [รายงานสรุปโครงการ PDF](docs/reports/CassavaGuard_Project_Summary_TH.pdf)
-- [รายงานสรุปโครงการ Word](docs/reports/CassavaGuard_Project_Summary_TH.docx)
-- [คู่มือการใช้แอป PDF](docs/reports/CassavaGuard_App_Usage_Guide_TH.pdf)
-- [คู่มือการใช้งานฉบับ Markdown](docs/USER_GUIDE_TH.md)
-- [คู่มือฝึกโมเดลและข้อมูล](docs/TRAINING.md)
-- [แผนเพิ่มประสิทธิภาพ](docs/PERFORMANCE_PLAN_TH.md)
-- [แผนคุณภาพ Whitefly](docs/WHITEFLY_QUALITY_PLAN_TH.md)
-- [API Reference](docs/API.md)
-
-## โครงสร้างระบบ
-
-ขั้นตอนการพัฒนาแอปตั้งแต่การกำหนดโจทย์ ออกแบบหน้าจอ สร้างฐานข้อมูล/API เชื่อม AI
-ไปจนถึงทดสอบและ Deploy อธิบายไว้ใน
-**[วิธีสร้างแอป CassavaGuard ตั้งแต่ต้น](docs/COMPLETE_WORKFLOW_TH.md#ส่วนที่-12-วิธีสร้างแอป-cassavaguard-ตั้งแต่ต้น)**
-
-```text
-cassavaguard-render/
-├── backend/
-│   ├── api/                 # FastAPI routes
-│   ├── core/                # Security, policies, rate limiting
-│   ├── services/            # AI, weather, satellite, soil, recommendations
-│   ├── training/            # Download, audit, train, evaluate, promote
-│   └── ml_models/           # Runtime artifacts + metric contracts + hashes
-├── frontend/
-│   ├── src/                 # React UI source
-│   └── dist/                # Production assets committed for Render
-├── migrations/              # Alembic migrations
-├── tests/                   # Runtime, security, model and data contracts
-├── docs/                    # คู่มือ แผน และรายงาน
-├── deploy/render/           # Render build/start/runtime verification
-├── render.yaml              # Render Blueprint
-├── serve.py                 # Application launcher
-└── requirements.txt         # Runtime dependencies
-```
-
-## การรันในเครื่อง
-
-> ต้องการทำตามแบบละเอียดตั้งแต่เริ่มต้นจน Deploy ให้เปิด
-> **[คู่มือทำทุกขั้นตอน (Local, AI, GitHub และ Render)](docs/COMPLETE_WORKFLOW_TH.md)**
-
-### ความต้องการ
-
+- Git
 - Python 3.11 หรือ 3.12
-- Node.js ใช้เฉพาะเมื่อแก้ Frontend
-- RAM อย่างน้อย 4 GB สำหรับ Development; การวิเคราะห์ครั้งแรกต้องโหลด ONNX models
+- RAM อย่างน้อย 4 GB สำหรับ Development
+- Node.js LTS เฉพาะกรณีแก้ Frontend
 
-### ติดตั้งและเริ่มระบบ
+### ติดตั้งและเปิดแอป
 
 ```bash
 git clone https://github.com/norapolamarit-commits/cassavaguard-render.git
 cd cassavaguard-render
 
-python3.12 -m venv .venv
-.venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 
 cp .env.example .env
-.venv/bin/python serve.py
+python serve.py
 ```
 
-เปิด <http://127.0.0.1:8800>
+เปิด <http://127.0.0.1:8800/> และตรวจ <http://127.0.0.1:8800/api/health>
 
-ระบบปัจจุบันไม่ต้อง Login ผู้ใช้สามารถเปิดหน้า วิเคราะห์ด้วย AI และอัปโหลดภาพได้ทันที
+Windows PowerShell ใช้คำสั่งเปิด environment ต่อไปนี้แทน:
 
-### Environment ที่สำคัญ
+```powershell
+.venv\Scripts\Activate.ps1
+```
 
-| ตัวแปร | Development | Production |
+อ่านขั้นตอนติดตั้ง Windows/macOS, การตั้ง `.env` และการแก้ปัญหาได้ที่
+[คู่มือทำทุกขั้นตอน](docs/COMPLETE_WORKFLOW_TH.md)
+
+## วิธีใช้วิเคราะห์ภาพ
+
+1. เปิดหน้าแอปและเลือก **วิเคราะห์ด้วย AI** — ไม่ต้อง Login
+2. เลือก JPEG/PNG ที่ใบอยู่กลางภาพ ภาพชัด และมีแสงเพียงพอ
+3. กดวิเคราะห์และรอระบบตรวจภาพกับโหลดโมเดล
+4. อ่านคลาสที่ทำนาย confidence คำเตือน และตำแหน่งที่โมเดลให้ความสำคัญ
+5. ถ้าความมั่นใจต่ำหรือภาพไม่ผ่าน ให้ถ่ายใหม่หลายมุม
+6. ตรวจซ้ำกับนักวิชาการเกษตร โดยเฉพาะก่อนการตัดสินใจที่มีความเสี่ยง
+7. เปิด **ประวัติ** เพื่อดูผลเดิม หรือ **ระบบ & โมเดล** เพื่อตรวจสถานะ AI
+
+ภาพแนะนำ: ใบเต็มใบ, โฟกัสชัด, ไม่มีเงาหนัก, ฉากหลังไม่รก และไม่ผ่านการแต่งสีรุนแรง
+
+## ผลประเมิน AI
+
+### โมเดลจำแนกหลัก
+
+| โมเดล | ชุดประเมิน | Accuracy | Macro-F1 | การตัดสินใจ |
+|---|---:|---:|---:|---|
+| EfficientNet-B2 ภาพเดียว | Test 1,873 ภาพ | 86.60% | 80.82% | Baseline |
+| **EfficientNet-B2 + TTA** | **Test 1,873 ภาพ** | **88.20%** | **83.63%** | **โมเดลที่ใช้งาน** |
+| Candidate + ข้อมูลจริง 225 ภาพ | Test 1,873 ภาพ | 85.80% | 79.78% | ไม่โปรโมต |
+
+- Wilson 95% CI ของ Accuracy โมเดลหลัก + TTA: **86.66%–89.58%**
+- F1 รายคลาส: Healthy 82.51%, CBB 72.73%, CBSD 87.69%, CMD 93.56%, CGM 81.68%
+- จุดอ่อนหลัก: CBB Recall 67.53%
+- Candidate ที่เพิ่มข้อมูลจริงให้ผลต่ำกว่า baseline จึงไม่ถูกนำขึ้น Production
+- จะไม่รายงานว่าได้ 95% จนกว่าจะผ่าน independent Thai-field test
+
+### โมเดลเสริมและ Object Detection
+
+| โมเดล | ชุดประเมิน | ผลหลัก | สถานะ |
+|---|---|---|---|
+| Brown Leaf Spot | Test | Accuracy 92.78%, Macro-F1 88.70% | ใช้เป็นหัวเสริม; ยังไม่มี Thai-field validation |
+| White Leaf Spot | Test | Accuracy 96.77%, Macro-F1 94.94% | Experimental; มี domain/license warning |
+| Whitefly detector | Validation | mAP50 75.57%, mAP50-95 36.39% | Review-only; sealed test ยังไม่เปิด |
+| Whitefly operating point | Validation | Precision 74.74%, Recall 74.68%, F1 74.71% | ต่ำกว่า gate 75% เล็กน้อย |
+
+Whitefly เป็นงาน Object Detection จึงประเมินด้วย mAP, Precision, Recall และ F1
+ไม่ใช้ Accuracy แทน ผลเต็มและ artifact contracts อยู่ใน
+[`backend/ml_models`](backend/ml_models)
+
+## ข้อมูลที่ใช้
+
+### TFDS Cassava — โมเดลหลัก 5 คลาส
+
+- แหล่งข้อมูล: [TensorFlow Datasets Cassava](https://www.tensorflow.org/datasets/catalog/cassava)
+- Raw: Train 5,656 / Validation 1,889 / Test 1,885
+- หลังตรวจซ้ำ: Train 5,619 / Validation 1,875 / Test 1,873
+- ตรวจ exact duplicates ด้วย SHA-256 ของ decoded RGB pixels
+- ตรวจภาพคล้ายด้วย dHash และ pHash
+- กักกลุ่มฉลากขัดแย้ง และไม่ใช้ Test เลือก checkpoint
+
+### Mendeley India — การทดลองเพิ่มข้อมูลจริง
+
+- Dataset: [Mendeley India Cassava Dataset](https://data.mendeley.com/datasets/3832tx2cb2/1)
+- DOI: `10.17632/3832tx2cb2.1`, License: CC BY 4.0
+- เผยแพร่ 228 ภาพ; รับเข้า Train 225 ภาพ; กัก near-duplicates 3 ภาพ
+- Healthy 91 / CBB 46 / CMD 88
+- ใช้ใน Train เท่านั้น ไม่แตะ Validation/Test
+
+Dataset ดิบไม่อยู่ใน GitHub เพราะขนาด เงื่อนไข license และความเป็นส่วนตัว
+Pipeline ต้องตรวจ provenance, label mapping และ leakage ก่อนรับข้อมูลใหม่ทุกครั้ง
+
+## สถาปัตยกรรม
+
+```text
+Browser / React SPA
+        │
+        │ HTTPS + JSON + multipart image
+        ▼
+FastAPI routes
+        ├── AI services ── ONNX Runtime ── Model artifacts + contracts
+        ├── Weather ───── Open-Meteo
+        ├── Satellite ─── Earth Search / Sentinel-2
+        ├── Soil & Recommendation services
+        ├── SQLAlchemy ── SQLite (local) / PostgreSQL (production)
+        └── DATA_DIR ──── uploaded/generated assets
+```
+
+```text
+cassavaguard-render/
+├── backend/
+│   ├── api/                 # FastAPI routes
+│   ├── core/                # Access policy, security, rate limiting
+│   ├── services/            # AI และ external-data services
+│   ├── training/            # Download, audit, train, evaluate, promote
+│   └── ml_models/           # Published artifacts, metrics, hashes
+├── frontend/
+│   ├── src/                 # React source
+│   └── dist/                # Production build
+├── migrations/              # Alembic database migrations
+├── tests/                   # API, runtime, security, model/data contracts
+├── docs/                    # คู่มือ แผน และรายงาน
+├── deploy/render/           # Build, pre-deploy, start, verification
+├── render.yaml              # Render Blueprint
+├── serve.py                 # Application launcher
+└── requirements.txt         # Runtime dependencies
+```
+
+อ่านวิธีสร้างแต่ละส่วนตั้งแต่ requirement, database, API, AI, UI, security และ production ที่
+[วิธีสร้างแอป CassavaGuard ตั้งแต่ต้น](docs/COMPLETE_WORKFLOW_TH.md#ส่วนที่-12-วิธีสร้างแอป-cassavaguard-ตั้งแต่ต้น)
+
+## พัฒนาและทดสอบ
+
+### Environment สำคัญ
+
+| ตัวแปร | Local | Production |
 |---|---|---|
 | `APP_ENV` | `development` | `production` |
-| `SECRET_KEY` | ค่าเฉพาะเครื่อง | ค่าสุ่มยาวและเก็บเป็น Render Secret |
-| `AI_SERVING_MODE` | `review` | `review` จนผ่าน Thai-field validation |
+| `SECRET_KEY` | ค่าสุ่มเฉพาะเครื่อง | Render Secret ที่สุ่มใหม่ |
+| `AUTH_REQUIRED` | `false` | `false` ตาม release ปัจจุบัน |
+| `AI_SERVING_MODE` | `review_only` | `review_only` |
 | `AI_FIELD_VALIDATED` | `false` | `false` จนผ่านการตรวจอิสระ |
-| `ENVIRONMENTAL_DATA_MODE` | `live` หรือ `synthetic` | `live` |
+| `ENVIRONMENTAL_DATA_MODE` | `live` | `live` |
 | `USE_CNN` | `true` | `true` |
 
 ห้าม commit `.env`, token, API key, database, uploads หรือข้อมูลผู้ใช้
 
-## การ Build Frontend
-
-Production โหลดไฟล์จาก `frontend/dist` ซึ่งถูก commit เพื่อให้ Render runtime ไม่ต้องติดตั้ง Node.js
+### Build Frontend
 
 ```bash
 npm ci
 npm run build
 ```
 
-เมื่อแก้ `frontend/src` ต้อง build และ commit `frontend/dist` ด้วย
+เมื่อแก้ `frontend/src` ต้องตรวจและ commit `frontend/dist` ที่ build ใหม่ด้วย
 
-## การทดสอบ
+### Test และตรวจ artifacts
 
 ```bash
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
-.venv/bin/python -m pytest -q
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+python backend/training/verify_artifacts.py --require-cnn --include-fusion
+python backend/training/quality_gate.py
 ```
 
-ชุดทดสอบครอบคลุม:
+ชุดทดสอบครอบคลุม API/SPA, security headers, rate limiting, ONNX loading,
+artifact hash/contract/self-test, leakage controls, Whitefly runtime และ Render bundle
 
-- Backend/API และหน้า SPA
-- Model artifact hash/contract/self-test
-- ONNX loading และ memory-bounded inference
-- Train/validation/test leakage controls
-- Security headers และ rate limiting
-- Whitefly runtime และ validation benchmark contracts
-- Render bundle/runtime verification
-
-## การฝึกโมเดล
-
-### EfficientNet บน Apple Silicon
+### ฝึก Candidate
 
 ```bash
-python3.12 -m venv backend/training/.venv-torch
+python3 -m venv backend/training/.venv-torch
 backend/training/.venv-torch/bin/python -m pip install -r requirements-training-torch.txt
 
 backend/training/.venv-torch/bin/python \
@@ -203,109 +246,100 @@ backend/training/.venv-torch/bin/python \
   --output-dir tmp/candidates/efficientnet_b2_candidate
 ```
 
-### ดาวน์โหลดข้อมูลจริง Mendeley India
+กฎสำคัญ: เลือก checkpoint/threshold/TTA จาก Validation, เปิด sealed Test หลังล็อก
+การตัดสินใจ, ตรวจ ONNX parity และ hash และโปรโมตเฉพาะ Candidate ที่ดีกว่า baseline
+ดูขั้นตอนเต็มใน [คู่มือฝึกโมเดล](docs/TRAINING.md)
 
-```bash
-.venv/bin/python backend/training/download_mendeley_india.py \
-  --output-dir backend/training/data/mendeley_india
-```
+## Deploy บน Render
 
-Downloader ตรวจ Dataset ID/version, จำนวนคลาส และ SHA-256 ของไฟล์ที่ผู้เผยแพร่ระบุ
+### Blueprint — วิธีแนะนำ
 
-### เพิ่มข้อมูลภายนอกเข้า Train เท่านั้น
+1. Push repository ไป GitHub
+2. Render Dashboard → **New + → Blueprint**
+3. เลือก repository และให้ Render อ่าน [`render.yaml`](render.yaml)
+4. ตรวจ Web Service, PostgreSQL และ Persistent Disk
+5. กด Apply/Deploy
+6. ตรวจ `/api/health`, `/api/models` และทดลองวิเคราะห์ภาพ
 
-```bash
-backend/training/.venv-torch/bin/python \
-  backend/training/train_cnn_torch.py \
-  --architecture efficientnet_b2 \
-  --image-size 260 \
-  --device mps \
-  --extra-data-dir backend/training/data/mendeley_india \
-  --output-dir tmp/candidates/efficientnet_b2_extra_real
-```
+### สร้าง Web Service เอง
 
-Pipeline จะตรวจ exact/perceptual overlap กับ official Train/Validation/Test ก่อนรับภาพเข้า Train
+| Render setting | ค่า |
+|---|---|
+| Runtime | Python 3 |
+| Branch | `main` |
+| Build Command | `bash deploy/render/build.sh` |
+| Pre-Deploy Command | `bash deploy/render/predeploy.sh` |
+| Start Command | `bash deploy/render/start.sh` |
+| Health Check Path | `/api/health` |
 
-### กฎการโปรโมตโมเดล
+ต้องตั้ง `APP_ENV=production`, `SECRET_KEY`, `DATABASE_URL` และ environment อื่นตาม
+[คู่มือ Deploy ฉบับเต็ม](deploy/render/README.md)
 
-1. เลือก architecture/checkpoint/threshold/TTA จาก Validation เท่านั้น
-2. เปิด Test หลังการเลือกเสร็จ
-3. Candidate ต้องดีกว่าโมเดลเดิม ไม่ใช่แค่ผ่าน 75%
-4. ตรวจ ONNX parity และ SHA-256 artifacts
-5. รัน tests และ Render runtime verification
-6. Thai-field validation ต้องแยกตามแปลง/ต้นก่อนเปิด `AI_FIELD_VALIDATED=true`
-
-## Deploy ไป Render
-
-คู่มือด้านล่างเป็นฉบับย่อ ส่วนขั้นตอนกดเมนู ตั้งค่าตัวแปร ตรวจ Deploy และแก้ปัญหาอยู่ใน
-[คู่มือทำทุกขั้นตอน](docs/COMPLETE_WORKFLOW_TH.md#ส่วนที่-8-deploy-ขึ้น-renderแบบ-blueprint)
-
-### วิธีแนะนำ: Blueprint
-
-1. Fork หรือ push repository นี้ไป GitHub
-2. Render Dashboard → **New → Blueprint**
-3. เลือก repository
-4. Render อ่านค่าใน [`render.yaml`](render.yaml)
-5. ตั้ง Secret/Environment variables ที่ไม่มีใน Git
-6. Deploy และตรวจ `/api/health`, `/api/models`, `/api/models/compare`
-
-### ตั้ง Web Service เอง
-
-- Runtime: Python 3
-- Branch: `main`
-- Build Command: `bash deploy/render/build.sh`
-- Start Command: `bash deploy/render/start.sh`
-- Health Check Path: `/api/health`
-- Environment: `APP_ENV=production`
-- กำหนด `SECRET_KEY` เป็นค่าลับแบบสุ่ม
-
-ดูรายละเอียดใน [deploy/render/README.md](deploy/render/README.md)
-
-## API สำคัญ
+## API หลัก
 
 | Method | Endpoint | หน้าที่ |
 |---|---|---|
-| GET | `/api/health` | Health และ runtime readiness |
-| POST | `/api/predict/image` | วิเคราะห์ภาพใบมันสำปะหลัง |
-| GET | `/api/models` | Model registry และ class readiness |
-| GET | `/api/models/compare` | ข้อมูลกราฟเปรียบเทียบโมเดล |
-| GET | `/api/models/readiness` | ความพร้อมของทุกคลาส |
-| GET | `/api/weather/*` | ข้อมูลสภาพอากาศ |
-| GET | `/api/satellite/*` | Sentinel-2 indices |
+| `GET` | `/api/health` | Health และ runtime readiness |
+| `POST` | `/api/predict/image` | ตรวจและวิเคราะห์ภาพ |
+| `GET` | `/api/models` | Model registry และสถานะ artifact |
+| `GET` | `/api/models/readiness` | ความพร้อมรายคลาส |
+| `GET` | `/api/models/compare` | Metric สำหรับเปรียบเทียบโมเดล |
+| `GET` | `/api/weather/*` | ข้อมูลสภาพอากาศ |
+| `GET` | `/api/satellite/*` | Sentinel-2 indices |
 
-รายละเอียด schema อยู่ใน [docs/API.md](docs/API.md)
+Schema และตัวอย่าง request อยู่ใน [API Reference](docs/API.md) ส่วน Swagger UI เปิดที่
+`/api/docs` เฉพาะ Development เมื่อ `ENABLE_API_DOCS=true`
 
-## ข้อจำกัดที่ต้องเปิดเผย
+## เอกสารทั้งหมด
 
-- ไม่มี independent Thai-field holdout ที่ครอบคลุมหลายจังหวัด ฤดู พันธุ์ และอุปกรณ์
-- TFDS และ CCMT ไม่มี plant/field grouping ครบ จึงตัด same-scene leakage ไม่ได้ทุกกรณี
-- White Leaf Spot มี cross-source/domain confounding และข้อจำกัด CC BY-NC 4.0
-- Whitefly ยังไม่ผ่าน Validation Precision/Recall/F1 gate 75% ครบทุกค่า และ sealed test ยังไม่เปิด
-- Synthetic data ใช้เพื่อ seed/train experiments เท่านั้น ห้ามใช้เป็นหลักฐานประสิทธิภาพหรือใช้ใน test
-- คำแนะนำเป็น decision support ไม่ใช่คำสั่งใช้สารเคมีหรือผลวินิจฉัยจากผู้เชี่ยวชาญ
+### คู่มือ
 
-## สิ่งที่ไม่เก็บใน GitHub
+- [คู่มือทุกขั้นตอน: ติดตั้ง ใช้ พัฒนา GitHub และ Render](docs/COMPLETE_WORKFLOW_TH.md)
+- [คู่มือผู้ใช้ภาษาไทย](docs/USER_GUIDE_TH.md)
+- [คู่มือการใช้แอป PDF](docs/reports/CassavaGuard_App_Usage_Guide_TH.pdf)
+- [API Reference](docs/API.md)
+- [คู่มือฝึกโมเดลและจัดการข้อมูล](docs/TRAINING.md)
+- [คู่มือ Render](deploy/render/README.md)
+
+### รายงานและแผน
+
+- [รายงานผลการทดลองภาษาไทย](docs/reports/CassavaGuard_Experiment_Report_TH.docx)
+- [รายงานสรุปโครงการ PDF](docs/reports/CassavaGuard_Project_Summary_TH.pdf)
+- [รายงานสรุปโครงการ Word](docs/reports/CassavaGuard_Project_Summary_TH.docx)
+- [แผนเพิ่มประสิทธิภาพ](docs/PERFORMANCE_PLAN_TH.md)
+- [แผนคุณภาพ Whitefly](docs/WHITEFLY_QUALITY_PLAN_TH.md)
+
+## ข้อจำกัดและความปลอดภัย
+
+- ยังไม่มี independent Thai-field holdout ที่ครอบคลุมจังหวัด ฤดู พันธุ์ และอุปกรณ์เพียงพอ
+- Dataset บางชุดไม่มี plant/field grouping ครบ จึงตัด same-scene leakage ไม่ได้ทุกกรณี
+- White Leaf Spot มีความเสี่ยง cross-source/domain confounding และข้อจำกัด CC BY-NC 4.0
+- Whitefly ยังไม่ผ่าน Validation P/R/F1 75% ครบทุกค่า และ sealed test ยังไม่เปิด
+- Synthetic data ใช้ได้เฉพาะ Train/experiment ที่ติดป้าย ห้ามใส่ Validation/Test
+- การปิด Login หมายถึงผู้เข้าถึง URL ใช้พื้นที่ข้อมูลร่วมกัน ไม่ควรใส่ข้อมูลส่วนบุคคล
+- Runtime artifacts ต้องตรงกับ metric contract และ SHA-256 ที่ตรวจระหว่าง build
+
+สิ่งที่ตั้งใจไม่เก็บใน GitHub:
 
 - `.env`, secrets, tokens และ credentials
-- `database/`, `uploads/` และข้อมูลผู้ใช้
-- Dataset ดิบและ training caches
-- Virtual environments และ `node_modules`
+- Database, uploads และข้อมูลผู้ใช้
+- Dataset ดิบ, training cache และ virtual environments
 - Candidate models ที่ไม่ผ่านการโปรโมต
-- QA screenshots, temporary renders และไฟล์ build ชั่วคราว
+- Temporary builds, QA screenshots และไฟล์ทดสอบชั่วคราว
 
-ไฟล์โมเดล Runtime ที่ commit ต้องมีขนาดต่ำกว่าข้อจำกัด GitHub และถูกตรวจ hash จาก metrics/manifest ระหว่าง build
+## License และแหล่งข้อมูล
 
-## License และที่มาข้อมูล
-
-Repository นี้รวมโค้ด โมเดล และ metadata จากหลายแหล่งซึ่งมีเงื่อนไขต่างกัน โปรดตรวจ license/DOI ใน metrics และเอกสารก่อนนำไปใช้ต่อ โดยเฉพาะ:
+โครงการรวมโค้ด โมเดล และ metadata หลายแหล่งซึ่งมีเงื่อนไขต่างกัน ต้องตรวจ license/DOI
+ของแต่ละ artifact ก่อนนำไปแจกจ่ายหรือใช้เชิงพาณิชย์ โดยเฉพาะ:
 
 - Mendeley India และ CCMT: CC BY 4.0
-- Whitefly Dataset: CC BY 4.0
-- Embrapa White Leaf Spot subset: CC BY-NC 4.0 (ไม่อนุญาตเชิงพาณิชย์)
-- TFDS Cassava: ตรวจสิทธิ์ของภาพต้นทางก่อนแจกจ่ายซ้ำหรือใช้เชิงพาณิชย์
+- Cassava Whitefly Dataset: CC BY 4.0
+- Embrapa White Leaf Spot subset: CC BY-NC 4.0 — ไม่อนุญาตการใช้เชิงพาณิชย์
+- TFDS Cassava: ต้องตรวจสิทธิ์ภาพต้นทางก่อนแจกจ่ายซ้ำหรือใช้เชิงพาณิชย์
 
 ไม่มีการรับประกันความเหมาะสมสำหรับการวินิจฉัยหรือการตัดสินใจทางการเกษตรที่มีความเสี่ยงสูง
 
 ---
 
-**Current verified primary result: EfficientNet-B2 + TTA - Test Accuracy 88.20%, Macro-F1 83.63%. Target 95% is not yet achieved.**
+**ผลหลักที่ยืนยันได้ในปัจจุบัน: EfficientNet-B2 + TTA — Test Accuracy 88.20%,
+Macro-F1 83.63%. เป้าหมาย 95% ยังไม่บรรลุ**
