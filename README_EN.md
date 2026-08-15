@@ -65,7 +65,7 @@ health was `ok`, and the runtime reported `environment=production`,
 | Soil | Accepts laboratory, sensor, or field-kit measurements; missing values are not invented |
 | Recommendations | Combines image, soil, weather, and satellite evidence with an explicit confidence level |
 | History | Stores, reviews, and exports previous analyses |
-| Interface | Thai/English, dark/light themes, and responsive layouts |
+| Interface | English by default with Thai switching, dark/light themes, and responsive layouts |
 
 ### System principles
 

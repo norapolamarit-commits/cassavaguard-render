@@ -5,7 +5,7 @@
 
   function Provider({ children }) {
     const [theme, setTheme] = useState(() => localStorage.getItem('cg_theme') || 'dark');
-    const [lang, setLang]   = useState(() => localStorage.getItem('cg_lang') || 'th');
+    const [lang, setLang]   = useState(() => localStorage.getItem('cg_lang') || 'en');
     const [user, setUser]   = useState(null);
     const [booted, setBooted] = useState(false);
     const [toasts, setToasts] = useState([]);
