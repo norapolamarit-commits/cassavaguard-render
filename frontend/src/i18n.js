@@ -1,4 +1,4 @@
-/* Bilingual dictionary (TH default / EN). */
+/* Bilingual dictionary (English default, Thai selectable). */
 (function () {
   const DICT = {
     // shell / nav

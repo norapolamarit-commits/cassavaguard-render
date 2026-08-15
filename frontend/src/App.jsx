@@ -48,7 +48,7 @@
     }, [user]);
 
     if (!booted) return <div className="min-h-screen theme-bg grid place-items-center"><div className="w-10 h-10 rounded-2xl grad-brand grid place-items-center text-white animate-pulse"><Icon name="leaf" className="w-6 h-6" /></div></div>;
-    if (!user) return <div className="min-h-screen theme-bg grid place-items-center px-6 text-center"><div><div className="txt font-bold">CassavaGuard AI</div><div className="txt-soft text-sm mt-2">ไม่สามารถเชื่อมต่อ API ได้ กรุณาตรวจสอบว่า backend กำลังทำงาน</div></div></div>;
+    if (!user) return <div className="min-h-screen theme-bg grid place-items-center px-6 text-center"><div><div className="txt font-bold">CassavaGuard AI</div><div className="txt-soft text-sm mt-2">{lang === 'th' ? 'ไม่สามารถเชื่อมต่อ API ได้ กรุณาตรวจสอบว่า backend กำลังทำงาน' : 'Unable to connect to the API. Check that the backend is running.'}</div></div></div>;
 
     const markAll = () => window.CG.API_CLIENT.markAllRead().then(() => window.CG.API_CLIENT.notifications().then(setNotifs));
     const markOne = (id) => window.CG.API_CLIENT.markRead(id).then(() => window.CG.API_CLIENT.notifications().then(setNotifs));
