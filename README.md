@@ -1,309 +1,301 @@
-# 🌿 CassavaGuard AI
+# CassavaGuard AI
 
-**An AI-powered precision-agriculture platform for cassava monitoring, disease
-diagnosis, and evidence-based agronomy decision support.**
+แพลตฟอร์มเว็บสำหรับช่วยคัดกรองโรคและศัตรูมันสำปะหลังจากภาพใบพืช พร้อมข้อมูลดาวเทียม สภาพอากาศ ดิน ประวัติการวิเคราะห์ และคำแนะนำเชิงเกษตร
 
-CassavaGuard turns leaf photos, satellite indices, weather and soil data into a
-single intelligent dashboard — the kind of decision-support tool that farmers,
-researchers and administrators can act on. It is styled after commercial
-platforms like Google Earth Engine, ArcGIS Dashboard and Climate FieldView, with
-a modern glassmorphic UI, dark/light mode, Thai/English, and smooth animations.
+> **สถานะสำคัญ:** ระบบเปิดให้ใช้งานแบบไม่ต้อง Login และโมเดลทุกตัวเป็นเครื่องมือช่วยคัดกรอง (`decision support`) ไม่ใช่ผลยืนยันจากห้องปฏิบัติการ ผลวิเคราะห์ต้องได้รับการตรวจซ้ำ โดยเฉพาะก่อนตัดสินใจใช้สารเคมีหรือทำลายพืช
 
----
+## ทดลองใช้งาน
 
-## ✨ Features
+- เว็บไซต์: [cassavaguard-render.onrender.com](https://cassavaguard-render.onrender.com/)
+- Health check: [cassavaguard-render.onrender.com/api/health](https://cassavaguard-render.onrender.com/api/health)
+- API documentation เปิดเฉพาะ Development ที่ `/api/docs`
 
-| Area | What it does |
-|------|--------------|
-| **Dashboard** | Animated KPI cards (fields, plants, healthy %, high-risk %, disease/nutrient/water alerts), weather summary, satellite constellation status, risk distribution & per-field health charts |
-| **Interactive GIS Map** | Leaflet map with 4 basemaps (Esri satellite / OSM street / OpenTopo / CARTO dark), field boundary polygons, risk heatmap and observed Sentinel-2 index overlays |
-| **AI Diagnosis** | Upload a **cassava leaf** image. The verified EfficientNet-B0 head returns a 5-class distribution (Healthy, CMD, CBSD, CBB, CGM), while separate heads handle Brown Leaf Spot and review-only White Leaf Spot/Whitefly findings. They are never fabricated into the 5-way softmax. The remaining 5 conditions expose explicit data/model readiness instead of heuristic diagnoses. Confidence, margin, image-quality and field-validation gates determine `requires_review`; automatic alerts are disabled until independent Thai-field validation is explicitly approved |
-| **Satellite Analysis** | Actual Sentinel-2 L2A reflectance from the public Earth Search/AWS archive; NDVI / NDMI / SAVI / EVI, cloud/SCL masking, acquisition provenance, spatial grid and historical comparison |
-| **Weather** | Live Open-Meteo operational-model current conditions, 7-day forecast and recent history, with timestamp/provider provenance (model output, not a local weather-station reading) |
-| **Soil** | Stores real laboratory, sensor or field-kit samples. Missing pH/OM/N/P/K/CEC/moisture remain blank—no generated replacement values |
-| **Recommendations** | Evidence-based agronomy cards that **fuse AI + soil + weather + satellite** into a hypothesis, multi-source evidence, concrete actions and a transparent confidence score |
-| **History** | Searchable/filterable prediction log with a detail modal (attribution-map explainability), **CSV and PDF export** |
-| **System & Models** | Model registry & comparison (accuracy/F1/size/speed), server/compute/inference/dataset status, bounded API request logs, and Admin user/role management |
-| **Notifications** | Per-user alert read state + toast notifications (disease / nutrient / water / weather) |
-| **Auth & privacy** | JWT with revocation after password/role changes, expiring hashed reset tokens, Admin / Researcher / Farmer RBAC, owner-scoped fields/history, and short-lived signed image URLs |
+Render Free อาจ sleep เมื่อไม่มีการใช้งาน คำขอแรกจึงอาจใช้เวลาประมาณ 30-60 วินาที
 
-Everything is **bilingual (ไทย / English)** with **dark & light** themes and a
-**fully responsive** layout.
+## ความสามารถหลัก
 
----
+| ส่วน | รายละเอียด |
+|---|---|
+| วิเคราะห์ด้วย AI | อัปโหลดภาพใบมันสำปะหลัง ตรวจคุณภาพภาพ และวิเคราะห์ด้วยโมเดลจริง |
+| โมเดลหลัก | EfficientNet-B2 + Test-Time Augmentation สำหรับ Healthy, CBB, CBSD, CMD และ CGM |
+| โมเดลเสริม | Brown Leaf Spot, White Leaf Spot และ Whitefly แยกจาก probability 5 คลาสหลัก |
+| ความพร้อม 13 คลาส | แสดงสถานะจริงของแต่ละคลาส ไม่สร้าง probability ปลอมให้คลาสที่ข้อมูลไม่พอ |
+| ดาวเทียม | Sentinel-2 L2A จาก Earth Search พร้อม NDVI, NDMI, SAVI และ EVI |
+| สภาพอากาศ | Open-Meteo พร้อมชื่อแหล่งข้อมูลและเวลาของข้อมูล |
+| ดิน | รับค่าจากผลแล็บ เซนเซอร์ หรือชุดตรวจภาคสนาม; ค่าที่ไม่มีจะไม่ถูกสร้างแทน |
+| คำแนะนำ | รวมหลักฐานจากภาพ ดิน อากาศ และดาวเทียม พร้อมระดับความเชื่อมั่น |
+| ประวัติ | เก็บและส่งออกผลวิเคราะห์ พร้อม attribution map แบบ occlusion sensitivity |
+| ระบบและโมเดล | แสดงทะเบียนโมเดล ผลวัด ขนาด ความเร็ว และความพร้อมของทุกคลาส |
+| ภาษาและหน้าจอ | ไทย/อังกฤษ, Dark/Light, Responsive |
 
-## 🚀 Run it
+## ผลการทดลองที่ยืนยันได้
 
-```bash
-cd cassavaguard
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-cp .env.example .env
-.venv/bin/python serve.py           # http://127.0.0.1:8800
+### โมเดลจำแนกหลัก
+
+| รายการ | ชุดประเมิน | Accuracy | Macro-F1 | หมายเหตุ |
+|---|---:|---:|---:|---|
+| EfficientNet-B2 ภาพเดียว | Test 1,873 ภาพ | 86.60% | 80.82% | โมเดลฐาน |
+| **EfficientNet-B2 + TTA** | **Test 1,873 ภาพ** | **88.20%** | **83.63%** | โมเดลที่ระบบใช้ |
+| Candidate + ข้อมูลจริง 225 ภาพ | Test 1,873 ภาพ | 85.80% | 79.78% | ไม่โปรโมต เพราะต่ำกว่าเดิม |
+
+- Wilson 95% CI ของ Accuracy โมเดลหลัก + TTA: **86.66%-89.58%**
+- F1 รายคลาส: Healthy 82.51%, CBB 72.73%, CBSD 87.69%, CMD 93.56%, CGM 81.68%
+- จุดอ่อนหลักคือ CBB: Recall 67.53%
+- เป้าหมาย 95% **ยังไม่บรรลุ** และจะไม่รายงานว่าได้ 95% จนกว่าจะผ่าน independent Thai-field test
+
+### โมเดลเสริมและ Object Detector
+
+| โมเดล | ชุดประเมิน | ผลหลัก | สถานะ |
+|---|---|---|---|
+| Brown Leaf Spot | Test | Accuracy 92.78%, Macro-F1 88.70% | ใช้เป็นหัวเสริม; ยังไม่มี Thai-field validation |
+| White Leaf Spot | Test | Accuracy 96.77%, Macro-F1 94.94% | Experimental; เสี่ยง cross-source/domain confounding และ CC BY-NC |
+| Whitefly detector | Validation | mAP50 75.57%, mAP50-95 36.39% | Review-only; sealed test ยังไม่เปิด |
+| Whitefly operating point | Validation | Precision 74.74%, Recall 74.68%, F1 74.71% | ต่ำกว่า gate 75% เล็กน้อย |
+
+Whitefly เป็นงาน Object Detection จึงวัดด้วย mAP/Precision/Recall/F1 ไม่ใช่ Accuracy
+
+Artifacts และผลเต็มอยู่ใน [`backend/ml_models`](backend/ml_models) และรายงานอยู่ใน [`docs/reports`](docs/reports)
+
+## Dataset และการป้องกัน Data Leakage
+
+### TFDS Cassava 5 คลาส
+
+- แหล่งข้อมูล: [TensorFlow Datasets Cassava](https://www.tensorflow.org/datasets/catalog/cassava)
+- Raw splits: Train 5,656 / Validation 1,889 / Test 1,885
+- หลังตรวจซ้ำ: Train 5,619 / Validation 1,875 / Test 1,873
+- ตรวจ exact duplicates จาก SHA-256 ของ decoded RGB pixels
+- ตรวจภาพคล้ายด้วย dHash และ pHash
+- กักกลุ่มฉลากขัดแย้งและไม่ใช้ผล Test เลือก checkpoint
+
+### ข้อมูลจริงที่เพิ่มสำหรับการทดลอง
+
+- [Mendeley India Cassava Dataset](https://data.mendeley.com/datasets/3832tx2cb2/1)
+- DOI `10.17632/3832tx2cb2.1`, CC BY 4.0
+- เผยแพร่ 228 ภาพ; รับเข้า Train 225 ภาพ; กักภาพคล้ายซ้ำ 3 ภาพ
+- Healthy 91 / CBB 46 / CMD 88
+- ใช้เฉพาะ Train และไม่แตะ Validation/Test
+- Candidate ที่ฝึกด้วยชุดนี้ไม่ดีกว่าโมเดลเดิม จึงไม่ถูกนำขึ้น Production
+
+Dataset ดิบไม่เก็บใน GitHub เนื่องจากขนาด สัญญาอนุญาต และความสามารถในการทำซ้ำผ่าน downloader/DOI
+
+## เอกสารและรายงาน
+
+- [รายงานผลการทดลองภาษาไทย](docs/reports/CassavaGuard_Experiment_Report_TH.docx)
+- [รายงานสรุปโครงการ PDF](docs/reports/CassavaGuard_Project_Summary_TH.pdf)
+- [รายงานสรุปโครงการ Word](docs/reports/CassavaGuard_Project_Summary_TH.docx)
+- [คู่มือการใช้แอป PDF](docs/reports/CassavaGuard_App_Usage_Guide_TH.pdf)
+- [คู่มือการใช้งานฉบับ Markdown](docs/USER_GUIDE_TH.md)
+- [คู่มือฝึกโมเดลและข้อมูล](docs/TRAINING.md)
+- [แผนเพิ่มประสิทธิภาพ](docs/PERFORMANCE_PLAN_TH.md)
+- [แผนคุณภาพ Whitefly](docs/WHITEFLY_QUALITY_PLAN_TH.md)
+- [API Reference](docs/API.md)
+
+## โครงสร้างระบบ
+
+```text
+cassavaguard-render/
+├── backend/
+│   ├── api/                 # FastAPI routes
+│   ├── core/                # Security, policies, rate limiting
+│   ├── services/            # AI, weather, satellite, soil, recommendations
+│   ├── training/            # Download, audit, train, evaluate, promote
+│   └── ml_models/           # Runtime artifacts + metric contracts + hashes
+├── frontend/
+│   ├── src/                 # React UI source
+│   └── dist/                # Production assets committed for Render
+├── migrations/              # Alembic migrations
+├── tests/                   # Runtime, security, model and data contracts
+├── docs/                    # คู่มือ แผน และรายงาน
+├── deploy/render/           # Render build/start/runtime verification
+├── render.yaml              # Render Blueprint
+├── serve.py                 # Application launcher
+└── requirements.txt         # Runtime dependencies
 ```
 
-Open **http://127.0.0.1:8800**. The default `.env.example` uses live
-environmental providers and does not seed fictional fields. Set bootstrap admin
-credentials or register the first farmer account. Set
-`ENVIRONMENTAL_DATA_MODE=synthetic` and `SEED_DEMO_DATA=true` only for an
-explicit offline demo/test instance.
+## การรันในเครื่อง
 
-**Interactive API docs (development only):** http://127.0.0.1:8800/api/docs
+### ความต้องการ
 
-### Demo accounts (only when `SEED_DEMO_DATA=true`)
+- Python 3.11 หรือ 3.12
+- Node.js ใช้เฉพาะเมื่อแก้ Frontend
+- RAM อย่างน้อย 4 GB สำหรับ Development; การวิเคราะห์ครั้งแรกต้องโหลด ONNX models
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@cassavaguard.ai` | `admin123` |
-| Researcher | `researcher@cassavaguard.ai` | `research123` |
-| Farmer | `farmer@cassavaguard.ai` | `farmer123` |
+### ติดตั้งและเริ่มระบบ
 
-When editing frontend source, rebuild the committed production assets:
+```bash
+git clone https://github.com/norapolamarit-commits/cassavaguard-render.git
+cd cassavaguard-render
+
+python3.12 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
+
+cp .env.example .env
+.venv/bin/python serve.py
+```
+
+เปิด <http://127.0.0.1:8800>
+
+ระบบปัจจุบันไม่ต้อง Login ผู้ใช้สามารถเปิดหน้า วิเคราะห์ด้วย AI และอัปโหลดภาพได้ทันที
+
+### Environment ที่สำคัญ
+
+| ตัวแปร | Development | Production |
+|---|---|---|
+| `APP_ENV` | `development` | `production` |
+| `SECRET_KEY` | ค่าเฉพาะเครื่อง | ค่าสุ่มยาวและเก็บเป็น Render Secret |
+| `AI_SERVING_MODE` | `review` | `review` จนผ่าน Thai-field validation |
+| `AI_FIELD_VALIDATED` | `false` | `false` จนผ่านการตรวจอิสระ |
+| `ENVIRONMENTAL_DATA_MODE` | `live` หรือ `synthetic` | `live` |
+| `USE_CNN` | `true` | `true` |
+
+ห้าม commit `.env`, token, API key, database, uploads หรือข้อมูลผู้ใช้
+
+## การ Build Frontend
+
+Production โหลดไฟล์จาก `frontend/dist` ซึ่งถูก commit เพื่อให้ Render runtime ไม่ต้องติดตั้ง Node.js
 
 ```bash
 npm ci
 npm run build
 ```
 
-Run the verification suite with `python3.12 -m pytest -q`.
-The release-level performance gate is
-`.venv/bin/python backend/training/quality_gate.py`; it enforces held-out CNN
-accuracy above 75% together with macro-F1, calibration and task-appropriate
-Whitefly mAP/recall floors. See
-[`docs/PERFORMANCE_PLAN_TH.md`](docs/PERFORMANCE_PLAN_TH.md) for the supervised
-work split and metric contract.
+เมื่อแก้ `frontend/src` ต้อง build และ commit `frontend/dist` ด้วย
 
-### คู่มือการใช้งาน
-
-เปิดแอปแล้วเลือกเมนู **คู่มือใช้งาน** ในแถบด้านซ้ายเพื่อดูขั้นตอนสร้างแปลง
-บันทึกผลตรวจดิน ถ่ายภาพ วิเคราะห์ AI และอ่านผลแบบ review-only คู่มือฉบับเต็มอยู่ที่
-[`docs/USER_GUIDE_TH.md`](docs/USER_GUIDE_TH.md)
-
----
-
-## 🏗️ Architecture
-
-```
-cassavaguard/
-├── backend/                    # FastAPI application (clean, modular)
-│   ├── main.py                 # lifespan, rate limiting, security headers, SPA serving
-│   ├── config.py               # environment settings, upload limits, model registry
-│   ├── database.py             # SQLAlchemy engine/session + Alembic runner
-│   ├── models/                 # ORM: User, Field, Prediction, Alert/AlertRead, LogEntry
-│   ├── schemas/                # Pydantic request/response models
-│   ├── core/                   # PBKDF2/JWT, RBAC/ownership policy, rate limiter
-│   ├── api/                    # auth/admin, fields, signed files, prediction and analytics
-│   └── services/               # AI and live-provider adapters:
-│       ├── ai_engine.py        #   primary 5-way + auxiliary heads, review gates, attribution
-│       ├── model_readiness.py  #   honest readiness contract for all 13 display classes
-│       ├── reco_engine.py      #   multi-source evidence fusion → recommendation cards
-│       ├── satellite_engine.py #   Earth Search + Sentinel-2 L2A COG processing
-│       ├── weather_engine.py   #   Open-Meteo live weather-model adapter
-│       ├── soil_engine.py      #   real lab/sensor sample interpretation
-│       ├── provider_client.py  #   provider HTTP errors + bounded cache
-│       ├── simkit.py           #   explicit synthetic test-mode generator
-│       └── seed.py             #   idempotent demo data
-├── frontend/                   # React SPA with committed production assets
-│   ├── index.html              # theming + pre-built asset references
-│   ├── dist/                   # minified JS/CSS generated by npm run build
-│   ├── vendor/                 # React, ReactDOM, Chart.js, Leaflet
-│   └── src/
-│       ├── api.js              # fetch client with JWT
-│       ├── i18n.js             # TH/EN dictionary
-│       ├── store.js            # React context: theme, language, auth, toasts
-│       ├── ui.jsx              # reusable primitives (glass cards, KPI, rings, badges, modal…)
-│       ├── charts.jsx          # Chart.js wrappers (line, bar, radar, doughnut, scatter)
-│       ├── map.jsx             # Leaflet GIS component
-│       ├── pages/              # dashboard, fieldmap, predict, satellite, weather,
-│       │                       #   soil, recommendations, history, system, auth
-│       ├── App.jsx             # sidebar / navbar / notifications / FAB / router
-│       └── main.jsx            # mount
-├── migrations/                 # Alembic schema history
-├── tests/                      # authorization/security regression tests
-├── database/                   # local SQLite file (auto-created)
-├── uploads/                    # private prediction assets (served via signed URL)
-├── package.json                # pinned frontend build dependencies
-├── serve.py                    # launcher
-└── requirements.txt
-```
-
-### Production frontend
-
-React JSX is compiled by esbuild and Tailwind is generated at build time.
-Production browsers load only `frontend/dist/app.js` and `app.css`; Babel and
-Tailwind's browser compiler are not shipped. The generated files are committed,
-so the Python service can deploy without Node installed on the runtime host.
-
----
-
-## 🧠 About the AI
-
-`ai_engine.py` uses a multi-head contract. The primary probability distribution
-contains **only the five classes present in the verified TFDS artifact**:
-
-1. **healthy / CMD / CBSD / CBB / CGM** — the active model is an
-   **EfficientNet-B0 raw-pixel CNN**, selected by validation macro-F1 and trained
-   with ImageNet transfer learning on real, labelled photographs from the public
-   [TFDS `cassava`](https://www.tensorflow.org/datasets/catalog/cassava) dataset.
-   See `backend/ml_models/cnn_metrics.json` for its held-out test metrics and
-   artifact hash. The verified scikit-learn 12-feature model remains available
-   as a fail-closed fallback if the ONNX artifact is absent or invalid.
-2. **Brown Leaf Spot** — an independent binary Hist Gradient Boosting head trained
-   on 4,887 effective raw CCMT cassava images (CC BY 4.0), selected and thresholded
-   on validation only. It consumes the shared 12 visual features plus the five CNN
-   outputs. It appears in `auxiliary_findings`, never inside the 5-way `probs`.
-3. **White Leaf Spot** — a local experimental binary auxiliary trained from
-   115 real Embrapa PDDB positives and real CCMT negatives. It is returned only
-   in `auxiliary_findings`, is always marked review-required, and is blocked from
-   production by cross-source confounding, missing Thai-field validation and the
-   source's CC BY-NC 4.0 licence.
-4. **Whitefly** — a local experimental YOLO object detector/counting head trained
-   from 3,000 real photographs and 212,948 PASCAL VOC boxes. Its boxes and count
-   are returned in `auxiliary_findings`; it is not a leaf-classification label and
-   remains blocked from production. The validation-selected checkpoint measured
-   held-out test precision 49.85%, recall 41.47%, mAP50 31.53% and mAP50-95 8.50%.
-5. **Water Stress / Nutrient Deficiency / Anthracnose (CAD) / Super Elongation
-   Disease (SED) / Mealybug** — not served as diagnoses. `/api/models/readiness`
-   states the real-data count, correct task type and concrete blocker for each.
-
-For the ML-backed classes, the "attribution map" is a **genuine occlusion-
-sensitivity map**: the runtime masks 8×8 grid cells with the image's mean
-colour and measures the real drop in the active classifier's probability.
-It is an input-perturbation explanation, not relabelled as Grad-CAM.
-
-### Verified training pipeline
-
-Use Python 3.11 or 3.12. The first run downloads TFDS `cassava` (~1.26 GiB); CNN
-training is substantially faster on a GPU.
-
-For Google Colab, open [`CassavaGuard_Train_CNN_Colab.ipynb`](CassavaGuard_Train_CNN_Colab.ipynb).
-It supports project upload by ZIP, Google Drive or Git and downloads a verified
-Keras/ONNX/metrics artifact bundle after training.
+## การทดสอบ
 
 ```bash
-python3.12 -m venv .venv-training
-.venv-training/bin/python -m pip install -r requirements-training.txt
-.venv-training/bin/python backend/training/train_all.py
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
+.venv/bin/python -m pytest -q
 ```
 
-On Apple silicon, the Metal/MPS path used for the current artifact is:
+ชุดทดสอบครอบคลุม:
+
+- Backend/API และหน้า SPA
+- Model artifact hash/contract/self-test
+- ONNX loading และ memory-bounded inference
+- Train/validation/test leakage controls
+- Security headers และ rate limiting
+- Whitefly runtime และ validation benchmark contracts
+- Render bundle/runtime verification
+
+## การฝึกโมเดล
+
+### EfficientNet บน Apple Silicon
 
 ```bash
 python3.12 -m venv backend/training/.venv-torch
 backend/training/.venv-torch/bin/python -m pip install -r requirements-training-torch.txt
-backend/training/.venv-torch/bin/python backend/training/train_cnn_torch.py --device mps
-.venv/bin/python backend/training/verify_artifacts.py --require-cnn
+
+backend/training/.venv-torch/bin/python \
+  backend/training/train_cnn_torch.py \
+  --architecture efficientnet_b2 \
+  --image-size 260 \
+  --device mps \
+  --output-dir tmp/candidates/efficientnet_b2_candidate
 ```
 
-Train the Brown Leaf Spot auxiliary head from the primary CCMT repository:
+### ดาวน์โหลดข้อมูลจริง Mendeley India
 
 ```bash
-.venv/bin/python backend/training/train_brown_leaf_spot.py
+.venv/bin/python backend/training/download_mendeley_india.py \
+  --output-dir backend/training/data/mendeley_india
 ```
 
-The downloader verifies the provider's SHA-256 for every file, stores source DOI
-and CC BY 4.0 provenance, removes exact duplicates before a stratified 70/15/15
-split, selects the family and threshold only on validation, and opens test only
-after selection.
+Downloader ตรวจ Dataset ID/version, จำนวนคลาส และ SHA-256 ของไฟล์ที่ผู้เผยแพร่ระบุ
 
-`train_all.py` is the TensorFlow/Keras alternative. The pipelines run
-`verify_artifacts.py`. It preserves TFDS's official splits, quarantines exact
-duplicate label conflicts, uses all remaining train images (with class weights where
-the estimator supports them),
-selects checkpoints only from validation macro-F1, fits confidence temperature
-on validation, evaluates test after selection, exports ONNX, checks framework/ONNX
-numeric parity and records SHA-256 hashes. Restart `serve.py` after a successful
-run. The local development instance uses `USE_CNN=true`; keep
-`AI_FIELD_VALIDATED=false` until an independent Thai-field evaluation passes.
-
-See [`docs/TRAINING.md`](docs/TRAINING.md) for role ownership, data provenance,
-release gates, current measured results and primary source links.
-
-Fusion training is intentionally opt-in:
+### เพิ่มข้อมูลภายนอกเข้า Train เท่านั้น
 
 ```bash
-ENVIRONMENTAL_DATA_MODE=synthetic \
-  .venv-training/bin/python backend/training/train_all.py --include-experimental-fusion
+backend/training/.venv-torch/bin/python \
+  backend/training/train_cnn_torch.py \
+  --architecture efficientnet_b2 \
+  --image-size 260 \
+  --device mps \
+  --extra-data-dir backend/training/data/mendeley_india \
+  --output-dir tmp/candidates/efficientnet_b2_extra_real
 ```
 
-It remains `production_eligible=false` and `USE_FUSION=false` because its synthetic
-NDVI is derived from the target label and the downstream demo engines are date-
-dependent. All five fusion-family artifacts are hash/contract/smoke-test verified
-and appear in the model registry as `experimental · off`; they are architecture
-experiments, not production accuracy evidence.
+Pipeline จะตรวจ exact/perceptual overlap กับ official Train/Validation/Test ก่อนรับภาพเข้า Train
 
-With `ENVIRONMENTAL_DATA_MODE=live`, weather comes from Open-Meteo's operational
-weather-model feed, satellite indices are computed from observed Sentinel-2 L2A
-pixels found via Earth Search, and soil values come only from stored lab/sensor/
-field-kit samples. Every response includes `data_source`. Provider failures
-produce HTTP 503; the live path never falls back to generated values. Synthetic
-mode remains available for deterministic offline tests and is always labelled.
+### กฎการโปรโมตโมเดล
 
-The active EfficientNet-B0 CNN reached validation accuracy **79.10%** /
-macro-F1 **72.25%**, then measured held-out test accuracy **81.38%** /
-macro-F1 **74.74%** on 1,874 post-quarantine official-test images. Calibration
-ECE is **4.34%** and PyTorch/ONNX maximum absolute logit difference is
-`7.15e-06` with identical argmax. The previous Hist Gradient Boosting fallback
-measured test accuracy **59.65%** / macro-F1 **47.04%**. Metrics for the five
-trained classes must not be described as end-to-end accuracy for all display
-conditions. The Brown Leaf Spot auxiliary head measured validation macro-F1
-**88.95%** and held-out test macro-F1 **85.77%**, ROC-AUC **95.88%**, with
-Brown Leaf Spot precision **80.74%** and recall **73.65%**. CCMT lacks
-field/plant grouping identifiers, so same-scene leakage cannot be fully ruled out
-despite exact-duplicate removal; this is not Thai-field validation. By default
-`AI_FIELD_VALIDATED=false`, so every image result requires expert review and
-cannot create an automatic disease alert. Set it true only after an independent,
-representative Thai-field validation. CassavaGuard remains decision support,
-not a laboratory-confirmed diagnosis.
+1. เลือก architecture/checkpoint/threshold/TTA จาก Validation เท่านั้น
+2. เปิด Test หลังการเลือกเสร็จ
+3. Candidate ต้องดีกว่าโมเดลเดิม ไม่ใช่แค่ผ่าน 75%
+4. ตรวจ ONNX parity และ SHA-256 artifacts
+5. รัน tests และ Render runtime verification
+6. Thai-field validation ต้องแยกตามแปลง/ต้นก่อนเปิด `AI_FIELD_VALIDATED=true`
 
-The full artifact self-test currently exercises **17 executable artifacts**:
-one CNN, Brown Leaf Spot, White Leaf Spot, Whitefly, eight classical image-feature
-models and five disabled experimental fusion models. This count is not the same
-as class coverage: **6 of 13 conditions are trained serving outputs**, two more
-are executable review-only experimental findings, and five still lack enough
-real labelled data for a defensible model.
+## Deploy ไป Render
+
+### วิธีแนะนำ: Blueprint
+
+1. Fork หรือ push repository นี้ไป GitHub
+2. Render Dashboard → **New → Blueprint**
+3. เลือก repository
+4. Render อ่านค่าใน [`render.yaml`](render.yaml)
+5. ตั้ง Secret/Environment variables ที่ไม่มีใน Git
+6. Deploy และตรวจ `/api/health`, `/api/models`, `/api/models/compare`
+
+### ตั้ง Web Service เอง
+
+- Runtime: Python 3
+- Branch: `main`
+- Build Command: `bash deploy/render/build.sh`
+- Start Command: `bash deploy/render/start.sh`
+- Health Check Path: `/api/health`
+- Environment: `APP_ENV=production`
+- กำหนด `SECRET_KEY` เป็นค่าลับแบบสุ่ม
+
+ดูรายละเอียดใน [deploy/render/README.md](deploy/render/README.md)
+
+## API สำคัญ
+
+| Method | Endpoint | หน้าที่ |
+|---|---|---|
+| GET | `/api/health` | Health และ runtime readiness |
+| POST | `/api/predict/image` | วิเคราะห์ภาพใบมันสำปะหลัง |
+| GET | `/api/models` | Model registry และ class readiness |
+| GET | `/api/models/compare` | ข้อมูลกราฟเปรียบเทียบโมเดล |
+| GET | `/api/models/readiness` | ความพร้อมของทุกคลาส |
+| GET | `/api/weather/*` | ข้อมูลสภาพอากาศ |
+| GET | `/api/satellite/*` | Sentinel-2 indices |
+
+รายละเอียด schema อยู่ใน [docs/API.md](docs/API.md)
+
+## ข้อจำกัดที่ต้องเปิดเผย
+
+- ไม่มี independent Thai-field holdout ที่ครอบคลุมหลายจังหวัด ฤดู พันธุ์ และอุปกรณ์
+- TFDS และ CCMT ไม่มี plant/field grouping ครบ จึงตัด same-scene leakage ไม่ได้ทุกกรณี
+- White Leaf Spot มี cross-source/domain confounding และข้อจำกัด CC BY-NC 4.0
+- Whitefly ยังไม่ผ่าน Validation Precision/Recall/F1 gate 75% ครบทุกค่า และ sealed test ยังไม่เปิด
+- Synthetic data ใช้เพื่อ seed/train experiments เท่านั้น ห้ามใช้เป็นหลักฐานประสิทธิภาพหรือใช้ใน test
+- คำแนะนำเป็น decision support ไม่ใช่คำสั่งใช้สารเคมีหรือผลวินิจฉัยจากผู้เชี่ยวชาญ
+
+## สิ่งที่ไม่เก็บใน GitHub
+
+- `.env`, secrets, tokens และ credentials
+- `database/`, `uploads/` และข้อมูลผู้ใช้
+- Dataset ดิบและ training caches
+- Virtual environments และ `node_modules`
+- Candidate models ที่ไม่ผ่านการโปรโมต
+- QA screenshots, temporary renders และไฟล์ build ชั่วคราว
+
+ไฟล์โมเดล Runtime ที่ commit ต้องมีขนาดต่ำกว่าข้อจำกัด GitHub และถูกตรวจ hash จาก metrics/manifest ระหว่าง build
+
+## License และที่มาข้อมูล
+
+Repository นี้รวมโค้ด โมเดล และ metadata จากหลายแหล่งซึ่งมีเงื่อนไขต่างกัน โปรดตรวจ license/DOI ใน metrics และเอกสารก่อนนำไปใช้ต่อ โดยเฉพาะ:
+
+- Mendeley India และ CCMT: CC BY 4.0
+- Whitefly Dataset: CC BY 4.0
+- Embrapa White Leaf Spot subset: CC BY-NC 4.0 (ไม่อนุญาตเชิงพาณิชย์)
+- TFDS Cassava: ตรวจสิทธิ์ของภาพต้นทางก่อนแจกจ่ายซ้ำหรือใช้เชิงพาณิชย์
+
+ไม่มีการรับประกันความเหมาะสมสำหรับการวินิจฉัยหรือการตัดสินใจทางการเกษตรที่มีความเสี่ยงสูง
 
 ---
 
-## 🔐 Production configuration
-
-The deployment bundle lives in [`deploy/render/`](deploy/render/README.md).
-The root `render.yaml` (mirrored at `deploy/render/render.yaml`) provisions
-PostgreSQL, a persistent upload disk, pre-deploy Alembic migrations, a generated
-JWT secret, committed hash-verified runtime models, demo mode disabled, and
-`AUTH_REQUIRED=false`. The app creates one internal `app@cassavaguard.local`
-identity and opens directly without a login screen. Anyone who can reach the URL
-shares that identity and its application permissions, so restrict the Render URL
-at the network/platform layer when the stored data is sensitive.
-
-Render uses `AI_SERVING_MODE=review_only`, `AI_FIELD_VALIDATED=false` and
-`USE_CNN=true`. This lets the measured experimental heads execute without
-misrepresenting them as field-validated: every such finding remains review-required
-and cannot create an automatic disease alert. Use `approved_only` to fail closed on
-all artifacts that have not passed the production gate.
-
-For password-reset email, configure:
-
-```text
-SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM, SMTP_USE_TLS
-PUBLIC_BASE_URL
-```
-
-Useful optional settings include `CORS_ORIGINS`, `MAX_IMAGE_UPLOAD_BYTES`,
-`MAX_CSV_UPLOAD_BYTES`, `LOG_RETENTION_ROWS`, provider timeout/cache settings,
-`SATELLITE_MAX_CLOUD_PCT`, and the AI review gates. Production defaults to
-`ENVIRONMENTAL_DATA_MODE=live`.
-Production refuses to start with the built-in JWT secret or a secret shorter
-than 32 bytes, and an empty production database requires bootstrap-admin
-credentials.
-
-The in-process rate limiter matches the included single-instance deployment.
-Use a Redis-backed limiter before scaling the web service to multiple instances.
-
----
-
-## 🛠️ Tech
-
-**Backend:** FastAPI · SQLAlchemy · Alembic · Pydantic · PyJWT · Pillow · NumPy · HTTPX · Rasterio
-**Frontend:** React · esbuild · Tailwind CSS · Chart.js · Leaflet
-**DB:** SQLite (local development) · PostgreSQL (production Blueprint)
+**Current verified primary result: EfficientNet-B2 + TTA - Test Accuracy 88.20%, Macro-F1 83.63%. Target 95% is not yet achieved.**
