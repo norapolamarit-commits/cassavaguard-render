@@ -7,7 +7,8 @@
 [คู่มือทุกขั้นตอน](docs/COMPLETE_WORKFLOW_TH.md) ·
 [คู่มือผู้ใช้](docs/USER_GUIDE_TH.md) ·
 [ผลการทดลอง](docs/reports/CassavaGuard_Experiment_Report_TH.docx) ·
-[API](docs/API.md)
+[API](docs/API.md) ·
+[Security](SECURITY.md)
 
 > [!IMPORTANT]
 > CassavaGuard เป็น **เครื่องมือช่วยตัดสินใจ (decision support)** ไม่ใช่ผลวินิจฉัยยืนยัน
@@ -294,6 +295,10 @@ backend/training/.venv-torch/bin/python \
 5. กด Apply/Deploy
 6. ตรวจ `/api/health`, `/api/models` และทดลองวิเคราะห์ภาพ
 
+> [!WARNING]
+> Blueprint ปัจจุบันใช้ Web Service `starter`, PostgreSQL `basic-256mb` และ Persistent Disk
+> จึงเป็นชุดที่มีค่าใช้จ่าย ตรวจราคาและ Billing ใน Render ก่อนสร้างหรือขยายบริการ
+
 ### สร้าง Web Service เอง
 
 | Render setting | ค่า |
@@ -332,6 +337,7 @@ Schema และตัวอย่าง request อยู่ใน [API Referen
 - [คู่มือการใช้แอป PDF](docs/reports/CassavaGuard_App_Usage_Guide_TH.pdf)
 - [API Reference](docs/API.md)
 - [คู่มือฝึกโมเดลและจัดการข้อมูล](docs/TRAINING.md)
+- [นโยบาย Model artifacts](docs/ARTIFACT_POLICY.md)
 - [คู่มือ Render](deploy/render/README.md)
 
 ### รายงานและแผน
@@ -381,11 +387,16 @@ Schema และตัวอย่าง request อยู่ใน [API Referen
 - Embrapa White Leaf Spot subset: CC BY-NC 4.0 — ไม่อนุญาตการใช้เชิงพาณิชย์
 - TFDS Cassava: ต้องตรวจสิทธิ์ภาพต้นทางก่อนแจกจ่ายซ้ำหรือใช้เชิงพาณิชย์
 
+Source code ระดับ repository เผยแพร่ภายใต้
+[CassavaGuard Proprietary Source-Available Notice](LICENSE) และไม่ได้ให้สิทธิ์นำไปใช้
+แก้ไข หรือแจกจ่ายโดยอัตโนมัติ ส่วน dataset, dependencies และ model tooling ยังอยู่ภายใต้
+เงื่อนไขของเจ้าของแต่ละราย ดูรายการและข้อจำกัดใน
+[Third-party notices](THIRD_PARTY_NOTICES.md)
+
 > [!CAUTION]
-> Repository ยังไม่มี `LICENSE` ระดับโครงการ จึง **ไม่ควรตีความว่าโค้ดทั้งหมดเป็น
-> open source หรือได้รับอนุญาตให้นำไปใช้เชิงพาณิชย์** ผู้ดูแลต้องเลือก license ของโค้ด
-> และตรวจ compatibility ของ dataset/model dependencies ก่อนเผยแพร่ต่อ โดยเฉพาะ
-> Embrapa CC BY-NC และ Ultralytics AGPL/commercial licensing
+> License ระดับ repository ไม่ได้ให้สิทธิ์ใน third-party materials โดยเฉพาะ
+> Embrapa CC BY-NC และ Ultralytics AGPL/commercial licensing ต้องได้รับการตรวจ
+> ก่อนแจกจ่ายหรือใช้เชิงพาณิชย์
 
 ไม่มีการรับประกันความเหมาะสมสำหรับการวินิจฉัยหรือการตัดสินใจทางการเกษตรที่มีความเสี่ยงสูง
 

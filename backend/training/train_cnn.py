@@ -54,7 +54,7 @@ from backend.training.training_utils import atomic_write_json, sha256_file
 
 MODEL_DIR = REPO_ROOT / "backend" / "ml_models"
 KERAS_PATH = MODEL_DIR / "cnn_efficientnet_b0.keras"
-ONNX_PATH = MODEL_DIR / "cnn_efficientnet_b0.onnx"
+ONNX_PATH = MODEL_DIR / "cnn_primary.onnx"
 METRICS_PATH = MODEL_DIR / "cnn_metrics.json"
 
 

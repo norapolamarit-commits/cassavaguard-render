@@ -57,7 +57,7 @@ def _cnn_entry():
         sum(row["recall"] for row in per_class) / len(per_class)
         if per_class else None
     )
-    model_path = BASE_DIR / "backend" / "ml_models" / "cnn_efficientnet_b0.onnx"
+    model_path = BASE_DIR / "backend" / "ml_models" / "cnn_primary.onnx"
     return {
         "id": meta["model_id"],
         "name": "EfficientNet-B0 CNN",
@@ -303,7 +303,7 @@ def self_test(_user: User = Depends(get_current_user)):
     cnn_ready = get_cnn_session() is not None
     cnn_meta = get_cnn_metrics() if cnn_ready else None
     cnn = {
-        "id": cnn_meta["model_id"] if cnn_meta else "cnn_efficientnet_b0",
+        "id": cnn_meta["model_id"] if cnn_meta else "cnn_primary",
         "status": "ready" if cnn_ready else "unavailable",
         "active": bool(cnn_ready and USE_CNN),
         "classes": list(cnn_meta["classes"]) if cnn_meta else [],

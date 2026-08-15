@@ -30,5 +30,5 @@ def test_verify_runtime_remains_fail_closed(monkeypatch):
     _valid_environment(monkeypatch)
     monkeypatch.setattr(runtime_check, "get_cnn_session", lambda: None)
 
-    with pytest.raises(RuntimeError, match="cnn_efficientnet_b0"):
+    with pytest.raises(RuntimeError, match="cnn_efficientnet_b2"):
         runtime_check.verify_runtime()

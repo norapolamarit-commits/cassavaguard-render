@@ -15,7 +15,7 @@ from backend.training.training_utils import atomic_write_json
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MODEL_DIR = REPO_ROOT / "backend" / "ml_models"
-RUNTIME_MODEL = MODEL_DIR / "cnn_efficientnet_b0.onnx"
+RUNTIME_MODEL = MODEL_DIR / "cnn_primary.onnx"
 RUNTIME_METRICS = MODEL_DIR / "cnn_metrics.json"
 
 

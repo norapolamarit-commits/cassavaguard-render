@@ -1,0 +1,18 @@
+CassavaGuard Proprietary Source-Available Notice
+
+Copyright (c) 2026 CassavaGuard project contributors. All rights reserved.
+
+No permission is granted to use, copy, modify, merge, publish, distribute,
+sublicense, sell, or create derivative works from this repository except with
+prior written permission from the copyright holder.
+
+This notice does not replace or override the licences of third-party software,
+datasets, pretrained weights, model artifacts, or other materials referenced or
+included in this repository. Those components remain subject to their respective
+terms. See THIRD_PARTY_NOTICES.md.
+
+THE SOFTWARE AND ASSOCIATED MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO
+EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.

@@ -1,6 +1,6 @@
-"""Lazy-loads the trained CNN (EfficientNet-B0 on raw 224x224x3 pixels) ONNX model
+"""Lazy-loads the published raw-pixel CNN ONNX model
 produced by backend/training/train_cnn.py or train_cnn_torch.py — backend/ml_models/
-cnn_efficientnet_b0.onnx + cnn_metrics.json.
+cnn_primary.onnx + cnn_metrics.json.
 
 This is the raw-pixel CNN alternative to ml_classifier.py's hand-crafted-feature
 classifier: ml_classifier.py's sklearn model consumes a 12-dim engineered feature
@@ -22,7 +22,7 @@ classical/fusion.
 get_cnn_session() returns None (leaving the app on classical/fusion) whenever:
 - onnxruntime isn't installed (imported lazily inside _load(), wrapped in its own
   try/except ImportError, so the base app never requires this optional dependency), or
-- no cnn_efficientnet_b0.onnx / cnn_metrics.json exist yet, or
+- no cnn_primary.onnx / cnn_metrics.json exist yet, or
 - cnn_metrics.json's "classes" order doesn't EXACTLY match
   feature_extraction.ML_CLASS_ORDER — a class-order mismatch would silently mislabel
   every prediction (e.g. serve a "cbb" logit's probability under the "cmd" key), which
@@ -46,7 +46,7 @@ from backend.services.feature_extraction import ML_CLASS_ORDER
 from backend.services.model_contract import verify_artifact
 
 ML_MODELS_DIR = BASE_DIR / "backend" / "ml_models"
-ONNX_PATH = ML_MODELS_DIR / "cnn_efficientnet_b0.onnx"
+ONNX_PATH = ML_MODELS_DIR / "cnn_primary.onnx"
 METRICS_PATH = ML_MODELS_DIR / "cnn_metrics.json"
 
 _session = None

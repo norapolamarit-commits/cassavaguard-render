@@ -36,7 +36,7 @@ from backend.services.feature_extraction import ML_CLASS_ORDER
 from backend.training.training_utils import atomic_write_json, sha256_file
 
 MODEL_DIR = REPO_ROOT / "backend" / "ml_models"
-ONNX_PATH = MODEL_DIR / "cnn_efficientnet_b0.onnx"
+ONNX_PATH = MODEL_DIR / "cnn_primary.onnx"
 METRICS_PATH = MODEL_DIR / "cnn_metrics.json"
 SPLITS = ("train", "validation", "test")
 PERCEPTUAL_DHASH_SIZE = 8

@@ -273,7 +273,7 @@ def _verify_cnn() -> dict:
     if not isinstance(parity, dict) or parity.get("argmax_equal") is not True:
         raise AssertionError("cnn_metrics.json: missing successful framework/ONNX parity")
 
-    onnx_path = MODEL_DIR / "cnn_efficientnet_b0.onnx"
+    onnx_path = MODEL_DIR / "cnn_primary.onnx"
     session = onnxruntime.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
     inputs, outputs = session.get_inputs(), session.get_outputs()
     if len(inputs) != 1 or inputs[0].name != meta.get("input_name") or len(outputs) != 1:

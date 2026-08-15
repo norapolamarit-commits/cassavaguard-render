@@ -184,7 +184,7 @@ def _records(data_dir: Path) -> tuple[list[dict], dict]:
 def _extract(rows: list[dict], batch_size: int = 32) -> tuple[np.ndarray, np.ndarray]:
     session = get_cnn_session()
     if session is None:
-        raise RuntimeError("Verified cnn_efficientnet_b0 ONNX artifact is required")
+        raise RuntimeError("Verified cnn_primary ONNX artifact is required")
     matrix, targets = [], []
     for offset in range(0, len(rows), batch_size):
         batch_rows = rows[offset:offset + batch_size]
