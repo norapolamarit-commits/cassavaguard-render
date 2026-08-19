@@ -1,0 +1,84 @@
+# Canonical label mapping for CassavaGuard.
+#
+# Primary 5-way classifier taxonomy (production, review-required output):
+#   healthy, cbb, cbsd, cmd, cgm
+#
+# Sources are heterogeneous and must NOT be blindly string-matched into the
+# primary taxonomy. In particular, CCMT's "green_mite" is the pest
+# Mononychellus tanajoa (Cassava Green Mite) — a DIFFERENT condition from CGM
+# (Cassava Green Mottle virus). These must never be merged. Any dataset whose
+# label cannot be mapped with certainty stays out of the primary taxonomy and
+# is used only for its own auxiliary head, or quarantined.
+
+primary_taxonomy:
+  healthy:
+    aliases: [healthy, Healthy, healthy_leaf]
+    sources: [tfds_cassava]
+  cbb:
+    aliases: [cbb, CBB, cassava_bacterial_blight, "Cassava Bacterial Blight"]
+    sources: [tfds_cassava]
+  cbsd:
+    aliases: [cbsd, CBSD, cassava_brown_streak_disease, "Cassava Brown Streak Disease"]
+    sources: [tfds_cassava]
+  cmd:
+    aliases: [cmd, CMD, cassava_mosaic_disease, cassava_mosaic, mosaic_disease, "Cassava Mosaic Disease"]
+    sources: [tfds_cassava]
+  cgm:
+    aliases: [cgm, CGM, cassava_green_mottle, "Cassava Green Mottle"]
+    sources: [tfds_cassava]
+
+# Auxiliary heads: trained and served separately from the primary 5-way
+# classifier. Never fused into the primary taxonomy's probability vector.
+auxiliary_taxonomy:
+  brown_leaf_spot:
+    aliases: [brown_leaf_spot, "Brown Leaf Spot"]
+    sources: [ccmt_cassava]
+    status: trained_auxiliary
+  white_leaf_spot:
+    aliases: [white_leaf_spot, "White Leaf Spot"]
+    sources: [embrapa_pddb_white_leaf_spot]
+    status: experimental
+  whitefly:
+    aliases: [whitefly, Whitefly]
+    sources: [mendeley_cassava_whitefly_v3]
+    status: validation_only_detector
+
+# Labels seen in source datasets that are explicitly NOT mapped into the
+# primary taxonomy because they describe a different condition, or because
+# there isn't enough validated data to trust the mapping. These stay
+# quarantined rather than guessed.
+excluded_or_unmapped:
+  green_mite:
+    reason: >
+      CCMT pest label (Mononychellus tanajoa, Cassava Green Mite) — visually
+      and biologically distinct from CGM (Cassava Green Mottle virus). Never
+      alias this to "cgm".
+    sources: [ccmt_cassava]
+  bacterial_blight:
+    reason: >
+      Present in CCMT with a different label vocabulary/imaging protocol than
+      TFDS's "cbb". Not merged into the primary cbb training set pending a
+      dedicated cross-source validation experiment.
+    sources: [ccmt_cassava]
+  mosaic:
+    reason: >
+      Present in CCMT; same rationale as bacterial_blight — different source
+      domain, not merged into TFDS-based "cmd" without a validated experiment.
+    sources: [ccmt_cassava]
+  mealybug:
+    reason: "Only 3 real images, no bounding boxes. Insufficient for any use beyond a seed reference."
+    sources: [ciat_commons_mealybug]
+  cad:
+    reason: "Only 1 real image on record. Not exposed to users."
+    sources: []
+  sed:
+    reason: "Synthetic seed data only, no real images. Not exposed to users."
+    sources: []
+  water_stress:
+    reason: "No paired image/soil/weather ground truth available. Not exposed to users."
+    sources: []
+  nutrient_deficiency:
+    reason: "Insufficient paired real-world ground truth. Not exposed to users."
+    sources: []
+
+unknown_label_policy: quarantine
