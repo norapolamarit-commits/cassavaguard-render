@@ -48,6 +48,13 @@ backend/ml_models/cnn_efficientnet_b0.keras
 runs/
 work/cache_quarantine/
 
+# Thai field photos: large binaries, farm-location-adjacent, and not yet license/consent
+# reviewed for redistribution. Track metadata.csv/labels.csv (small, no raw images) but
+# never commit the images themselves — mirrors how TFDS/CCMT/Mendeley raw data is kept
+# out of the repo (see THIRD_PARTY_NOTICES.md and docs/THAI_FIELD_COLLECTION_TH.md).
+data/thai_field/images/*
+!data/thai_field/images/.gitkeep
+
 # Local reports/build products. Curated final reports belong in docs/reports/.
 /output/
 /reports/
