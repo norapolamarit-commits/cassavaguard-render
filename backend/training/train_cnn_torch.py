@@ -79,6 +79,174 @@ class DirectSquareResize:
         )
 
 
+class GrayWorldWhiteBalance:
+    """Deterministic gray-world color-constancy correction on real pixels.
+
+    Rescales each channel so the three channel means become equal, reducing
+    the effect of a colored light source (e.g. a phone's warm/cool white
+    balance) before the classifier ever sees the image. No pixels are
+    invented; this only rescales existing real values, and clips the
+    correction so near-uniform images (little color signal either way)
+    aren't pushed to an extreme.
+    """
+
+    def __call__(self, image):
+        array = np.asarray(image).astype(np.float32)
+        channel_means = array.reshape(-1, 3).mean(axis=0)
+        gray = float(channel_means.mean())
+        scale = gray / np.clip(channel_means, 1.0, None)
+        scale = np.clip(scale, 0.5, 2.0)
+        corrected = np.clip(array * scale, 0, 255).astype(np.uint8)
+        return Image.fromarray(corrected)
+
+
+class LeafBackgroundCrop:
+    """Crop tightly to the vegetation-colored region of a real photo.
+
+    Classical HSV thresholding (green-to-brown hue band), not a trained
+    segmentation model -- there is no real, licensed cassava leaf-mask
+    dataset in this repo to train one on, and this project does not
+    fabricate labels/masks. Falls back to the untouched image when the
+    heuristic finds too little vegetation-colored area to trust (e.g. a
+    close-up already dominated by leaf, or an unusual background it can't
+    characterize), rather than risk cropping out the diagnostic region.
+    """
+
+    def __init__(self, margin: float = 0.08, min_area_fraction: float = 0.02):
+        self.margin = margin
+        self.min_area_fraction = min_area_fraction
+
+    def __call__(self, image):
+        hsv = np.asarray(image.convert("HSV"))
+        hue_degrees = hsv[..., 0].astype(np.float32) * (360.0 / 255.0)
+        saturation, value = hsv[..., 1], hsv[..., 2]
+        vegetation_mask = (
+            (hue_degrees >= 30) & (hue_degrees <= 170) & (saturation > 25) & (value > 20)
+        )
+        if vegetation_mask.sum() < self.min_area_fraction * vegetation_mask.size:
+            return image
+        rows, cols = np.where(vegetation_mask)
+        y0, y1 = int(rows.min()), int(rows.max())
+        x0, x1 = int(cols.min()), int(cols.max())
+        height, width = vegetation_mask.shape
+        margin_y = int((y1 - y0) * self.margin)
+        margin_x = int((x1 - x0) * self.margin)
+        y0 = max(0, y0 - margin_y)
+        y1 = min(height, y1 + margin_y + 1)
+        x0 = max(0, x0 - margin_x)
+        x1 = min(width, x1 + margin_x + 1)
+        return image.crop((x0, y0, x1, y1))
+
+
+class TiledRandomCrop:
+    """Force exposure to local detail instead of one global downsample.
+
+    Upscales to a size*grid canvas and picks one grid tile at random.
+    Different mechanism from RandomResizedCrop's continuous scale/ratio
+    jitter: it guarantees the model sometimes trains on a spatially
+    disjoint quarter of the leaf at full local resolution, rather than
+    always seeing a (possibly slightly cropped) view of the whole leaf.
+    Train-only, like every other stochastic transform in this file --
+    evaluation keeps using the deterministic DirectSquareResize baseline
+    so validation/test stay comparable across pipelines.
+    """
+
+    def __init__(self, size: int, grid: int = 2):
+        self.size = size
+        self.grid = grid
+
+    def __call__(self, image):
+        canvas = image.resize(
+            (self.size * self.grid, self.size * self.grid), Image.Resampling.BILINEAR,
+        )
+        tile_x = random.randrange(self.grid)
+        tile_y = random.randrange(self.grid)
+        box = (
+            tile_x * self.size, tile_y * self.size,
+            (tile_x + 1) * self.size, (tile_y + 1) * self.size,
+        )
+        return canvas.crop(box)
+
+
+class SaliencyGuidedCrop:
+    """Crop toward the sub-region with the most local color anomaly.
+
+    A cheap, deterministic, classical-CV proxy for attribution-guided
+    cropping. True occlusion-sensitivity attribution (as used for the
+    production result explanation, see backend/services/cnn_classifier.py)
+    needs gradient/many-forward-pass access to a specific trained model,
+    which is circular for a from-scratch candidate and prohibitively slow
+    to run over the full ~9,000-image train/validation/test set (tens of
+    forward passes per image). Lesions create local color contrast against
+    otherwise uniform healthy leaf tissue, so this instead finds the
+    window with the highest summed distance-from-mean-color, using an
+    integral image for an O(1) window-sum lookup per candidate position.
+    """
+
+    def __init__(self, size: int, window_fraction: float = 0.6, probe_resolution: int = 96, step: int = 4):
+        self.size = size
+        self.window_fraction = window_fraction
+        self.probe_resolution = probe_resolution
+        self.step = step
+
+    def __call__(self, image):
+        probe = image.resize(
+            (self.probe_resolution, self.probe_resolution), Image.Resampling.BILINEAR,
+        )
+        array = np.asarray(probe).astype(np.float32)
+        mean_color = array.reshape(-1, 3).mean(axis=0)
+        anomaly = np.linalg.norm(array - mean_color, axis=-1)
+        window = max(8, int(self.probe_resolution * self.window_fraction))
+        cumulative = np.pad(np.cumsum(np.cumsum(anomaly, axis=0), axis=1), ((1, 0), (1, 0)))
+
+        best_score = -1.0
+        best_position = (0, 0)
+        limit = self.probe_resolution - window + 1
+        for row in range(0, max(limit, 1), self.step):
+            for col in range(0, max(limit, 1), self.step):
+                score = (
+                    cumulative[row + window, col + window]
+                    - cumulative[row, col + window]
+                    - cumulative[row + window, col]
+                    + cumulative[row, col]
+                )
+                if score > best_score:
+                    best_score = score
+                    best_position = (row, col)
+
+        row, col = best_position
+        scale_y = image.height / self.probe_resolution
+        scale_x = image.width / self.probe_resolution
+        y0, x0 = int(row * scale_y), int(col * scale_x)
+        y1, x1 = int((row + window) * scale_y), int((col + window) * scale_x)
+        return image.crop((x0, y0, x1, y1))
+
+
+PIPELINE_CHOICES = ("none", "color_constancy", "leaf_crop", "tiled_crop", "saliency_crop")
+
+
+def _build_pipeline_transform(name: str, image_size: int):
+    """Return (deterministic_pre_transform_or_None, train_only_transform_or_None).
+
+    The deterministic transform (if any) is applied identically to both
+    train and eval so the model is trained and evaluated on the same kind
+    of input. The train-only transform (tiled_crop) replaces the eval
+    step's job entirely for train, since it already produces a
+    size x size crop -- eval keeps using plain DirectSquareResize.
+    """
+    if name == "none":
+        return None, None
+    if name == "color_constancy":
+        return GrayWorldWhiteBalance(), None
+    if name == "leaf_crop":
+        return LeafBackgroundCrop(), None
+    if name == "saliency_crop":
+        return SaliencyGuidedCrop(image_size), None
+    if name == "tiled_crop":
+        return None, TiledRandomCrop(image_size)
+    raise ValueError(f"unknown pipeline {name!r}")
+
+
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=None)
@@ -98,6 +266,11 @@ def parse_args(argv=None):
     parser.add_argument("--device", choices=("auto", "mps", "cpu"), default="auto")
     parser.add_argument("--class-weight-power", type=float, default=1.0,
                         help="inverse-frequency exponent; 0 disables weights, 0.5 uses sqrt balancing")
+    parser.add_argument(
+        "--pipeline", choices=PIPELINE_CHOICES, default="none",
+        help="preprocessing pipeline ablation: color_constancy, leaf_crop, tiled_crop, "
+             "or saliency_crop instead of the baseline resize-only preprocessing",
+    )
     parser.add_argument(
         "--oversample-minority-classes", action="store_true",
         help="sample train images with replacement, weighted by inverse class frequency, "
@@ -601,26 +774,48 @@ def main(argv=None):
         transforms.ConvertImageDtype(torch.float32),
         ScaleTo255(),
     ])
-    train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(
-            args.image_size,
-            scale=(0.72, 1.0),
-            ratio=(0.85, 1.15),
-            interpolation=transforms.InterpolationMode.BILINEAR,
-            antialias=True,
-        ),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(p=0.25),
-        transforms.RandomRotation(
-            12,
-            interpolation=transforms.InterpolationMode.BILINEAR,
-            fill=0,
-        ),
-        transforms.ColorJitter(brightness=0.18, contrast=0.18, saturation=0.18, hue=0.04),
-        to_255,
-    ])
+    deterministic_pipeline, train_only_pipeline = _build_pipeline_transform(args.pipeline, args.image_size)
+    pre_steps = [deterministic_pipeline] if deterministic_pipeline is not None else []
 
-    eval_transform = transforms.Compose([DirectSquareResize(args.image_size), to_255])
+    if train_only_pipeline is not None:
+        # tiled_crop already yields a size x size crop; skip RandomResizedCrop
+        # so the two spatial-sampling strategies aren't stacked on top of
+        # each other in an untested, uncontrolled way.
+        train_transform = transforms.Compose([
+            *pre_steps,
+            train_only_pipeline,
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(p=0.25),
+            transforms.RandomRotation(
+                12,
+                interpolation=transforms.InterpolationMode.BILINEAR,
+                fill=0,
+            ),
+            transforms.ColorJitter(brightness=0.18, contrast=0.18, saturation=0.18, hue=0.04),
+            to_255,
+        ])
+    else:
+        train_transform = transforms.Compose([
+            *pre_steps,
+            transforms.RandomResizedCrop(
+                args.image_size,
+                scale=(0.72, 1.0),
+                ratio=(0.85, 1.15),
+                interpolation=transforms.InterpolationMode.BILINEAR,
+                antialias=True,
+            ),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(p=0.25),
+            transforms.RandomRotation(
+                12,
+                interpolation=transforms.InterpolationMode.BILINEAR,
+                fill=0,
+            ),
+            transforms.ColorJitter(brightness=0.18, contrast=0.18, saturation=0.18, hue=0.04),
+            to_255,
+        ])
+
+    eval_transform = transforms.Compose([*pre_steps, DirectSquareResize(args.image_size), to_255])
     generator = torch.Generator().manual_seed(args.seed)
     loader_args = {
         "batch_size": args.batch_size,
@@ -953,6 +1148,7 @@ def main(argv=None):
                 },
                 "class_weight_power": args.class_weight_power,
                 "oversample_minority_classes": args.oversample_minority_classes,
+                "pipeline": args.pipeline,
                 "label_smoothing": args.label_smoothing,
                 "imagenet_initialization": True,
                 "history": history,
