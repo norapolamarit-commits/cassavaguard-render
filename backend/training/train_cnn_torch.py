@@ -98,6 +98,12 @@ def parse_args(argv=None):
     parser.add_argument("--device", choices=("auto", "mps", "cpu"), default="auto")
     parser.add_argument("--class-weight-power", type=float, default=1.0,
                         help="inverse-frequency exponent; 0 disables weights, 0.5 uses sqrt balancing")
+    parser.add_argument(
+        "--oversample-minority-classes", action="store_true",
+        help="sample train images with replacement, weighted by inverse class frequency, "
+             "instead of a plain shuffle -- a different mechanism from --class-weight-power "
+             "(that reweights the loss; this reweights how often each image is seen)",
+    )
     parser.add_argument("--label-smoothing", type=float, default=0.08)
     parser.add_argument("--output-dir", type=Path, default=MODEL_DIR,
                         help="write candidate artifacts outside backend/ml_models until promoted")
@@ -622,16 +628,6 @@ def main(argv=None):
         "persistent_workers": args.workers > 0,
         "generator": generator,
     }
-    train_loader = DataLoader(
-        CassavaDataset(records["train"], train_transform),
-        shuffle=True,
-        **loader_args,
-    )
-    validation_loader = DataLoader(
-        CassavaDataset(records["validation"], eval_transform),
-        shuffle=False,
-        **loader_args,
-    )
 
     counts = Counter(label for _, label in records["train"])
     raw_weights = np.asarray([
@@ -644,6 +640,36 @@ def main(argv=None):
         powered_weights,
         dtype=torch.float32,
         device=device,
+    )
+
+    if args.oversample_minority_classes:
+        # Distinct mechanism from --class-weight-power: that reweights the loss
+        # gradient but every epoch still sees each real image exactly once.
+        # Sampling with replacement, weighted by inverse class frequency, means
+        # minority-class images (e.g. cbb) are physically seen more often per
+        # epoch, at the cost of majority-class images being seen less often.
+        sample_weights = [raw_weights[label] for _, label in records["train"]]
+        sampler = torch.utils.data.WeightedRandomSampler(
+            weights=sample_weights,
+            num_samples=len(records["train"]),
+            replacement=True,
+            generator=torch.Generator().manual_seed(args.seed),
+        )
+        train_loader = DataLoader(
+            CassavaDataset(records["train"], train_transform),
+            sampler=sampler,
+            **loader_args,
+        )
+    else:
+        train_loader = DataLoader(
+            CassavaDataset(records["train"], train_transform),
+            shuffle=True,
+            **loader_args,
+        )
+    validation_loader = DataLoader(
+        CassavaDataset(records["validation"], eval_transform),
+        shuffle=False,
+        **loader_args,
     )
     print(
         "Training counts: "
@@ -926,6 +952,7 @@ def main(argv=None):
                     for index in range(len(ML_CLASS_ORDER))
                 },
                 "class_weight_power": args.class_weight_power,
+                "oversample_minority_classes": args.oversample_minority_classes,
                 "label_smoothing": args.label_smoothing,
                 "imagenet_initialization": True,
                 "history": history,
