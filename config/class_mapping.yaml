@@ -57,8 +57,13 @@ excluded_or_unmapped:
   bacterial_blight:
     reason: >
       Present in CCMT with a different label vocabulary/imaging protocol than
-      TFDS's "cbb". Not merged into the primary cbb training set pending a
-      dedicated cross-source validation experiment.
+      TFDS's "cbb". Not merged into the primary cbb training set by default —
+      a controlled train-only ablation now exists at
+      backend/training/prepare_ccmt_cbb_supplement.py (targeting CBB's weak
+      67.53% recall) but this mapping stays excluded here until that
+      experiment is evaluated against the untouched TFDS test split and
+      shown to help, per the same acceptance rule that rejected the
+      Mendeley India candidate.
     sources: [ccmt_cassava]
   mosaic:
     reason: >
