@@ -85,7 +85,11 @@ def parse_args(argv=None):
     parser.add_argument("--epochs-head", type=int, default=5)
     parser.add_argument("--epochs-fine", type=int, default=14)
     parser.add_argument("--fine-tune-blocks", type=int, default=4)
-    parser.add_argument("--architecture", choices=("efficientnet_b0", "efficientnet_b2", "efficientnet_b3"), default="efficientnet_b0")
+    parser.add_argument(
+        "--architecture",
+        choices=("efficientnet_b0", "efficientnet_b2", "efficientnet_b3", "mobilenet_v3_large"),
+        default="efficientnet_b0",
+    )
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--patience", type=int, default=4)
@@ -555,7 +559,9 @@ def main(argv=None):
     from torchvision import transforms
     from torchvision.models import (
         EfficientNet_B0_Weights, EfficientNet_B2_Weights, EfficientNet_B3_Weights,
+        MobileNet_V3_Large_Weights,
         efficientnet_b0, efficientnet_b2, efficientnet_b3,
+        mobilenet_v3_large,
     )
 
     random.seed(args.seed)
@@ -649,12 +655,19 @@ def main(argv=None):
         "efficientnet_b0": (efficientnet_b0, EfficientNet_B0_Weights.IMAGENET1K_V1),
         "efficientnet_b2": (efficientnet_b2, EfficientNet_B2_Weights.IMAGENET1K_V1),
         "efficientnet_b3": (efficientnet_b3, EfficientNet_B3_Weights.IMAGENET1K_V1),
+        "mobilenet_v3_large": (mobilenet_v3_large, MobileNet_V3_Large_Weights.IMAGENET1K_V2),
     }
     builder, pretrained_weights = builders[args.architecture]
     network = builder(weights=pretrained_weights)
-    in_features = network.classifier[1].in_features
-    network.classifier[0] = nn.Dropout(p=0.35)
-    network.classifier[1] = nn.Linear(in_features, len(ML_CLASS_ORDER))
+    # Architecture-agnostic head replacement: EfficientNet's classifier is
+    # Sequential(Dropout, Linear); MobileNetV3's is Sequential(Linear,
+    # Hardswish, Dropout, Linear). Only the final Linear and the Dropout's
+    # rate are architecture-specific knowledge worth keeping in sync.
+    in_features = network.classifier[-1].in_features
+    network.classifier[-1] = nn.Linear(in_features, len(ML_CLASS_ORDER))
+    for module in network.classifier:
+        if isinstance(module, nn.Dropout):
+            module.p = 0.35
 
     class ServingModel(nn.Module):
         def __init__(self, classifier):
