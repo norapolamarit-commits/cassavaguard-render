@@ -65,6 +65,29 @@
           ))}
         </section>
 
+        <section>
+          <Card className="animate-fadeup">
+            <h3 className="txt font-bold text-lg">{th ? 'เกี่ยวกับ CassavaGuard' : 'About CassavaGuard'}</h3>
+            <div className="txt-soft text-sm leading-relaxed mt-3 space-y-3">
+              {th ? (
+                <>
+                  <p>CassavaGuard เป็นแอปพลิเคชันบนโทรศัพท์มือถือที่ใช้ปัญญาประดิษฐ์ (AI) เพื่อช่วยเกษตรกรผู้ปลูกมันสำปะหลังในการติดตามสุขภาพของพืชและคัดกรองโรคเบื้องต้น โครงการนี้พัฒนาขึ้นเพื่อแก้ไขปัญหาการผลิตมันสำปะหลัง เช่น การระบาดของโรค และการพึ่งพาการสังเกตด้วยสายตาของเกษตรกรเพียงอย่างเดียว ซึ่งอาจทำให้การจัดการพืชล่าช้าหรือไม่แม่นยำ</p>
+                  <p>แอปพลิเคชันวิเคราะห์ภาพใบมันสำปะหลังร่วมกับข้อมูลสภาพอากาศ ตัวชี้วัดคุณภาพดิน และข้อมูลจากดาวเทียม โดยใช้ระบบ AI ที่ผสาน CNN, Multimodal Data Fusion, Classical Machine Learning และ Heuristic Rules เพื่อระบุสภาพของพืชในกลุ่มโรคหลัก ได้แก่ Healthy, CBB, CBSD, CMD และ CGM พร้อมแสดงระดับความมั่นใจ Heatmap ที่ชี้ตำแหน่งซึ่ง AI ให้ความสำคัญในการวิเคราะห์ และคำแนะนำในการจัดการที่รวมหลักฐานจากภาพ ดิน อากาศ และดาวเทียมเข้าด้วยกัน</p>
+                  <p>แอปพลิเคชันนี้ช่วยให้เกษตรกรได้รับข้อมูลที่รวดเร็ว สะดวก และใช้อ้างอิงประกอบการตัดสินใจ เพื่อสนับสนุนการเกษตรแม่นยำ ลดความสูญเสียจากการตรวจพบโรคล่าช้า และวางแผนจัดการแปลงได้ทันท่วงทีมากขึ้น การประเมินภาวะขาดธาตุอาหารและการคาดการณ์ผลผลิตเป็นทิศทางการพัฒนาต่อไปของโครงการ ซึ่งจะเปิดใช้งานเมื่อมีข้อมูลจริงเพียงพอสำหรับฝึกโมเดลอย่างน่าเชื่อถือ</p>
+                  <p>ปัจจุบันระบบอยู่ในขั้นผู้ช่วยคัดกรองเบื้องต้น และยังต้องผ่านการทดสอบภาคสนามอย่างเป็นทางการก่อนนำไปใช้ในการตัดสินใจทางการเกษตรโดยอัตโนมัติ ผลวิเคราะห์จากระบบจึงเป็นข้อมูลประกอบการตัดสินใจ ไม่ใช่ผลวินิจฉัยยืนยันที่ใช้แทนผู้เชี่ยวชาญได้</p>
+                </>
+              ) : (
+                <>
+                  <p>CassavaGuard is a mobile application that uses artificial intelligence (AI) to help cassava farmers monitor plant health and screen for disease early. The project was built to address problems in cassava production such as disease outbreaks and reliance on visual inspection alone, which can delay or reduce the accuracy of crop management decisions.</p>
+                  <p>The application analyzes cassava leaf photos together with weather data, soil quality indicators and satellite data, using an AI system that combines a CNN, multimodal data fusion, classical machine learning and heuristic rules to identify the primary disease classes — Healthy, CBB, CBSD, CMD and CGM — along with a confidence score, a heatmap showing where the AI focused its analysis, and management recommendations that combine evidence from the image, soil, weather and satellite data.</p>
+                  <p>The application gives farmers fast, convenient information to support decision-making, enabling precision agriculture, reducing losses from delayed disease detection, and allowing more timely field management. Nutrient-deficiency assessment and yield forecasting are future directions for the project, to be enabled once enough real data exists to train those models reliably.</p>
+                  <p>The system is currently at the stage of an early screening assistant and still requires formal field validation before its output can be used to automate agricultural decisions. Results from the system are decision-support information, not a confirmed diagnosis that replaces an expert.</p>
+                </>
+              )}
+            </div>
+          </Card>
+        </section>
+
         <section className="grid lg:grid-cols-[1.2fr_.8fr] gap-4">
           <Card className="animate-fadeup">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
