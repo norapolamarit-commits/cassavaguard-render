@@ -386,6 +386,43 @@ def _symptoms(f: dict) -> list:
     return out[:5]
 
 
+# Which SYMPTOM_RULES feature keys are most relevant to each disease class, for
+# severity estimation. Unvalidated heuristic: no dataset used by this project
+# (TFDS Cassava, CCMT, Mendeley India) carries a severity ground-truth label, so
+# this maps disease -> real pixel-fraction signal, never disease -> classifier
+# confidence (see master spec section 24 and docs/superpowers/specs/
+# 2026-08-26-disease-severity-design.md).
+#
+# Known limitation: CGM (green mottle) and CMD (mosaic) both key off "mottle"
+# because the classical-CV features here don't separate them -- the severity
+# *level* for a CGM prediction reuses the same signal as CMD, not an
+# independently validated CGM measurement.
+SEVERITY_FEATURE_KEYS = {
+    "cbb": ["bright_spot_frac", "necrosis_frac"],
+    "cbsd": ["brown_frac", "streak"],
+    "cmd": ["mottle", "yellow_frac"],
+    "cgm": ["mottle"],
+}
+_SYMPTOM_THRESHOLDS = {key: thr for key, thr, _en, _th in SYMPTOM_RULES}
+
+
+def _severity(top_key: str, f: dict) -> dict | None:
+    keys = SEVERITY_FEATURE_KEYS.get(top_key)
+    if not keys:
+        return None  # healthy, or a class with no mapped pixel signal
+    scores = [min(1.0, f[key] / (_SYMPTOM_THRESHOLDS[key] * 2.5)) for key in keys]
+    score = max(scores)
+    level = "severe" if score >= 0.67 else "moderate" if score >= 0.34 else "mild"
+    return {
+        "level": level,
+        "score": round(score, 2),
+        "based_on": keys,
+        "heuristic": True,
+        "note_en": "Estimated from image color/texture signal, not a validated measurement.",
+        "note_th": "ประเมินจากลักษณะสี/พื้นผิวในภาพ ไม่ใช่การวัดที่ผ่านการตรวจสอบยืนยัน",
+    }
+
+
 _FEATURE_LABELS = {
     "green_frac": "Green canopy fraction", "yellow_frac": "Leaf yellowing (chlorosis)",
     "brown_frac": "Brown tissue fraction", "necrosis_frac": "Necrotic (dead) tissue",
@@ -850,6 +887,7 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
     top_key, top_conf = ranked[0]
     margin = top_conf - ranked[1][1] if len(ranked) > 1 else top_conf
     symptoms = _symptoms(feats)
+    severity = _severity(top_key, feats)
 
     fusion_used = ml_source == "fusion"
     cnn_used = ml_source == "cnn"
@@ -930,6 +968,7 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
         "fusion_used": fusion_used,  # transparency: image-only vs image+satellite+soil
         "cnn_used": cnn_used,  # transparency: raw-pixel CNN vs classical/fusion feature-vector model
         "symptoms": symptoms,
+        "severity": severity,
         "feature_importance": importance,
         "raw_features": clean_feats,
         "explanation_en": en,

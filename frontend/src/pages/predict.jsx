@@ -295,10 +295,20 @@
             )}
           </div>
 
+          {r.severity && (
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <Badge tone={r.severity.level === 'severe' ? 'high' : r.severity.level === 'moderate' ? 'medium' : 'low'}>
+                {lang === 'th'
+                  ? { mild: 'อาการเล็กน้อย', moderate: 'อาการปานกลาง', severe: 'อาการรุนแรง' }[r.severity.level]
+                  : { mild: 'Mild', moderate: 'Moderate', severe: 'Severe' }[r.severity.level]}
+              </Badge>
+              <span className="txt-dim text-[11px]">{lang === 'th' ? r.severity.note_th : r.severity.note_en}</span>
+            </div>
+          )}
+
           <div className="flex items-center gap-4">
             <ProgressRing value={top.confidence * 100} size={84} label={t('confidence')} />
             <div className="flex-1 min-w-0">
-              {/* Severity: no r.severity field exists yet -- no fake value rendered */}
               {/* Health score: no r.health_score field exists yet -- no fake value rendered */}
               {r.requires_review ? (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-200 text-xs leading-relaxed">
