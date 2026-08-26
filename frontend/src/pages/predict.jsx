@@ -15,7 +15,9 @@
     const [fieldId, setFieldId] = useState('');
     const [drag, setDrag] = useState(false);
     const [camOpen, setCamOpen] = useState(false);
+    const [advancedOpen, setAdvancedOpen] = useState(false);
     const inputRef = useRef(null);
+    const uploaderRef = useRef(null);
 
     useEffect(() => { window.CG.API_CLIENT.fields().then(setFields).catch(() => {}); }, []);
 
@@ -24,6 +26,16 @@
       setFile(f); setResult(null);
       if (f.type.startsWith('image/')) { const url = URL.createObjectURL(f); setPreview(url); }
       else setPreview(null);
+    };
+
+    const retake = () => {
+      setFile(null); setPreview(null); setResult(null);
+      uploaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    const openAdvancedForField = () => {
+      setAdvancedOpen(true);
+      uploaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const run = async () => {
@@ -49,8 +61,8 @@
         <div className="grid lg:grid-cols-5 gap-4">
           {/* uploader */}
           <Card className="lg:col-span-2 animate-fadeup">
+            <div ref={uploaderRef}>
             <SectionTitle icon="brain" title={t('predict_title')} sub={t('predict_sub')} />
-            <div className="mb-3"><Segmented options={SRC} value={source} onChange={(v) => { setSource(v); setResult(null); }} /></div>
 
             <div
               onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
@@ -88,12 +100,27 @@
             )}
 
             <div className="mt-3">
-              <label className="txt-dim text-xs">{t('select_field')}</label>
-              <select value={fieldId} onChange={(e) => setFieldId(e.target.value)}
-                      className="w-full mt-1 glass rounded-xl px-3 py-2 txt text-sm bg-transparent focus:outline-none focus:ring-2 ring-brand-500/40">
-                <option value="" className="bg-ink-800">— {t('all_fields')} —</option>
-                {fields.map((f) => <option key={f.id} value={f.id} className="bg-ink-800">{lang === 'th' ? f.name_th || f.name : f.name}</option>)}
-              </select>
+              <button type="button" onClick={() => setAdvancedOpen((v) => !v)}
+                className="w-full flex items-center justify-between gap-2 txt-soft hover:txt text-xs font-semibold py-1.5 transition">
+                <span className="flex items-center gap-1.5"><Icon name="cpu" className="w-3.5 h-3.5" />{lang === 'th' ? 'ตัวเลือกขั้นสูง' : 'Advanced options'}</span>
+                <Icon name={advancedOpen ? 'close' : 'grid'} className="w-3.5 h-3.5" />
+              </button>
+              {advancedOpen && (
+                <div className="mt-2 space-y-3 animate-fadeup">
+                  <div>
+                    <label className="txt-dim text-xs">{lang === 'th' ? 'ชนิดภาพ' : 'Image type'}</label>
+                    <div className="mt-1"><Segmented options={SRC} value={source} onChange={(v) => { setSource(v); setResult(null); }} /></div>
+                  </div>
+                  <div>
+                    <label className="txt-dim text-xs">{t('select_field')}</label>
+                    <select value={fieldId} onChange={(e) => setFieldId(e.target.value)}
+                            className="w-full mt-1 glass rounded-xl px-3 py-2 txt text-sm bg-transparent focus:outline-none focus:ring-2 ring-brand-500/40">
+                      <option value="" className="bg-ink-800">— {t('all_fields')} —</option>
+                      {fields.map((f) => <option key={f.id} value={f.id} className="bg-ink-800">{lang === 'th' ? f.name_th || f.name : f.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button onClick={run} disabled={busy || !file}
@@ -114,13 +141,16 @@
                 {lang === 'th' ? 'ตรวจ Whitefly: ถ่ายใต้ใบระยะใกล้ ให้เห็นตัวแมลง และใช้ภาพความละเอียดเต็ม' : 'Whitefly check: photograph the underside closely, keep insects visible, and use full resolution.'}
               </div>}
             </div>}
+            </div>
           </Card>
 
           {/* results */}
           <div className="lg:col-span-3 space-y-4">
             {busy && <AnalyzingSkeleton />}
             {!busy && !result && <Card className="min-h-[300px] grid place-items-center animate-fadeup"><Empty icon="brain" text={lang === 'th' ? 'อัปโหลดไฟล์เพื่อเริ่มการวิเคราะห์' : 'Upload a file to begin analysis'} /></Card>}
-            {!busy && result && (result.source === 'csv' ? <CsvResult r={result} /> : <ImageResult r={result} preview={preview} />)}
+            {!busy && result && (result.source === 'csv'
+              ? <CsvResult r={result} onRetake={retake} />
+              : <ImageResult r={result} preview={preview} fieldId={fieldId} onRetake={retake} onOpenAdvanced={openAdvancedForField} />)}
           </div>
         </div>
 
@@ -232,27 +262,104 @@
     );
   }
 
-  function ImageResult({ r, preview }) {
+  function ImageResult({ r, preview, fieldId, onRetake, onOpenAdvanced }) {
     const { t, lang } = window.CG.Store.useStore();
     const top = r.top3[0];
     const [visualMode, setVisualMode] = useState('heat');
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    const [fieldRecs, setFieldRecs] = useState(null);
     const whiteflyFinding = r.auxiliary_findings?.find((item) => item.key === 'whitefly');
-    const probItems = r.top3.map((x) => ({ key: x.key, label: lang === 'th' ? x.th : x.en, value: x.confidence }));
+
+    useEffect(() => {
+      if (!fieldId) { setFieldRecs(null); return; }
+      let cancelled = false;
+      setFieldRecs(undefined);
+      window.CG.API_CLIENT.field(fieldId)
+        .then((d) => { if (!cancelled) setFieldRecs(d.recommendations || []); })
+        .catch(() => { if (!cancelled) setFieldRecs([]); });
+      return () => { cancelled = true; };
+    }, [fieldId, r]);
+
     return (
       <>
-        {/* verdict + attribution map */}
+        {/* Primary card: the 5 things a user needs without scrolling */}
+        <Card className="animate-fadeup">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <Badge tone={top.key} dot>{lang === 'th' ? top.th : top.en}</Badge>
+            {r.model_basis && (
+              <Badge tone={r.model_basis[top.key] === 'trained_ml' ? 'low' : 'info'}>
+                {r.model_basis[top.key] === 'trained_ml'
+                  ? (lang === 'th' ? 'โมเดลที่เทรนจริง' : 'Trained model')
+                  : (lang === 'th' ? 'กฎการประเมิน (ยังไม่มีข้อมูลจริง)' : 'Heuristic (no dataset yet)')}
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <ProgressRing value={top.confidence * 100} size={84} label={t('confidence')} />
+            <div className="flex-1 min-w-0">
+              {/* Severity: no r.severity field exists yet -- no fake value rendered */}
+              {/* Health score: no r.health_score field exists yet -- no fake value rendered */}
+              {r.requires_review ? (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-200 text-xs leading-relaxed">
+                  {lang === 'th'
+                    ? `ผลนี้ต้องตรวจทานโดยผู้เชี่ยวชาญก่อนดำเนินการกับแปลง (${(r.review_reasons || []).join(', ')})`
+                    : `Expert review is required before field action (${(r.review_reasons || []).join(', ')})`}
+                </div>
+              ) : (
+                <p className="txt-soft text-xs leading-relaxed">{lang === 'th' ? r.explanation_th : r.explanation_en}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Recommendation */}
+          <div className="mt-4 glass rounded-xl p-3">
+            <div className="txt-soft text-xs font-semibold mb-1.5 flex items-center gap-1.5"><Icon name="bulb" className="w-3.5 h-3.5 text-amber-400" />{lang === 'th' ? 'คำแนะนำ' : 'Recommendation'}</div>
+            {!fieldId ? (
+              <button onClick={onOpenAdvanced} className="text-brand-300 hover:text-brand-200 text-xs font-medium flex items-center gap-1.5 transition">
+                {lang === 'th' ? 'เลือกแปลงเพื่อรับคำแนะนำเฉพาะเจาะจง' : 'Attach a field for tailored recommendations'} <span aria-hidden="true">→</span>
+              </button>
+            ) : fieldRecs === undefined ? (
+              <div className="flex items-center gap-2 txt-dim text-xs"><Spinner className="w-4 h-4" />{lang === 'th' ? 'กำลังโหลดคำแนะนำ...' : 'Loading recommendations...'}</div>
+            ) : fieldRecs && fieldRecs.length > 0 ? (
+              <ul className="space-y-2">
+                {fieldRecs.slice(0, 2).map((rec, i) => (
+                  <li key={i} className="text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="txt font-semibold">{lang === 'th' ? rec.title_th : rec.title_en}</span>
+                      <Badge tone={rec.severity}>{Math.round(rec.confidence * 100)}%</Badge>
+                    </div>
+                    {(lang === 'th' ? rec.actions_th : rec.actions_en)?.[0] && (
+                      <div className="txt-soft mt-0.5 flex items-start gap-1.5">
+                        <Icon name="check" className="w-3.5 h-3.5 text-brand-400 mt-0.5 shrink-0" />
+                        {(lang === 'th' ? rec.actions_th : rec.actions_en)[0]}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="txt-dim text-xs">{lang === 'th' ? 'ยังไม่มีคำแนะนำสำหรับแปลงนี้ในขณะนี้' : 'No recommendations for this field right now.'}</p>
+            )}
+          </div>
+
+          <button onClick={onRetake} className="w-full mt-4 glass rounded-xl py-2.5 flex items-center justify-center gap-2 txt-soft hover:txt transition text-sm font-medium">
+            <Icon name="history" className="w-4 h-4" />{lang === 'th' ? 'ถ่ายใหม่' : 'Retake'}
+          </button>
+        </Card>
+
+        {/* Advanced Details: attribution map, auxiliary findings, symptoms, feature importance, full distribution */}
+        <button onClick={() => setDetailsOpen((v) => !v)}
+          className="w-full glass rounded-xl px-4 py-2.5 flex items-center justify-between gap-2 txt-soft hover:txt text-xs font-semibold transition animate-fadeup">
+          <span className="flex items-center gap-1.5"><Icon name="cpu" className="w-3.5 h-3.5" />{lang === 'th' ? 'รายละเอียดขั้นสูง' : 'Advanced Details'}</span>
+          <Icon name={detailsOpen ? 'close' : 'grid'} className="w-3.5 h-3.5" />
+        </button>
+
+        {detailsOpen && <>
         <Card className="animate-fadeup">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <Badge tone={top.key} dot>{lang === 'th' ? top.th : top.en}</Badge>
-                {r.model_basis && (
-                  <Badge tone={r.model_basis[top.key] === 'trained_ml' ? 'low' : 'info'}>
-                    {r.model_basis[top.key] === 'trained_ml'
-                      ? (lang === 'th' ? 'โมเดลที่เทรนจริง' : 'Trained model')
-                      : (lang === 'th' ? 'กฎการประเมิน (ยังไม่มีข้อมูลจริง)' : 'Heuristic (no dataset yet)')}
-                  </Badge>
-                )}
                 <span className="txt-dim text-xs font-mono">{r.model.name} v{r.model.version}</span>
               </div>
               <div className="relative rounded-xl overflow-hidden bg-black/20 grid place-items-center min-h-[220px]">
@@ -292,30 +399,18 @@
             </div>
 
             <div className="flex flex-col">
-              <div className="flex items-center gap-4 mb-3">
-                <ProgressRing value={top.confidence * 100} size={84} label={t('confidence')} />
-                <div>
-                  <div className="txt-soft text-xs">{t('top3')}</div>
-                  {r.top3.map((x, i) => (
-                    <div key={x.key} className="flex items-center gap-2 mt-1.5">
-                      <span className={`w-5 text-center text-[11px] font-bold ${i === 0 ? 'text-brand-400' : 'txt-dim'}`}>#{i + 1}</span>
-                      <span className="txt text-xs flex-1 truncate">{lang === 'th' ? x.th : x.en}</span>
-                      <span className="txt-soft text-xs font-mono tabular-nums">{(x.confidence * 100).toFixed(1)}%</span>
-                    </div>
-                  ))}
+              <div className="txt-soft text-xs">{t('top3')}</div>
+              {r.top3.map((x, i) => (
+                <div key={x.key} className="flex items-center gap-2 mt-1.5">
+                  <span className={`w-5 text-center text-[11px] font-bold ${i === 0 ? 'text-brand-400' : 'txt-dim'}`}>#{i + 1}</span>
+                  <span className="txt text-xs flex-1 truncate">{lang === 'th' ? x.th : x.en}</span>
+                  <span className="txt-soft text-xs font-mono tabular-nums">{(x.confidence * 100).toFixed(1)}%</span>
                 </div>
-              </div>
-              <div className="glass rounded-xl p-3 mt-auto">
+              ))}
+              <div className="glass rounded-xl p-3 mt-3">
                 <div className="txt-soft text-xs font-semibold mb-1.5 flex items-center gap-1.5"><Icon name="bulb" className="w-3.5 h-3.5 text-amber-400" />{t('explain')}</div>
                 <p className="txt-soft text-xs leading-relaxed">{lang === 'th' ? r.explanation_th : r.explanation_en}</p>
               </div>
-              {r.requires_review && (
-                <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-200 text-xs leading-relaxed">
-                  {lang === 'th'
-                    ? `ผลนี้ต้องตรวจทานโดยผู้เชี่ยวชาญก่อนดำเนินการกับแปลง (${(r.review_reasons || []).join(', ')})`
-                    : `Expert review is required before field action (${(r.review_reasons || []).join(', ')})`}
-                </div>
-              )}
             </div>
           </div>
         </Card>
@@ -427,11 +522,12 @@
         <p className="txt-dim text-[11px] text-center">
           {lang === 'th' ? 'CassavaGuard เป็นเครื่องมือสนับสนุนการตัดสินใจ ไม่ใช่การวินิจฉัยที่ยืนยันโดยห้องปฏิบัติการ' : 'CassavaGuard is decision support, not a laboratory-confirmed diagnosis.'}
         </p>
+        </>}
       </>
     );
   }
 
-  function CsvResult({ r }) {
+  function CsvResult({ r, onRetake }) {
     const { t, lang } = window.CG.Store.useStore();
     const top = r.top3[0];
     return (
@@ -449,6 +545,9 @@
           </div>
         </div>
         <ProbBars items={r.top3.map((x) => ({ key: x.key, label: lang === 'th' ? x.th : x.en, value: x.confidence }))} />
+        <button onClick={onRetake} className="w-full mt-4 glass rounded-xl py-2.5 flex items-center justify-center gap-2 txt-soft hover:txt transition text-sm font-medium">
+          <Icon name="history" className="w-4 h-4" />{lang === 'th' ? 'ถ่ายใหม่' : 'Retake'}
+        </button>
       </Card>
     );
   }
