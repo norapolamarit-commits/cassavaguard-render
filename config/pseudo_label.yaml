@@ -1,0 +1,43 @@
+# Pseudo-labeling configuration.
+#
+# Trigger condition (master spec section 14): activate only after a class is
+# confirmed data-insufficient AND reasonable public dataset discovery has
+# been exhausted. Both are true for "cbb" as of 2026-08-26 -- see
+# docs/superpowers/specs/2026-08-24-cbb-recall-experiments-report.md and its
+# addendum for the dataset search. No other class currently meets this
+# trigger; do not pre-emptively pseudo-label a class that hasn't.
+#
+# This file intentionally does NOT flip the pipeline on by itself. Pseudo-
+# labeling also requires a source of legitimate, license-clear unlabeled
+# cassava images to run inference over (master spec workflow: "collect
+# legitimate unlabeled cassava images" comes before "baseline prediction").
+# No such source currently exists in this repo -- data/pseudo_labels/ is
+# schema-only until one does. Do not point this at scraped/unlicensed images.
+
+pseudo_label:
+  enabled: false          # flip to true only once an unlabeled image source exists
+  trigger: dataset_insufficient
+  triggered_classes: ["cbb"]
+
+  min_confidence: 0.95    # a pseudo-label candidate below this is never auto-accepted
+  require_human_review: true
+  use_tta: true            # use the same 4-view flip TTA as production inference
+  train_only: true         # never eligible for validation/test, ever
+
+  # Class-aware quotas (master spec section 17): don't let the model flood
+  # easy classes. Priority order for review capacity, hardest/rarest first.
+  review_priority: ["cbb", "cgm", "cbsd"]
+
+  # Safety gate before ANY pseudo-labeled image reaches train:
+  # 1. duplicate/leakage check against TFDS train/validation/test (same
+  #    SHA-256 + dHash/pHash audit used everywhere else in this repo)
+  # 2. human review changes review_status from "pending" to "approved" or
+  #    "rejected" in data/pseudo_labels/pending.csv, moving the row to the
+  #    matching CSV -- see data/pseudo_labels/*.csv column contracts
+  # 3. acceptance-rule check after retraining (master spec section 23):
+  #    the resulting candidate must beat the current production model on
+  #    BOTH overall macro-F1 AND the specific class's recall, using the
+  #    same untouched TFDS test split already used throughout this repo.
+  #    A model that only improves one is not promoted -- this already
+  #    happened three times in the CBB investigation (see the report) and
+  #    the same rule applies here without exception.

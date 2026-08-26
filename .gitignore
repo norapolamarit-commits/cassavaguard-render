@@ -55,6 +55,11 @@ work/cache_quarantine/
 data/thai_field/images/*
 !data/thai_field/images/.gitkeep
 
+# Pseudo-label candidate images: same reasoning as data/thai_field/images/ above.
+# Track only the review CSVs (pending/approved/corrected/rejected), never the images.
+data/pseudo_labels/images/*
+!data/pseudo_labels/images/.gitkeep
+
 # Local reports/build products. Curated final reports belong in docs/reports/.
 /output/
 /reports/
