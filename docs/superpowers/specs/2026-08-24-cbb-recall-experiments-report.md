@@ -109,3 +109,25 @@ backend/training/.venv-torch/bin/python -m backend.training.evaluate_cnn_tta_pip
 All 8 candidates' full metrics JSON files remain locally under
 `tmp/candidates/` (gitignored, not committed — regenerate with the commands
 above and in `backend/training/prepare_ccmt_cbb_supplement.py`'s docstring).
+
+## Addendum (2026-08-26): public dataset search for more real CBB data
+
+Per the recommendation above ("a source that plausibly shares TFDS's domain
+characteristics... would test whether more same-domain CBB data helps"), we
+searched Kaggle, Hugging Face, Roboflow Universe and academic/institutional
+sources (Zenodo, IITA, CGIAR) for a new CBB-bearing dataset. Full entries are
+in `data/dataset_registry.csv`; summary:
+
+| Source | Images (CBB) | Verdict | Why |
+|---|---|---|---|
+| Kaggle "Cassava Leaf Disease Classification" 2021 | 21,367 total (~1,087 CBB) | Rejected (for now) | Same Makerere/NaCRRI/iCassava-2019 crowdsourcing effort as `tfds_cassava` — high risk of near-duplicate overlap with our existing train/validation/test images. Also non-commercial-only competition license, and would need a user-owned Kaggle account/API token to fetch (not something to hand to an agent). Would need a dedicated duplicate audit against all three TFDS splits before it could be trusted at all. |
+| Hugging Face `pufanyi/cassava-leaf-disease-classification` | 9,430 total | Rejected | Raw split counts (5,656/1,885/1,889) exactly match `tfds_cassava`'s own raw counts — this is the same source dataset, not new data. |
+| Roboflow Universe community projects (`fresh-sprout/cassava-model`, `SulthonReyhan/cassava-leaves-disease`, others) | 3,900–7,920 total each | Rejected | Same 4–5 class taxonomy as Kaggle/TFDS with no independently verifiable provenance or confirmed license — most likely re-uploads of the same source data under community accounts, not new collections. |
+| IITA Tanzania (Ramcharan et al. 2017, arXiv:1707.03717) | 2,415 total, 0 CBB | Rejected for this search | Genuinely different domain (Tanzania/IITA, no Makerere overlap) but has **no CBB class at all** — its classes are CMD, CBSD, Brown Leaf Spot, Green/Red Mite damage, and Nutrient Deficiency. Not usable for the CBB problem, but worth revisiting separately: this project currently has zero real data for `nutrient_deficiency`, which this dataset does cover. |
+
+**Conclusion**: no publicly discoverable, adequately licensed, non-overlapping
+CBB dataset was found. This is consistent with the main report's finding
+that CBB recall is a genuine data-scarcity problem — the class is
+under-represented industry-wide, not just in `tfds_cassava`. The
+`iita_tanzania_ramcharan` lead is noted in the registry as a separate,
+unrelated opportunity for the nutrient-deficiency gap, not for CBB.
