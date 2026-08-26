@@ -309,7 +309,14 @@
           <div className="flex items-center gap-4">
             <ProgressRing value={top.confidence * 100} size={84} label={t('confidence')} />
             <div className="flex-1 min-w-0">
-              {/* Health score: no r.health_score field exists yet -- no fake value rendered */}
+              {r.health_score && (
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="text-2xl font-bold txt tabular-nums">
+                    {r.health_score.score}<span className="text-xs txt-dim font-normal">/100</span>
+                  </div>
+                  <span className="txt-dim text-[11px]">{lang === 'th' ? r.health_score.note_th : r.health_score.note_en}</span>
+                </div>
+              )}
               {r.requires_review ? (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-200 text-xs leading-relaxed">
                   {lang === 'th'

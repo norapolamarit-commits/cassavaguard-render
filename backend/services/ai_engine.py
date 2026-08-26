@@ -423,6 +423,28 @@ def _severity(top_key: str, f: dict) -> dict | None:
     }
 
 
+def _health_score(top_key: str, top_conf: float, severity: dict | None, quality: dict) -> dict | None:
+    """Combine already-computed signals (confidence, severity, image quality) into
+    one 0-100 indicator. Never a new measurement -- see docs/superpowers/specs/
+    2026-08-26-health-score-design.md. Returns None if the image quality gate
+    failed, so a score is never shown next to an unreliable image."""
+    if not quality["passed"]:
+        return None
+    disease_penalty = 0.0 if top_key == "healthy" else top_conf * 60.0
+    severity_penalty = severity["score"] * 40.0 if severity else 0.0
+    score = round(max(0.0, 100.0 - disease_penalty - severity_penalty))
+    return {
+        "score": score,
+        "components": {
+            "disease_penalty": round(disease_penalty, 1),
+            "severity_penalty": round(severity_penalty, 1),
+        },
+        "heuristic": True,
+        "note_en": "A combined indicator from this image only, not a laboratory measurement.",
+        "note_th": "ตัวชี้วัดรวมจากภาพนี้เท่านั้น ไม่ใช่ผลการตรวจทางห้องปฏิบัติการ",
+    }
+
+
 _FEATURE_LABELS = {
     "green_frac": "Green canopy fraction", "yellow_frac": "Leaf yellowing (chlorosis)",
     "brown_frac": "Brown tissue fraction", "necrosis_frac": "Necrotic (dead) tissue",
@@ -919,6 +941,7 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
         review_reasons.append("synthetic_environmental_context")
     if any(item["detected"] for item in auxiliary_findings):
         review_reasons.append("auxiliary_finding_requires_expert_review")
+    health_score = _health_score(top_key, top_conf, severity, quality)
 
     if cnn_used:
         cnn_meta = get_cnn_metrics()
@@ -969,6 +992,7 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
         "cnn_used": cnn_used,  # transparency: raw-pixel CNN vs classical/fusion feature-vector model
         "symptoms": symptoms,
         "severity": severity,
+        "health_score": health_score,
         "feature_importance": importance,
         "raw_features": clean_feats,
         "explanation_en": en,
