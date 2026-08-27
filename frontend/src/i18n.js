@@ -16,10 +16,7 @@
     nav_guide:     { th:'คู่มือใช้งาน', en:'User Guide' },
     nav_legal:     { th:'ความเป็นส่วนตัว & ติดต่อ', en:'Privacy & Contact' },
     nav_welcome:   { th:'หน้าเริ่มต้น', en:'Welcome' },
-    group_monitor: { th:'การติดตาม', en:'MONITORING' },
-    group_ai:      { th:'ปัญญาประดิษฐ์', en:'INTELLIGENCE' },
-    group_data:    { th:'ข้อมูล', en:'DATA' },
-    group_help:    { th:'ช่วยเหลือ', en:'HELP' },
+    nav_more:      { th:'เพิ่มเติม', en:'More' },
 
     // common
     loading:       { th:'กำลังโหลด…', en:'Loading…' },

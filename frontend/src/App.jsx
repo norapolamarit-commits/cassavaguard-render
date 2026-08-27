@@ -4,28 +4,29 @@
   const { Icon, Badge, ToastHost, Modal } = window.CG.UI;
   const P = window.CG.Pages;
 
-  const NAV = [
-    { group: 'group_monitor', items: [
-      { key: 'welcome', icon: 'leaf', label: 'nav_welcome' },
-      { key: 'dashboard', icon: 'grid', label: 'nav_dashboard' },
-      { key: 'map', icon: 'map', label: 'nav_map' },
-    ]},
-    { group: 'group_ai', items: [
-      { key: 'predict', icon: 'brain', label: 'nav_predict' },
-      { key: 'recommendations', icon: 'bulb', label: 'nav_reco' },
-    ]},
-    { group: 'group_data', items: [
-      { key: 'satellite', icon: 'satellite', label: 'nav_satellite' },
-      { key: 'weather', icon: 'cloud', label: 'nav_weather' },
-      { key: 'soil', icon: 'soil', label: 'nav_soil' },
-      { key: 'history', icon: 'history', label: 'nav_history' },
-      { key: 'system', icon: 'cpu', label: 'nav_system' },
-    ]},
-    { group: 'group_help', items: [
-      { key: 'guide', icon: 'book', label: 'nav_guide' },
-      { key: 'legal', icon: 'privacy', label: 'nav_legal' },
-    ]},
+  // Core: the pages a farmer actually opens every visit -- always visible,
+  // no grouping/scrolling needed to find them. Everything else (dashboards,
+  // raw data feeds, system status, docs) is real but secondary, so it lives
+  // behind a collapsed "More" disclosure instead of competing for attention
+  // in the primary list. Same simplify-the-default, keep-everything-reachable
+  // pattern as the Advanced Options/Details disclosures on the predict page.
+  const NAV_CORE = [
+    { key: 'welcome', icon: 'leaf', label: 'nav_welcome' },
+    { key: 'predict', icon: 'brain', label: 'nav_predict' },
+    { key: 'recommendations', icon: 'bulb', label: 'nav_reco' },
+    { key: 'map', icon: 'map', label: 'nav_map' },
+    { key: 'history', icon: 'history', label: 'nav_history' },
   ];
+  const NAV_MORE = [
+    { key: 'dashboard', icon: 'grid', label: 'nav_dashboard' },
+    { key: 'satellite', icon: 'satellite', label: 'nav_satellite' },
+    { key: 'weather', icon: 'cloud', label: 'nav_weather' },
+    { key: 'soil', icon: 'soil', label: 'nav_soil' },
+    { key: 'system', icon: 'cpu', label: 'nav_system' },
+    { key: 'guide', icon: 'book', label: 'nav_guide' },
+    { key: 'legal', icon: 'privacy', label: 'nav_legal' },
+  ];
+  const NAV_MORE_KEYS = new Set(NAV_MORE.map((it) => it.key));
 
   function App() {
     const store = window.CG.Store.useStore();
@@ -36,8 +37,14 @@
     const [mobileNav, setMobileNav] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
     const [notifs, setNotifs] = useState({ unread: 0, items: [] });
+    const [moreOpen, setMoreOpen] = useState(NAV_MORE_KEYS.has(route));
 
-    const go = useCallback((r, arg = null) => { setRoute(r); setRouteArg(arg); setMobileNav(false); }, []);
+    const go = useCallback((r, arg = null) => {
+      setRoute(r); setRouteArg(arg); setMobileNav(false);
+      // if navigating into a "More" page from elsewhere (e.g. a card's
+      // deep link), auto-expand so the newly active item isn't hidden
+      if (NAV_MORE_KEYS.has(r)) setMoreOpen(true);
+    }, []);
 
     // load classes into a lookup + fetch notifications
     useEffect(() => {
@@ -93,12 +100,28 @@
               {!collapsed && <div className="min-w-0"><div className="txt font-bold text-sm leading-tight">CassavaGuard <span className="grad-text">AI</span></div><div className="txt-dim text-[10px] truncate">{t('app_tag')}</div></div>}
             </div>
 
-            <nav className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-4">
-              {NAV.map((grp) => (
-                <div key={grp.group}>
-                  {!collapsed && <div className="txt-dim text-[10px] font-bold uppercase tracking-wider px-3 mb-1.5">{t(grp.group)}</div>}
-                  <div className="space-y-1">
-                    {grp.items.map((it) => {
+            <nav className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-1">
+              {NAV_CORE.map((it) => {
+                const active = route === it.key;
+                return (
+                  <button key={it.key} onClick={() => go(it.key)} title={t(it.label)}
+                    className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 transition group relative ${active ? 'grad-brand text-white shadow-lg shadow-brand-500/20' : 'txt-soft hover:txt hover:bg-white/[.04]'}`}>
+                    <Icon name={it.icon} className="w-5 h-5 shrink-0" />
+                    {!collapsed && <span className="text-sm font-medium truncate">{t(it.label)}</span>}
+                    {active && !collapsed && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/80" />}
+                  </button>
+                );
+              })}
+
+              <div className="pt-2">
+                <button onClick={() => setMoreOpen((v) => !v)} title={t('nav_more')}
+                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 txt-dim hover:txt hover:bg-white/[.04] transition">
+                  <Icon name={moreOpen ? 'close' : 'grid'} className="w-4 h-4 shrink-0" />
+                  {!collapsed && <span className="text-xs font-semibold uppercase tracking-wider truncate">{t('nav_more')}</span>}
+                </button>
+                {moreOpen && (
+                  <div className="space-y-1 mt-1">
+                    {NAV_MORE.map((it) => {
                       const active = route === it.key;
                       return (
                         <button key={it.key} onClick={() => go(it.key)} title={t(it.label)}
@@ -110,8 +133,8 @@
                       );
                     })}
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
             </nav>
 
             <div className="p-3 border-t hair">
