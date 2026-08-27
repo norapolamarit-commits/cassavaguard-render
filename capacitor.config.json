@@ -1,0 +1,12 @@
+{
+  "appId": "com.cassavaguard.app",
+  "appName": "CassavaGuard AI",
+  "webDir": "frontend/dist",
+  "server": {
+    "url": "http://10.87.118.36:8800",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

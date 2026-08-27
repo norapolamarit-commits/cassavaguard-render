@@ -64,3 +64,14 @@ data/pseudo_labels/images/*
 /output/
 /reports/
 /tmp/
+
+# Android/Capacitor: keep the native project source (manifest, gradle config,
+# capacitor.config.json) but never Gradle's local caches or build outputs --
+# same reasoning as excluding backend/training/.venv/ etc, all regenerable.
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/*.iml
+android/app/*.iml
