@@ -7,10 +7,14 @@
 
 ## โครงสร้าง
 
-- `capacitor.config.json` — ตั้งค่า `server.url` ชี้ไปยัง backend (ปัจจุบันตั้งเป็น
-  `http://<LAN IP ของเครื่อง dev>:8800` สำหรับทดสอบในวงแลนเดียวกัน)
+- `capacitor.config.json` — ตั้งค่า `server.url` ชี้ไปยัง backend production จริง
+  (`https://cassavaguard-render.onrender.com`)
 - `android/` — native Android project ที่ `npx cap add android` สร้างขึ้น
   (commit เฉพาะ source/config; ไม่ commit `build/`, `.gradle/` — ดู `.gitignore`)
+- `android/keystore/cassavaguard-release.jks` — **ไม่ commit เข้า git เด็ดขาด**
+  (อยู่ใน `.gitignore`) กุญแจเซ็นแอปสำหรับ release build ถ้าไฟล์นี้หายและไม่มี
+  backup จะ**อัปเดตแอปตัวเดิมบน Play Store ต่อไม่ได้อีกเลย** ต้อง backup
+  ไฟล์นี้ + รหัสผ่านไว้ในที่ปลอดภัย (password manager) ทันทีที่สร้าง
 
 ## Build ใหม่
 
@@ -25,7 +29,45 @@ export JAVA_TOOL_OPTIONS="-Duser.language=en -Duser.country=US"   # ดูเห
 ./gradlew assembleDebug
 ```
 
-APK อยู่ที่ `android/app/build/outputs/apk/debug/app-debug.apk`
+APK (debug, เซ็นด้วย debug keystore อัตโนมัติของ Gradle) อยู่ที่
+`android/app/build/outputs/apk/debug/app-debug.apk` — ติดตั้งทดสอบเองได้ปกติ
+แต่เอาขึ้น Play Store ไม่ได้
+
+## Build เวอร์ชัน Release (เซ็นด้วย release keystore)
+
+ต้องมีไฟล์ `android/keystore/cassavaguard-release.jks` อยู่ก่อน (สร้างครั้งเดียว
+ด้วย `keytool -genkeypair`, ดู "การสร้าง keystore" ด้านล่าง) รหัสผ่านต้อง**ไม่ใส่
+ในไฟล์ repo เด็ดขาด** — ส่งผ่าน environment variable เฉพาะตอน build:
+
+```bash
+cd android
+export ANDROID_HOME=~/Library/Android/sdk
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export CASSAVAGUARD_KEYSTORE_PASSWORD="รหัสผ่านที่ตั้งไว้ตอนสร้าง keystore"
+export CASSAVAGUARD_KEY_PASSWORD="รหัสผ่านเดียวกัน หรือรหัส key แยกถ้าตั้งไว้ต่างกัน"
+./gradlew assembleRelease
+```
+
+APK อยู่ที่ `android/app/build/outputs/apk/release/app-release.apk` — ถ้าไม่ตั้ง
+สองตัวแปรนี้ `assembleRelease` จะยัง build ผ่าน แต่ได้ APK ที่**ไม่ได้เซ็น** (ติดตั้ง
+ไม่ได้จนกว่าจะเซ็นทีหลัง) เพื่อกันไม่ให้ build ล้มเหลวแบบงงๆ ถ้าลืมตั้งค่า
+
+### การสร้าง keystore (ทำครั้งเดียว)
+
+```bash
+mkdir -p android/keystore
+"/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/keytool" -genkeypair -v \
+  -keystore android/keystore/cassavaguard-release.jks \
+  -alias cassavaguard \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -dname "CN=CassavaGuard AI, OU=CassavaGuard, O=CassavaGuard, L=Bangkok, ST=Bangkok, C=TH"
+```
+
+**สำคัญมาก**: หลัง build เสร็จ backup ไฟล์ `.jks` นี้ + รหัสผ่านทั้งสองตัว (store
+password, key password) ไว้ใน password manager หรือที่ปลอดภัยอื่นทันที ไฟล์นี้
+**ไม่ได้อยู่ใน git** (ตั้งใจ — ไม่ควรมีกุญแจเซ็นแอป production ไปอยู่ใน git history)
+ถ้าเครื่องนี้พังหรือไฟล์หาย และไม่มี backup จะสร้างอัปเดตให้แอปตัวเดิมบน Play
+Store ไม่ได้อีกเลย ต้องขึ้นแอปใหม่เป็นคนละ listing
 
 ## ⚠️ ปัญหาที่เจอและวิธีแก้: locale ไทยทำให้ build พังแบบไม่มี error message
 

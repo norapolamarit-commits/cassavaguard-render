@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+// Release signing reads only from environment variables, never a file this
+// repo tracks -- run `CASSAVAGUARD_KEYSTORE_PASSWORD=... CASSAVAGUARD_KEY_PASSWORD=... ./gradlew assembleRelease`
+// (both default to empty so a debug build never needs them). See docs/ANDROID_BUILD_TH.md.
+def releaseKeystoreFile = rootProject.file('keystore/cassavaguard-release.jks')
+def releaseStorePassword = System.getenv('CASSAVAGUARD_KEYSTORE_PASSWORD') ?: ''
+def releaseKeyPassword = System.getenv('CASSAVAGUARD_KEY_PASSWORD') ?: releaseStorePassword
+
 android {
     namespace = "com.cassavaguard.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,10 +23,26 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (releaseKeystoreFile.exists() && releaseStorePassword) {
+                storeFile releaseKeystoreFile
+                storePassword releaseStorePassword
+                keyAlias 'cassavaguard'
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Only sign if the env vars were actually provided -- assembleRelease
+            // without them still succeeds but produces an UNSIGNED apk, which is
+            // intentionally not installable until explicitly signed.
+            if (releaseKeystoreFile.exists() && releaseStorePassword) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     packagingOptions {

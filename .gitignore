@@ -75,3 +75,9 @@ android/capacitor-cordova-android-plugins/build/
 android/local.properties
 android/*.iml
 android/app/*.iml
+
+# Release signing key: never commit. Losing this permanently breaks future
+# updates to the same Play Store listing, so it must only ever live in the
+# project owner's own backup (password manager / secure storage), never in
+# git history. See docs/ANDROID_BUILD_TH.md.
+android/keystore/
