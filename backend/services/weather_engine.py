@@ -303,3 +303,27 @@ def summary(lat: float, lon: float) -> dict:
         "warnings": warnings,
         "data_source": today["data_source"],
     }
+
+
+def terrain(lat: float, lon: float) -> dict:
+    """Return approximate model-grid elevation for geographic context."""
+    if ENVIRONMENTAL_DATA_MODE == "synthetic":
+        elevation = round(80 + 220 * h01(round(lat, 3), round(lon, 3), "elevation"), 1)
+        source = _source("generated_test_terrain")
+    else:
+        payload = _live_payload(lat, lon, forecast_days=1)
+        raw = payload.get("elevation")
+        if raw is None:
+            raise ProviderError("Open-Meteo returned no terrain elevation")
+        elevation = round(float(raw), 1)
+        source = _source("model_grid_elevation", model=payload.get("model"))
+    terrain_class = "lowland" if elevation < 200 else ("upland" if elevation < 500 else "highland")
+    return {
+        "latitude": round(lat, 6),
+        "longitude": round(lon, 6),
+        "elevation_m": elevation,
+        "terrain_class": terrain_class,
+        "slope_available": False,
+        "limitation": "Model-grid elevation; slope and aspect are not surveyed values.",
+        "data_source": source,
+    }

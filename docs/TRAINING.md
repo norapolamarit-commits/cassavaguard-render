@@ -185,6 +185,68 @@ commercial license ก่อนนำ dependency/artifact ไปกระจา�
 TFDS catalog ไม่ระบุ license ของภาพอย่างชัดเจน จึงบันทึกเป็น
 `unknown/pending upstream image-license verification`; ต้องตรวจสิทธิ์ก่อนใช้งานเชิงพาณิชย์
 
+### เพิ่มข้อมูลภาคสนามแบบไม่ทำให้คะแนนลวง
+
+เตรียมภาพที่ยังไม่มี label ด้วยโมเดลปัจจุบัน โดยเก็บเฉพาะ pseudo-label ที่
+confidence และ top-1/top-2 margin สูง ตัด exact/perceptual duplicate และสร้างคิว
+active learning สำหรับคนตรวจทุกภาพที่ไม่ซ้ำ:
+
+```bash
+.venv-training/bin/python backend/training/prepare_pseudo_label_dataset.py \
+  /path/to/unlabelled-images backend/training/data/pseudo_field \
+  --min-confidence 0.90 --min-margin 0.35
+```
+
+เปิด `human_label_queue.csv` แล้วกรอก `human_label`, `reviewer`, `reviewed_at`
+หลังตรวจภาพจริง ค่า label ที่รับได้คือ `healthy`, `cbb`, `cbsd`, `cmd`, `cgm`,
+`uncertain`, `not_cassava` ห้ามคัดลอก suggested label โดยไม่ได้ตรวจภาพ จากนั้นนำ
+เฉพาะ label ที่คนยืนยันเข้าชุด train-only:
+
+```bash
+.venv-training/bin/python backend/training/import_reviewed_field_labels.py \
+  /path/to/unlabelled-images \
+  backend/training/data/pseudo_field/human_label_queue.csv \
+  backend/training/data/human_reviewed_field
+```
+
+ฝึก candidate โดยเพิ่มข้อมูลที่คนตรวจแล้ว; ห้ามใช้โฟลเดอร์นี้เป็น validation/test:
+
+```bash
+.venv-training/bin/python backend/training/train_cnn_torch.py \
+  --architecture efficientnet_b2 --pipeline field_robust --device mps \
+  --extra-data-dir backend/training/data/human_reviewed_field \
+  --output-dir backend/training/candidates/field_robust_reviewed
+```
+
+ชุด Kaggle Cassava Leaf Disease Classification รุ่นใหม่มีภาพติดป้าย 21,397 ภาพ
+และภาพไม่มีป้าย 12,595 ภาพ แต่สิทธิ์ขึ้นกับ competition rules จึงต้องให้เจ้าของ
+บัญชียอมรับเงื่อนไข/ยืนยันสิทธิ์ก่อนดาวน์โหลด และต้องตรวจซ้ำกับ TFDS เดิมก่อนรวม
+ข้อมูล ห้ามดึงเข้าระบบหรือเผยแพร่ต่อโดยอัตโนมัติ
+
+เตรียม Figshare Cassava Image Dataset3 (CC BY 4.0) โดยตรวจ MD5, decode รูป,
+ตัดภาพซ้ำ และใช้เฉพาะ publisher train split:
+
+```bash
+.venv-training/bin/python backend/training/prepare_figshare_cassava.py \
+  --archive backend/training/data/incoming/figshare_21769070_v2/archive.zip \
+  --output backend/training/data/figshare_cassava_21769070_v2
+```
+
+เมื่อเพิ่มข้อมูลภายนอกจำนวนมาก ต้องเปิด sampler ที่สมดุลคลาสก่อน แล้วสมดุลแหล่ง
+ข้อมูลภายในแต่ละคลาส ห้ามใช้ plain shuffle เพราะ CMD/CBSD จะกลบ CBB/CGM:
+
+```bash
+.venv-training/bin/python backend/training/train_cnn_torch.py \
+  --architecture efficientnet_b2 --pipeline field_robust --device mps \
+  --extra-data-dir backend/training/data/figshare_cassava_21769070_v2 \
+  --balance-classes-and-sources --class-weight-power 0 \
+  --output-dir backend/training/candidates/field_robust_figshare
+```
+
+หลัง freeze candidate แล้วเท่านั้นจึงเปิด publisher test split 1,786 ภาพด้วย
+`evaluate_figshare_external_test.py`; รายงานนี้เป็น external evidence และห้ามนำไป
+ปรับ architecture, preprocessing หรือ threshold รอบเดิม
+
 ## Pipeline
 
 ```text
@@ -364,3 +426,39 @@ local development เปิด `USE_CNN=true` แล้ว แต่ยังค
 External-domain candidates ต้องให้ผู้เชี่ยวชาญยืนยัน taxonomy:
 [India dataset](https://data.mendeley.com/datasets/3832tx2cb2/1) และ
 [Makerere dataset](https://doi.org/10.7910/DVN/T4RB0B)
+# Root-volume to fresh-weight model
+
+Run `python backend/training/train_root_weight_model.py`. The training table contains
+19 Thai cassava root crowns from seven cultivars with paired 3-D volume and weighed
+fresh-root mass. Evaluation is leave-one-cultivar-out to reduce cultivar leakage.
+The app accepts volume measured after excavation (water displacement or a genuine
+multi-view 3-D reconstruction); it never derives underground yield from a leaf image.
+
+### Automatic local 3-D reconstruction
+
+Install COLMAP (`brew install colmap` on Apple silicon) and
+`pip install -r requirements-photogrammetry.txt`. Photograph one excavated crown
+20–30 times in a full circle with 70–80% overlap, fixed focus/exposure, a plain
+textured background and no movement. Upload the ordered views in the weight panel
+and enter the measured maximum crown span in centimetres. The worker runs feature
+extraction, exhaustive matching, mapping, undistortion, dense PatchMatch/Poisson
+meshing when supported, and a sparse Delaunay review fallback on CPU-only builds.
+Only a watertight dense mesh inside the weight model's training range is marked
+production eligible. Monocular reconstruction has no metric scale, so the one
+physical span measurement is mandatory.
+
+The preferred capture path is a 4–90 second MP4/MOV/WebM orbit video (maximum
+250 MB). FFmpeg samples 2–5 frames/second, rejects extreme exposure, ranks local
+sharpness, removes perceptual near-duplicates and selects 30 time-stratified views.
+The original video is deleted after extraction; only the selected JPEG views are
+retained with the field sample.
+
+## Field collection gate
+
+Each verified record must contain a scale-readable root photo set, fresh weight,
+plant count, variety, field code, season, age and (when consented) coordinates.
+Do not train the field model before 150 verified plants from at least five independent
+fields are available. Keep every field and season wholly inside one split; never place
+near-duplicate views of a plant across train and test. Report MAE, RMSE, R² and
+within-20% rate overall and per variety. `IMAGE/` currently contains 87 unlabelled
+photos, so those files may be reviewed or grouped but are not weight labels.

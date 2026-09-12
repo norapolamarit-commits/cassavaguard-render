@@ -10,7 +10,6 @@ import "./pages/fieldmap.jsx";
 import "./pages/predict.jsx";
 import "./pages/satellite.jsx";
 import "./pages/weather.jsx";
-import "./pages/soil.jsx";
 import "./pages/recommendations.jsx";
 import "./pages/history.jsx";
 import "./pages/system.jsx";

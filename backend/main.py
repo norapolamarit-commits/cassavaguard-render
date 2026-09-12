@@ -20,21 +20,27 @@ from backend.config import (
     FRONTEND_DIR,
     LOG_RETENTION_ROWS,
     SEED_DEMO_DATA,
+    USE_CNN,
 )
 from backend.core.rate_limit import rate_limit_middleware
 from backend.core.security import require_role
 from backend.database import SessionLocal
 from backend.models import LogEntry, User
-from backend.api import (admin, auth, dashboard, fields, files, history, models,
+from backend.api import (admin, auth, chat, dashboard, fields, files, history, models,
                          notifications, predict, satellite, soil, weather)
 from backend.services import ml_classifier, seed
+from backend.services.cnn_classifier import get_cnn_session
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     created = seed.run()
     print(f"[CassavaGuard] seed: {created}")
-    ml_classifier.get_classifier()
+    # Warm only the active primary model. Loading the classical fallback as well
+    # wastes memory on small Render instances and never serves while CNN is ready.
+    cnn_ready = bool(USE_CNN and get_cnn_session() is not None)
+    if not cnn_ready:
+        ml_classifier.get_classifier()
     yield
 
 
@@ -130,7 +136,7 @@ def logs(limit: int = Query(100, ge=1, le=500),
         db.close()
 
 
-for r in (auth, admin, dashboard, fields, files, predict, satellite, weather,
+for r in (auth, admin, chat, dashboard, fields, files, predict, satellite, weather,
           soil, notifications, history, models):
     app.include_router(r.router)
 

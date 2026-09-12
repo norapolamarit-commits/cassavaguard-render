@@ -31,6 +31,9 @@
       chevron: 'M9 6l6 6-6 6', temp: 'M12 3a2 2 0 0 0-2 2v9a4 4 0 1 0 4 0V5a2 2 0 0 0-2-2z',
       wind: 'M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h9',
       plus: 'M12 5v14M5 12h14', menu: 'M4 7h16M4 12h16M4 17h16',
+      play: 'M8 5v14l11-7L8 5z',
+      activity: 'M3 12h4l2-7 4 14 2-7h6',
+      privacy: 'M12 3 4 6v5c0 5.2 3.4 8.6 8 10 4.6-1.4 8-4.8 8-10V6l-8-3zM9 12l2 2 4-4',
       camera: 'M4 8a2 2 0 0 1 2-2h1.5l1-1.5h5l1 1.5H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8zM12 11a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
     };
     return (
@@ -43,16 +46,16 @@
 
   /* ---- Glass card ---- */
   const Card = ({ className = '', children, hover = false, pad = 'p-5', ...p }) => (
-    <div className={`glass rounded-2xl ${pad} ${hover ? 'card-hover' : ''} ${className}`} {...p}>{children}</div>
+    <section className={`glass cg-card ${pad} ${hover ? 'card-hover' : ''} ${className}`} {...p}>{children}</section>
   );
 
   const SectionTitle = ({ icon, title, sub, right }) => (
-    <div className="flex items-center justify-between mb-4 gap-3">
+    <div className="cg-section-title flex items-center justify-between mb-5 gap-3">
       <div className="flex items-center gap-3 min-w-0">
-        {icon && <div className="w-10 h-10 rounded-xl grad-brand grid place-items-center text-white shrink-0 shadow-lg shadow-brand-500/20"><Icon name={icon} /></div>}
+        {icon && <div className="cg-section-icon"><Icon name={icon} /></div>}
         <div className="min-w-0">
-          <h3 className="txt font-semibold text-[15px] leading-tight truncate">{title}</h3>
-          {sub && <p className="txt-soft text-xs mt-0.5 truncate">{sub}</p>}
+          <h3 className="txt font-bold text-base leading-tight">{title}</h3>
+          {sub && <p className="txt-soft text-sm mt-1 leading-snug">{sub}</p>}
         </div>
       </div>
       {right}
@@ -142,7 +145,7 @@
       nutrient_def:'text-indigo-300 bg-indigo-500/12 border-indigo-500/25',
     };
     return (
-      <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${map[tone] || map.slate} ${className}`}>
+      <span className={`cg-badge inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${map[tone] || map.slate} ${className}`}>
         {dot && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
         {children}
       </span>
@@ -210,9 +213,9 @@
       <div className="fixed inset-0 z-[9000] grid place-items-center p-4 animate-fadein" onMouseDown={onClose}>
         <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
         <div onMouseDown={(e) => e.stopPropagation()}
-             className={`glass-strong rounded-2xl relative w-full ${wide ? 'max-w-4xl' : 'max-w-lg'} max-h-[88vh] overflow-y-auto no-scrollbar animate-fadeup shadow-2xl`}>
+             className={`glass-strong cg-modal relative w-full ${wide ? 'max-w-4xl' : 'max-w-lg'} max-h-[88vh] overflow-y-auto no-scrollbar animate-fadeup shadow-2xl`}>
           <div className="flex items-center justify-between p-5 border-b hair sticky top-0 glass-strong z-10">
-            <h3 className="txt font-semibold">{title}</h3>
+            <h3 className="txt font-bold text-lg">{title}</h3>
             <button onClick={onClose} className="txt-dim hover:txt w-8 h-8 grid place-items-center rounded-lg hover:bg-white/5"><Icon name="close" /></button>
           </div>
           <div className="p-5">{children}</div>
@@ -223,10 +226,10 @@
 
   /* ---- Segmented control ---- */
   const Segmented = ({ options, value, onChange, size = 'text-xs' }) => (
-    <div className="inline-flex p-1 rounded-xl glass gap-1">
+    <div className="cg-segmented inline-flex p-1 glass gap-1">
       {options.map((o) => (
         <button key={o.value} onClick={() => onChange(o.value)}
-          className={`px-3 py-1.5 rounded-lg font-medium transition ${size} ${value === o.value ? 'grad-brand text-white shadow' : 'txt-soft hover:txt'}`}>
+          className={`px-3 py-2 rounded-xl font-semibold transition ${size} ${value === o.value ? 'grad-brand text-white shadow' : 'txt-soft hover:txt'}`}>
           {o.label}
         </button>
       ))}

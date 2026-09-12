@@ -5,38 +5,34 @@
   const STEPS = {
     th: [
       ['สร้างแปลง', 'ไปที่ “แผนที่แปลง” กด “เพิ่มแปลง” แล้วกรอกชื่อ จังหวัด พันธุ์ พื้นที่ และพิกัดจริง'],
-      ['บันทึกข้อมูลจริง', 'ไปที่ “ดิน” แล้วเพิ่มผลแล็บ เซนเซอร์ หรือชุดตรวจภาคสนาม ช่องที่ไม่ได้ตรวจให้เว้นว่าง'],
       ['ถ่ายภาพให้ชัด', 'ใช้แสงธรรมชาติ ภาพไม่สั่น เห็นใบหรือต้นเต็มส่วนที่มีอาการ และหลีกเลี่ยงพื้นหลังรก'],
-      ['วิเคราะห์ด้วย AI', 'เลือกชนิดภาพและแปลง อัปโหลด JPG/PNG แล้วกด “วิเคราะห์” สำหรับแมลงหวี่ขาวควรถ่ายใต้ใบระยะใกล้และใช้ภาพความละเอียดเต็ม'],
-      ['ตรวจผลก่อนลงมือ', 'อ่านความมั่นใจ เหตุผลที่ต้องตรวจซ้ำ ผลเสริม และกรอบแมลง เปรียบเทียบกับอาการจริงก่อนดำเนินการ'],
-      ['ติดตามผล', 'ดูประวัติ คำแนะนำ ดาวเทียม อากาศ และข้อมูลดินร่วมกัน ไม่ตัดสินจากภาพเดียว'],
+      ['วิเคราะห์ด้วย AI', 'เลือกแปลง อัปโหลดภาพ JPG/PNG แล้วกด “วิเคราะห์” ระบบจำแนกเฉพาะ 5 คลาสหลัก'],
+      ['ตรวจผลก่อนลงมือ', 'อ่านความมั่นใจและเหตุผลที่ต้องตรวจซ้ำ เปรียบเทียบกับอาการจริงก่อนดำเนินการ'],
+      ['ติดตามผล', 'ดูประวัติ คำแนะนำ ดาวเทียม และอากาศร่วมกัน ไม่ตัดสินจากภาพเดียว'],
     ],
     en: [
       ['Create a field', 'Open Field Map, choose Add field, then enter the real name, province, variety, area and coordinates.'],
-      ['Record measured data', 'Open Soil and add laboratory, sensor or field-kit results. Leave untested values blank.'],
       ['Capture a clear photo', 'Use daylight, avoid blur, show the affected leaf or plant clearly and keep the background simple.'],
-      ['Run AI analysis', 'Choose the image type and field, upload JPG/PNG, then Analyze. For whitefly, photograph the leaf underside closely at full resolution.'],
-      ['Review before acting', 'Check confidence, review reasons, auxiliary findings and insect boxes against the plant before taking action.'],
-      ['Monitor over time', 'Use History, Recommendations, Satellite, Weather and Soil together instead of relying on one photo.'],
+      ['Run AI analysis', 'Choose a field, upload JPG/PNG, then analyze one of the five primary classes.'],
+      ['Review before acting', 'Check confidence and review reasons against the plant before taking action.'],
+      ['Monitor over time', 'Use History, Recommendations, Satellite and Weather together instead of relying on one photo.'],
     ],
   };
 
   const FEATURES = {
     th: [
       ['แผนที่แปลง', 'เพิ่มและเลือกแปลง ดูขอบเขต ความเสี่ยง และชั้นข้อมูล NDVI/NDMI/SAVI'],
-      ['วิเคราะห์ด้วย AI', 'จำแนก 5 คลาสหลัก พร้อม Brown Leaf Spot และผลทดลอง White Leaf Spot/Whitefly แบบต้องตรวจซ้ำ'],
+      ['วิเคราะห์ด้วย AI', 'จำแนกเฉพาะ Healthy, CBB, CBSD, CMD และ CGM'],
       ['ดาวเทียมและอากาศ', 'ใช้ Sentinel-2 และ Open-Meteo แบบ live พร้อมแหล่งที่มาและเวลา'],
-      ['ดิน', 'เก็บเฉพาะค่าที่วัดจริง ระบบไม่สร้างค่า N/P/K/pH ทดแทนข้อมูลที่ขาด'],
       ['คำแนะนำและประวัติ', 'รวมหลักฐานหลายแหล่ง บันทึกผล และส่งออก CSV/PDF'],
-      ['ระบบและโมเดล', 'ตรวจสถานะเซิร์ฟเวอร์ ผลวัดโมเดล และความพร้อมของคลาสทั้ง 13'],
+      ['ระบบและโมเดล', 'ตรวจสถานะเซิร์ฟเวอร์และผลวัดโมเดลหลัก 5 คลาส'],
     ],
     en: [
       ['Field Map', 'Create and select fields; inspect boundaries, risk and NDVI/NDMI/SAVI layers.'],
-      ['AI Diagnosis', 'Five primary classes plus Brown Leaf Spot and review-only White Leaf Spot/Whitefly findings.'],
+      ['AI Diagnosis', 'Restricted to Healthy, CBB, CBSD, CMD and CGM.'],
       ['Satellite and weather', 'Live Sentinel-2 and Open-Meteo data with provider and timestamp provenance.'],
-      ['Soil', 'Stores measured values only; missing N/P/K/pH values are never invented.'],
       ['Recommendations and history', 'Combines evidence, records results and exports CSV/PDF.'],
-      ['System and models', 'Inspect server health, measured model metrics and readiness for all 13 classes.'],
+      ['System and models', 'Inspect server health and measured metrics for the five primary classes.'],
     ],
   };
 

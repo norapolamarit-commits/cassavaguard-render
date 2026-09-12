@@ -60,7 +60,7 @@ def _cnn_entry():
     model_path = BASE_DIR / "backend" / "ml_models" / "cnn_primary.onnx"
     return {
         "id": meta["model_id"],
-        "name": "EfficientNet-B0 CNN",
+        "name": meta["architecture"],
         "version": meta["trained_at"][:10],
         "task": "raw-pixel leaf classification (healthy/cbb/cbsd/cmd/cgm)",
         "classes": len(meta["classes"]),
@@ -470,7 +470,7 @@ def system_status(_user: User = Depends(get_current_user)):
             "available": False,
             "device": "CPU inference",
             "backend": (
-                "ONNX Runtime · EfficientNet-B0 raw-pixel CNN"
+                f"ONNX Runtime · {cnn_meta['architecture']}"
                 if cnn_meta
                 else "scikit-learn (trained) + PIL/NumPy feature extraction"
             ),

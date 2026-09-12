@@ -1,217 +1,143 @@
-/* App shell: sidebar, navbar, notification center, FAB, page router. */
+/* CassavaGuard consumer shell: photo-first, calm, and touch-friendly. */
 (function () {
   const { useState, useEffect, useCallback } = React;
-  const { Icon, Badge, ToastHost, Modal } = window.CG.UI;
+  const { Icon, ToastHost, Modal } = window.CG.UI;
   const P = window.CG.Pages;
-
-  // Core: the pages a farmer actually opens every visit -- always visible,
-  // no grouping/scrolling needed to find them. Everything else (dashboards,
-  // raw data feeds, system status, docs) is real but secondary, so it lives
-  // behind a collapsed "More" disclosure instead of competing for attention
-  // in the primary list. Same simplify-the-default, keep-everything-reachable
-  // pattern as the Advanced Options/Details disclosures on the predict page.
-  const NAV_CORE = [
-    { key: 'welcome', icon: 'leaf', label: 'nav_welcome' },
-    { key: 'predict', icon: 'brain', label: 'nav_predict' },
-    { key: 'recommendations', icon: 'bulb', label: 'nav_reco' },
-    { key: 'map', icon: 'map', label: 'nav_map' },
-    { key: 'history', icon: 'history', label: 'nav_history' },
+  const PRIMARY = [
+    { key: 'predict', icon: 'camera', th: 'วิเคราะห์', en: 'Analyze' },
+    { key: 'history', icon: 'history', th: 'ประวัติ', en: 'History' },
+    { key: 'recommendations', icon: 'bulb', th: 'คำแนะนำ', en: 'Advice' },
+    { key: 'weather', icon: 'cloud', th: 'อากาศ', en: 'Weather' },
   ];
-  const NAV_MORE = [
-    { key: 'dashboard', icon: 'grid', label: 'nav_dashboard' },
-    { key: 'satellite', icon: 'satellite', label: 'nav_satellite' },
-    { key: 'weather', icon: 'cloud', label: 'nav_weather' },
-    { key: 'soil', icon: 'soil', label: 'nav_soil' },
-    { key: 'system', icon: 'cpu', label: 'nav_system' },
-    { key: 'guide', icon: 'book', label: 'nav_guide' },
-    { key: 'legal', icon: 'privacy', label: 'nav_legal' },
+  const MORE = [
+    { key: 'map', icon: 'map', th: 'แผนที่แปลง', en: 'Field map' },
+    { key: 'satellite', icon: 'satellite', th: 'ข้อมูลดาวเทียม', en: 'Satellite' },
+    { key: 'dashboard', icon: 'grid', th: 'ภาพรวมข้อมูล', en: 'Overview' },
+    { key: 'system', icon: 'cpu', th: 'สถานะ AI', en: 'AI status' },
+    { key: 'guide', icon: 'book', th: 'วิธีใช้งาน', en: 'How to use' },
+    { key: 'legal', icon: 'privacy', th: 'ความเป็นส่วนตัว', en: 'Privacy' },
   ];
-  const NAV_MORE_KEYS = new Set(NAV_MORE.map((it) => it.key));
 
   function App() {
-    const store = window.CG.Store.useStore();
-    const { t, lang, theme, toggleTheme, toggleLang, user, booted } = store;
-    const [route, setRoute] = useState('welcome');
+    const { lang, theme, toggleTheme, toggleLang, user, booted } = window.CG.Store.useStore();
+    const [route, setRoute] = useState('predict');
     const [routeArg, setRouteArg] = useState(null);
-    const [collapsed, setCollapsed] = useState(false);
-    const [mobileNav, setMobileNav] = useState(false);
-    const [notifOpen, setNotifOpen] = useState(false);
-    const [notifs, setNotifs] = useState({ unread: 0, items: [] });
-    const [moreOpen, setMoreOpen] = useState(NAV_MORE_KEYS.has(route));
-
-    const go = useCallback((r, arg = null) => {
-      setRoute(r); setRouteArg(arg); setMobileNav(false);
-      // if navigating into a "More" page from elsewhere (e.g. a card's
-      // deep link), auto-expand so the newly active item isn't hidden
-      if (NAV_MORE_KEYS.has(r)) setMoreOpen(true);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const label = (item) => lang === 'th' ? item.th : item.en;
+    const go = useCallback((next, arg = null) => {
+      setRoute(next); setRouteArg(arg); setMenuOpen(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
 
-    // load classes into a lookup + fetch notifications
     useEffect(() => {
       if (!user) return;
-      window.CG.API_CLIENT.classes().then((cs) => { window.CG._classMap = {}; cs.forEach((c) => window.CG._classMap[c.key] = c); }).catch(() => {});
-      const loadN = () => window.CG.API_CLIENT.notifications().then(setNotifs).catch(() => {});
-      loadN(); const iv = setInterval(loadN, 20000); return () => clearInterval(iv);
+      window.CG.API_CLIENT.classes().then((classes) => {
+        window.CG._classMap = {};
+        classes.forEach((item) => { window.CG._classMap[item.key] = item; });
+      }).catch(() => {});
     }, [user]);
 
-    if (!booted) return <div className="min-h-screen theme-bg grid place-items-center"><div className="w-10 h-10 rounded-2xl grad-brand grid place-items-center text-white animate-pulse"><Icon name="leaf" className="w-6 h-6" /></div></div>;
-    if (!user) return <div className="min-h-screen theme-bg grid place-items-center px-6 text-center"><div><div className="txt font-bold">CassavaGuard AI</div><div className="txt-soft text-sm mt-2">{lang === 'th' ? 'ไม่สามารถเชื่อมต่อ API ได้ กรุณาตรวจสอบว่า backend กำลังทำงาน' : 'Unable to connect to the API. Check that the backend is running.'}</div></div></div>;
+    if (!booted) return <div className="min-h-screen theme-bg grid place-items-center"><div className="brand-orbit"><Icon name="leaf" className="w-7 h-7" /></div></div>;
+    if (!user) return <div className="min-h-screen theme-bg grid place-items-center px-6 text-center"><div><div className="txt text-xl font-bold">CassavaGuard AI</div><p className="txt-soft mt-2">{lang === 'th' ? 'ไม่สามารถเชื่อมต่อ API ได้ กรุณาตรวจสอบว่า backend กำลังทำงาน' : 'Unable to connect to the API. Check that the backend is running.'}</p></div></div>;
 
-    const markAll = () => window.CG.API_CLIENT.markAllRead().then(() => window.CG.API_CLIENT.notifications().then(setNotifs));
-    const markOne = (id) => window.CG.API_CLIENT.markRead(id).then(() => window.CG.API_CLIENT.notifications().then(setNotifs));
-
-    const pageTitle = {
-      welcome: ['nav_welcome', 'app_tag'], dashboard: ['dash_title', 'dash_sub'], map: ['nav_map', 'dash_sub'],
-      predict: ['predict_title', 'predict_sub'], recommendations: ['nav_reco', 'dash_sub'],
-      satellite: ['nav_satellite', 'veg_indices'], weather: ['nav_weather', 'forecast'],
-      soil: ['nav_soil', 'soil_profile'], history: ['nav_history', 'dash_sub'], system: ['nav_system', 'model_perf'],
-      guide: ['nav_guide', 'app_tag'], legal: ['nav_legal', 'app_tag'],
-    }[route] || ['app_name', 'app_tag'];
-
-    // Render the active page directly as a stable component element.
-    // (Do NOT wrap in inline arrow components — a new function identity each
-    //  render remounts the page and wipes its state on every App update.)
     const renderPage = () => {
       switch (route) {
-        case 'welcome': return <P.Welcome go={go} />;
-        case 'dashboard': return <P.Dashboard go={go} />;
-        case 'map': return <P.FieldMap go={go} />;
         case 'predict': return <P.Predict />;
-        case 'recommendations': return <P.Recommendations initialField={routeArg} />;
-        case 'satellite': return <P.Satellite initialField={routeArg} />;
-        case 'weather': return <P.Weather initialField={routeArg} />;
-        case 'soil': return <P.Soil initialField={routeArg} />;
         case 'history': return <P.History />;
+        case 'recommendations': return <P.Recommendations initialField={routeArg} />;
+        case 'weather': return <P.Weather initialField={routeArg} />;
+        case 'map': return <P.FieldMap go={go} />;
+        case 'satellite': return <P.Satellite initialField={routeArg} />;
+        case 'dashboard': return <P.Dashboard go={go} />;
         case 'system': return <P.System />;
         case 'guide': return <P.Guide />;
         case 'legal': return <P.Legal />;
-        default: return <div className="txt">Not found</div>;
+        default: return <P.Predict />;
       }
     };
+    const current = [...PRIMARY, ...MORE].find((item) => item.key === route);
+    const pageDescriptions = {
+      history: { th: 'ย้อนดูผลวิเคราะห์และติดตามการเปลี่ยนแปลง', en: 'Review analyses and track changes over time' },
+      recommendations: { th: 'แนวทางดูแลที่เชื่อมกับผลวิเคราะห์ล่าสุด', en: 'Care guidance linked to your latest results' },
+      weather: { th: 'สภาพอากาศจริงสำหรับวางแผนงานในแปลง', en: 'Live weather context for field planning' },
+      map: { th: 'ดูตำแหน่งและสถานะของแต่ละแปลง', en: 'View the location and status of every field' },
+      satellite: { th: 'ติดตามความเขียวและการเปลี่ยนแปลงจากดาวเทียม', en: 'Track vegetation and change from satellite data' },
+      dashboard: { th: 'สรุปสิ่งสำคัญจากทุกแปลงในหน้าเดียว', en: 'The important signals across all fields' },
+      system: { th: 'ข้อมูลโมเดล คุณภาพ และความพร้อมของระบบ', en: 'Model quality, evidence, and system readiness' },
+      guide: { th: 'ถ่ายภาพและอ่านผลให้ถูกต้อง', en: 'Capture better photos and understand results' },
+      legal: { th: 'การใช้ข้อมูล ข้อจำกัด และช่องทางติดต่อ', en: 'Data use, limitations, and contact information' },
+    };
 
-    const sidebarW = collapsed ? 'lg:w-[76px]' : 'lg:w-64';
     return (
-      <div className="min-h-screen theme-bg flex">
-        {/* sidebar */}
-        <aside className={`fixed lg:sticky top-0 z-[1000] h-screen shrink-0 transition-all duration-300 ${sidebarW} ${mobileNav ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0'} `}>
-          <div className="h-full glass-strong border-r hair flex flex-col">
-            <div className="p-4 flex items-center gap-3 border-b hair h-16">
-              <div className="w-9 h-9 rounded-xl grad-brand grid place-items-center text-white shrink-0 shadow-lg"><Icon name="leaf" className="w-5 h-5" /></div>
-              {!collapsed && <div className="min-w-0"><div className="txt font-bold text-sm leading-tight">CassavaGuard <span className="grad-text">AI</span></div><div className="txt-dim text-[10px] truncate">{t('app_tag')}</div></div>}
-            </div>
-
-            <nav className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-1">
-              {NAV_CORE.map((it) => {
-                const active = route === it.key;
-                return (
-                  <button key={it.key} onClick={() => go(it.key)} title={t(it.label)}
-                    className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 transition group relative ${active ? 'grad-brand text-white shadow-lg shadow-brand-500/20' : 'txt-soft hover:txt hover:bg-white/[.04]'}`}>
-                    <Icon name={it.icon} className="w-5 h-5 shrink-0" />
-                    {!collapsed && <span className="text-sm font-medium truncate">{t(it.label)}</span>}
-                    {active && !collapsed && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/80" />}
-                  </button>
-                );
-              })}
-
-              <div className="pt-2">
-                <button onClick={() => setMoreOpen((v) => !v)} title={t('nav_more')}
-                  className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 txt-dim hover:txt hover:bg-white/[.04] transition">
-                  <Icon name={moreOpen ? 'close' : 'grid'} className="w-4 h-4 shrink-0" />
-                  {!collapsed && <span className="text-xs font-semibold uppercase tracking-wider truncate">{t('nav_more')}</span>}
-                </button>
-                {moreOpen && (
-                  <div className="space-y-1 mt-1">
-                    {NAV_MORE.map((it) => {
-                      const active = route === it.key;
-                      return (
-                        <button key={it.key} onClick={() => go(it.key)} title={t(it.label)}
-                          className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 transition group relative ${active ? 'grad-brand text-white shadow-lg shadow-brand-500/20' : 'txt-soft hover:txt hover:bg-white/[.04]'}`}>
-                          <Icon name={it.icon} className="w-5 h-5 shrink-0" />
-                          {!collapsed && <span className="text-sm font-medium truncate">{t(it.label)}</span>}
-                          {active && !collapsed && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/80" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+      <div className="min-h-screen theme-bg pb-24 md:pb-0">
+        <a href="#main-content" className="skip-link">{lang === 'th' ? 'ข้ามไปยังเนื้อหาหลัก' : 'Skip to main content'}</a>
+        <header className="sticky top-0 z-[800] app-header">
+          <div className="max-w-7xl mx-auto h-[72px] px-4 sm:px-6 flex items-center gap-4">
+            <button onClick={() => go('predict')} className="flex items-center gap-3 shrink-0" aria-label="CassavaGuard">
+              <span className="brand-mark"><Icon name="leaf" className="w-6 h-6" /></span>
+              <span className="hidden sm:block text-left"><span className="txt block font-extrabold text-base leading-none">CassavaGuard</span><span className="brand-copy block mt-1">AI ตรวจสุขภาพมันสำปะหลัง</span></span>
+            </button>
+            <nav className="hidden md:flex items-center justify-center gap-1 ml-auto" aria-label={lang === 'th' ? 'เมนูหลัก' : 'Main navigation'}>
+              {PRIMARY.map((item) => <NavButton key={item.key} item={item} active={route === item.key} text={label(item)} onClick={() => go(item.key)} />)}
+              <button onClick={() => setMenuOpen(true)} className="nav-pill txt-soft"><Icon name="grid" className="w-4 h-4" />{lang === 'th' ? 'เพิ่มเติม' : 'More'}</button>
             </nav>
-
-            <div className="p-3 border-t hair">
-              <div className={`flex items-center gap-3 rounded-xl px-2 py-2 glass ${collapsed ? 'justify-center' : ''}`}>
-                <div className="w-8 h-8 rounded-lg grad-brand grid place-items-center text-white text-xs font-bold shrink-0">{(user.full_name || user.email)[0].toUpperCase()}</div>
-                {!collapsed && <div className="min-w-0 flex-1"><div className="txt text-xs font-semibold truncate">{user.full_name || user.email.split('@')[0]}</div><div className="txt-dim text-[10px] capitalize">{t(user.role)}</div></div>}
-              </div>
-              <button onClick={() => setCollapsed((v) => !v)} className="hidden lg:flex w-full mt-2 items-center justify-center txt-dim hover:txt py-1.5 rounded-lg hover:bg-white/[.04]">
-                <Icon name="chevron" className={`w-4 h-4 transition ${collapsed ? '' : 'rotate-180'}`} />
-              </button>
+            <div className="flex items-center gap-2 md:ml-3 ml-auto">
+              <button onClick={toggleLang} className="utility-button" aria-label={lang === 'th' ? 'เปลี่ยนเป็นภาษาอังกฤษ' : 'Switch to Thai'}>{lang === 'th' ? 'EN' : 'ไทย'}</button>
+              <button onClick={toggleTheme} className="utility-button square" aria-label={lang === 'th' ? 'เปลี่ยนธีม' : 'Change theme'}><Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" /></button>
+              <button onClick={() => setMenuOpen(true)} className="utility-button square md:hidden" aria-label={lang === 'th' ? 'เปิดเมนู' : 'Open menu'}><Icon name="menu" className="w-5 h-5" /></button>
             </div>
           </div>
-        </aside>
-        {mobileNav && <div className="fixed inset-0 z-[999] bg-black/50 lg:hidden" onClick={() => setMobileNav(false)} />}
+        </header>
 
-        {/* main */}
-        <div className="flex-1 min-w-0 flex flex-col">
-          {/* navbar */}
-          <header className="sticky top-0 z-[800] h-16 glass-strong border-b hair flex items-center gap-3 px-4 lg:px-6">
-            <button onClick={() => setMobileNav(true)} className="lg:hidden txt-soft hover:txt"><Icon name="menu" /></button>
-            <div className="min-w-0">
-              <h1 className="txt font-bold text-base lg:text-lg leading-tight truncate">{t(pageTitle[0])}</h1>
-              <p className="txt-dim text-[11px] truncate hidden sm:block">{t(pageTitle[1])}</p>
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <button onClick={toggleLang} className="glass rounded-lg px-2.5 py-1.5 txt-soft text-xs font-semibold hover:txt">{lang === 'th' ? 'EN' : 'ไทย'}</button>
-              <button onClick={toggleTheme} className="glass rounded-lg w-9 h-9 grid place-items-center txt-soft hover:txt"><Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" /></button>
-              <button onClick={() => setNotifOpen(true)} className="glass rounded-lg w-9 h-9 grid place-items-center txt-soft hover:txt relative">
-                <Icon name="bell" className="w-4 h-4" />
-                {notifs.unread > 0 && <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold grid place-items-center">{notifs.unread}</span>}
-              </button>
-            </div>
-          </header>
+        {route !== 'predict' && <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-7"><div className="route-heading"><span className="page-icon"><Icon name={current?.icon || 'leaf'} className="w-5 h-5" /></span><div><h1 className="txt text-2xl sm:text-3xl font-extrabold">{current ? label(current) : 'CassavaGuard'}</h1>{pageDescriptions[route] && <p className="txt-soft text-sm mt-1">{lang === 'th' ? pageDescriptions[route].th : pageDescriptions[route].en}</p>}</div></div></div>}
+        <main id="main-content" tabIndex="-1" className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-7"><div key={route} className="page-enter">{renderPage()}</div></main>
 
-          {/* page body */}
-          <main className="flex-1 p-4 lg:p-6 max-w-[1600px] w-full mx-auto">
-            {renderPage()}
-          </main>
-        </div>
+        <nav className="mobile-dock md:hidden" aria-label={lang === 'th' ? 'เมนูหลัก' : 'Main navigation'}>
+          {PRIMARY.slice(0, 3).map((item) => <DockButton key={item.key} item={item} active={route === item.key} text={label(item)} onClick={() => go(item.key)} />)}
+          <DockButton item={{ icon: 'menu' }} active={MORE.some((item) => item.key === route) || route === 'weather'} text={lang === 'th' ? 'เมนู' : 'Menu'} onClick={() => setMenuOpen(true)} />
+        </nav>
 
-        {/* FAB */}
-        {route !== 'predict' && route !== 'welcome' && (
-          <button onClick={() => go('predict')} title={t('nav_predict')}
-            className="fixed bottom-6 right-6 z-[850] w-14 h-14 rounded-2xl grad-brand text-white grid place-items-center shadow-2xl shadow-brand-500/30 hover:scale-105 active:scale-95 transition animate-floaty">
-            <Icon name="brain" className="w-6 h-6" />
-          </button>
-        )}
-
-        {/* notifications drawer */}
-        <Modal open={notifOpen} onClose={() => setNotifOpen(false)} title={t('notifications')}>
-          <div className="flex justify-end mb-3">
-            <button onClick={markAll} className="txt-soft hover:txt text-xs flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" />{t('mark_all_read')}</button>
-          </div>
-          <div className="space-y-2">
-            {notifs.items.length === 0 && <div className="txt-dim text-sm text-center py-8">{t('no_data')}</div>}
-            {notifs.items.map((n) => (
-              <div key={n.id} onClick={() => markOne(n.id)}
-                className={`rounded-xl p-3 cursor-pointer transition ${n.read ? 'glass opacity-60' : 'glass hover:bg-white/[.04]'}`}>
-                <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-lg grid place-items-center shrink-0 ${n.severity === 'high' ? 'bg-rose-500/15 text-rose-300' : n.severity === 'medium' ? 'bg-amber-500/15 text-amber-300' : 'bg-cyan2/15 text-cyan2-light'}`}>
-                    <Icon name={{ disease: 'brain', nutrient: 'soil', water: 'drop', weather: 'cloud' }[n.kind] || 'bell'} className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2"><span className="txt text-sm font-semibold">{lang === 'th' ? n.title_th : n.title}</span>{!n.read && <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />}</div>
-                    <p className="txt-soft text-xs mt-0.5 leading-snug">{lang === 'th' ? n.message_th : n.message}</p>
-                    <div className="txt-dim text-[10px] mt-1">{n.created_at.replace('T', ' ').slice(0, 16)}{n.field_name ? ` · ${lang === 'th' ? n.field_name_th || n.field_name : n.field_name}` : ''}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+        <Modal open={menuOpen} onClose={() => setMenuOpen(false)} title={lang === 'th' ? 'เมนูทั้งหมด' : 'All features'}>
+          <div className="grid grid-cols-2 gap-3">
+            {[...PRIMARY, ...MORE].map((item) => <button key={item.key} onClick={() => go(item.key)} className={`menu-tile ${route === item.key ? 'active' : ''}`}><span className="menu-tile-icon"><Icon name={item.icon} className="w-5 h-5" /></span><span>{label(item)}</span></button>)}
           </div>
         </Modal>
-
+        <AdviceChatbot lang={lang} />
         <ToastHost />
       </div>
     );
   }
 
+  function NavButton({ item, active, text, onClick }) {
+    return <button onClick={onClick} className={`nav-pill ${active ? 'active' : 'txt-soft'}`}><Icon name={item.icon} className="w-4 h-4" />{text}</button>;
+  }
+  function DockButton({ item, active, text, onClick }) {
+    return <button onClick={onClick} className={`dock-item ${active ? 'active' : ''}`}><Icon name={item.icon} className="w-5 h-5" /><span>{text}</span></button>;
+  }
+  function AdviceChatbot({ lang }) {
+    const [open, setOpen] = useState(false);
+    const [input, setInput] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [messages, setMessages] = useState([{ role: 'assistant', text: lang === 'th' ? 'สวัสดีครับ ผมช่วยอธิบายผลล่าสุดและแนะนำขั้นตอนดูแลได้' : 'Hello. I can explain your latest result and suggest next care steps.' }]);
+    const send = async (value) => {
+      const text = (value || input).trim(); if (!text || busy) return;
+      setMessages((items) => [...items, { role: 'user', text }]); setInput(''); setBusy(true);
+      try {
+        const result = await window.CG.API_CLIENT.chat(text, lang);
+        setMessages((items) => [...items, { role: 'assistant', text: result.reply, quick: result.quick_replies }]);
+      } catch (error) {
+        setMessages((items) => [...items, { role: 'assistant', text: error.message || (lang === 'th' ? 'เชื่อมต่อผู้ช่วยไม่ได้' : 'Assistant unavailable') }]);
+      } finally { setBusy(false); }
+    };
+    return <div className={`advice-chat ${open ? 'open' : ''}`}>
+      {open && <section className="advice-chat-panel" aria-label={lang === 'th' ? 'ผู้ช่วยแนะนำ' : 'Advice assistant'}>
+        <header><div><b>{lang === 'th' ? 'ผู้ช่วย CassavaGuard' : 'CassavaGuard Assistant'}</b><span>{lang === 'th' ? 'อ้างอิงผลวิเคราะห์ล่าสุด' : 'Grounded in your latest result'}</span></div><button onClick={() => setOpen(false)} aria-label="Close"><Icon name="close" className="w-5 h-5" /></button></header>
+        <div className="advice-chat-messages">{messages.map((message, index) => <div key={index} className={`chat-message ${message.role}`}><p>{message.text}</p>{message.quick && <div className="chat-quick">{message.quick.map((item) => <button key={item} onClick={() => send(item)}>{item}</button>)}</div>}</div>)}{busy && <div className="chat-message assistant"><Spinner className="w-4 h-4" /></div>}</div>
+        <form onSubmit={(event) => { event.preventDefault(); send(); }}><input maxLength="500" value={input} onChange={(event) => setInput(event.target.value)} placeholder={lang === 'th' ? 'ถามเรื่องผล โรค น้ำ ปุ๋ย หรือผลผลิต…' : 'Ask about results, disease, water, fertilizer…'} /><button disabled={busy || !input.trim()}><Icon name="play" className="w-4 h-4" /></button></form>
+        <small>{lang === 'th' ? 'คำแนะนำเพื่อคัดกรอง ไม่แทนผู้เชี่ยวชาญหรือผลห้องปฏิบัติการ' : 'Screening guidance; not a substitute for expert or laboratory confirmation.'}</small>
+      </section>}
+      <button className="advice-chat-fab" onClick={() => setOpen((value) => !value)} aria-label={lang === 'th' ? 'เปิดผู้ช่วยแนะนำ' : 'Open advice assistant'}><Icon name={open ? 'close' : 'bulb'} className="w-6 h-6" /><span>{lang === 'th' ? 'ถามผู้ช่วย' : 'Ask'}</span></button>
+    </div>;
+  }
   window.CG.App = App;
 })();

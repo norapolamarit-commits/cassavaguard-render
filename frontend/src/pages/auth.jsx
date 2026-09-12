@@ -69,7 +69,7 @@
           </div>
           <div className="relative">
             <h1 className="txt text-4xl font-bold leading-tight">{lang === 'th' ? 'เกษตรแม่นยำ' : 'Precision agriculture'}<br /><span className="grad-text">{lang === 'th' ? 'ขับเคลื่อนด้วย AI' : 'powered by AI'}</span></h1>
-            <p className="txt-soft mt-4 max-w-md">{lang === 'th' ? 'ระบบสนับสนุนการตัดสินใจอัจฉริยะสำหรับเกษตรกรมันสำปะหลัง — วินิจฉัยโรค วิเคราะห์ดาวเทียม ดิน และสภาพอากาศ พร้อมคำแนะนำที่มีหลักฐานรองรับ' : 'An intelligent decision-support platform for cassava farmers — disease diagnosis, satellite, soil & weather analytics with evidence-based recommendations.'}</p>
+            <p className="txt-soft mt-4 max-w-md">{lang === 'th' ? 'ระบบสนับสนุนการตัดสินใจสำหรับเกษตรกรมันสำปะหลัง — วิเคราะห์ภาพ สภาพอากาศ ภูมิประเทศ และดาวเทียมพร้อมหลักฐานอ้างอิง' : 'Decision support for cassava farmers using image diagnosis, weather, terrain, and satellite evidence.'}</p>
             <div className="flex gap-6 mt-8">
               {[
                 [modelStats && modelStats.accuracy != null ? (modelStats.accuracy * 100).toFixed(1) + '%' : '—', lang === 'th' ? 'ความแม่นยำ (จริง)' : 'Accuracy (real)'],

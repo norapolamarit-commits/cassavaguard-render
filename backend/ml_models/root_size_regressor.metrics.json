@@ -1,0 +1,49 @@
+{
+  "model_id": "root_size_saengwilai_v1",
+  "targets": {
+    "side": [
+      "AREA(S)",
+      "SKL_WIDTH(S)",
+      "SKL_DEPTH(S)"
+    ],
+    "top": [
+      "AREA(T)",
+      "WIDTH_MAX(T)",
+      "SKL_WIDTH(T)"
+    ]
+  },
+  "evaluation": {
+    "side": {
+      "split": "5-fold plant-grouped CV",
+      "winner": "extra_trees",
+      "mae": [
+        1788.462,
+        41.046,
+        28.444
+      ],
+      "r2": [
+        0.722,
+        0.554,
+        0.094
+      ]
+    },
+    "top": {
+      "split": "5-fold plant-grouped CV",
+      "winner": "extra_trees",
+      "mae": [
+        2167.053,
+        50.648,
+        47.76
+      ],
+      "r2": [
+        0.587,
+        0.284,
+        0.274
+      ]
+    }
+  },
+  "counts": {
+    "side": 32,
+    "top": 39
+  }
+}

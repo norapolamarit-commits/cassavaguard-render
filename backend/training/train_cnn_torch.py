@@ -32,7 +32,11 @@ from PIL import Image, ImageOps
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from backend.services.feature_extraction import ML_CLASS_ORDER
+from backend.services.feature_extraction import (
+    ML_CLASS_ORDER,
+    gray_world_white_balance,
+    leaf_background_crop,
+)
 from backend.training.training_utils import atomic_write_json, sha256_file
 
 MODEL_DIR = REPO_ROOT / "backend" / "ml_models"
@@ -91,13 +95,7 @@ class GrayWorldWhiteBalance:
     """
 
     def __call__(self, image):
-        array = np.asarray(image).astype(np.float32)
-        channel_means = array.reshape(-1, 3).mean(axis=0)
-        gray = float(channel_means.mean())
-        scale = gray / np.clip(channel_means, 1.0, None)
-        scale = np.clip(scale, 0.5, 2.0)
-        corrected = np.clip(array * scale, 0, 255).astype(np.uint8)
-        return Image.fromarray(corrected)
+        return gray_world_white_balance(image)
 
 
 class LeafBackgroundCrop:
@@ -117,25 +115,7 @@ class LeafBackgroundCrop:
         self.min_area_fraction = min_area_fraction
 
     def __call__(self, image):
-        hsv = np.asarray(image.convert("HSV"))
-        hue_degrees = hsv[..., 0].astype(np.float32) * (360.0 / 255.0)
-        saturation, value = hsv[..., 1], hsv[..., 2]
-        vegetation_mask = (
-            (hue_degrees >= 30) & (hue_degrees <= 170) & (saturation > 25) & (value > 20)
-        )
-        if vegetation_mask.sum() < self.min_area_fraction * vegetation_mask.size:
-            return image
-        rows, cols = np.where(vegetation_mask)
-        y0, y1 = int(rows.min()), int(rows.max())
-        x0, x1 = int(cols.min()), int(cols.max())
-        height, width = vegetation_mask.shape
-        margin_y = int((y1 - y0) * self.margin)
-        margin_x = int((x1 - x0) * self.margin)
-        y0 = max(0, y0 - margin_y)
-        y1 = min(height, y1 + margin_y + 1)
-        x0 = max(0, x0 - margin_x)
-        x1 = min(width, x1 + margin_x + 1)
-        return image.crop((x0, y0, x1, y1))
+        return leaf_background_crop(image, self.margin, self.min_area_fraction)
 
 
 class TiledRandomCrop:
@@ -222,7 +202,14 @@ class SaliencyGuidedCrop:
         return image.crop((x0, y0, x1, y1))
 
 
-PIPELINE_CHOICES = ("none", "color_constancy", "leaf_crop", "tiled_crop", "saliency_crop")
+PIPELINE_CHOICES = (
+    "none",
+    "color_constancy",
+    "leaf_crop",
+    "field_robust",
+    "tiled_crop",
+    "saliency_crop",
+)
 
 
 def _build_pipeline_transform(name: str, image_size: int):
@@ -240,6 +227,14 @@ def _build_pipeline_transform(name: str, image_size: int):
         return GrayWorldWhiteBalance(), None
     if name == "leaf_crop":
         return LeafBackgroundCrop(), None
+    if name == "field_robust":
+        # Deterministic and therefore identical in train/validation/test/runtime.
+        # This is an ablation candidate, never silently enabled for the published
+        # model: color constancy reduces phone/lighting shift and the conservative
+        # crop reduces reliance on field backgrounds.
+        from torchvision import transforms
+
+        return transforms.Compose([GrayWorldWhiteBalance(), LeafBackgroundCrop()]), None
     if name == "saliency_crop":
         return SaliencyGuidedCrop(image_size), None
     if name == "tiled_crop":
@@ -255,7 +250,13 @@ def parse_args(argv=None):
     parser.add_argument("--fine-tune-blocks", type=int, default=4)
     parser.add_argument(
         "--architecture",
-        choices=("efficientnet_b0", "efficientnet_b2", "efficientnet_b3", "mobilenet_v3_large"),
+        choices=(
+            "efficientnet_b0",
+            "efficientnet_b2",
+            "efficientnet_b3",
+            "mobilenet_v3_large",
+            "convnext_tiny",
+        ),
         default="efficientnet_b0",
     )
     parser.add_argument("--batch-size", type=int, default=32)
@@ -277,6 +278,11 @@ def parse_args(argv=None):
              "instead of a plain shuffle -- a different mechanism from --class-weight-power "
              "(that reweights the loss; this reweights how often each image is seen)",
     )
+    parser.add_argument(
+        "--balance-classes-and-sources", action="store_true",
+        help="sample every class equally, then every available source equally within "
+             "that class; recommended when adding large external datasets",
+    )
     parser.add_argument("--label-smoothing", type=float, default=0.08)
     parser.add_argument("--output-dir", type=Path, default=MODEL_DIR,
                         help="write candidate artifacts outside backend/ml_models until promoted")
@@ -285,6 +291,23 @@ def parse_args(argv=None):
         help="class-folder dataset added to training only after cross-source duplicate quarantine",
     )
     return parser.parse_args(argv)
+
+
+def _class_source_sample_weights(labels: list[int], sources: list[str]) -> list[float]:
+    """Equalize classes, then sources within each class.
+
+    A large external CMD dataset must not swamp scarce official CBB examples, and
+    an external source must not become a shortcut merely because it has more files.
+    Missing class/source combinations receive no invented samples.
+    """
+    if len(labels) != len(sources) or not labels:
+        raise ValueError("labels and sources must be non-empty and aligned")
+    cell_counts = Counter(zip(labels, sources))
+    sources_per_class: dict[int, int] = Counter(label for label, _ in cell_counts)
+    return [
+        1.0 / (sources_per_class[label] * cell_counts[(label, source)])
+        for label, source in zip(labels, sources)
+    ]
 
 
 def _find_data_dir(explicit: Path | None) -> Path:
@@ -563,13 +586,16 @@ def _load_extra_training_records(
     """Load real external images for training only, quarantining overlap."""
     if not directories:
         return [], []
-    reference = []
+    # Index perceptual hashes by dHash. The duplicate policy requires an exact
+    # dHash match, so scanning every prior image would turn large external-source
+    # imports into an avoidable O(n²) operation.
+    reference: dict[str, list[str]] = {}
     exact_hashes = set()
     for split in SPLITS:
         for path, _label in official_records[split]:
             exact, dhash, phash = _fingerprints_for_path(path)
             exact_hashes.add(exact)
-            reference.append((dhash, phash))
+            reference.setdefault(dhash, []).append(phash)
 
     accepted = []
     reports = []
@@ -591,14 +617,13 @@ def _load_extra_training_records(
                     removed_exact += 1
                     continue
                 if any(
-                    dhash == known_dhash
-                    and _hamming_hex(phash, known_phash) <= PERCEPTUAL_MAX_PHASH_HAMMING
-                    for known_dhash, known_phash in reference
+                    _hamming_hex(phash, known_phash) <= PERCEPTUAL_MAX_PHASH_HAMMING
+                    for known_phash in reference.get(dhash, ())
                 ):
                     removed_perceptual += 1
                     continue
                 exact_hashes.add(exact)
-                reference.append((dhash, phash))
+                reference.setdefault(dhash, []).append(phash)
                 accepted.append((path, class_index))
                 counts[class_name] += 1
         reports.append({
@@ -730,6 +755,16 @@ def main(argv=None):
         raise SystemExit("class-weight-power must be between 0 and 1")
     if not 0.0 <= args.label_smoothing < 1.0:
         raise SystemExit("label-smoothing must be in [0, 1)")
+    if args.oversample_minority_classes and args.balance_classes_and_sources:
+        raise SystemExit(
+            "choose either --oversample-minority-classes or "
+            "--balance-classes-and-sources, not both"
+        )
+    if args.balance_classes_and_sources and args.class_weight_power != 0:
+        raise SystemExit(
+            "--balance-classes-and-sources already equalizes class exposure; set "
+            "--class-weight-power 0 to avoid double compensation"
+        )
 
     os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
     import torch
@@ -737,8 +772,10 @@ def main(argv=None):
     from torch.utils.data import DataLoader, Dataset
     from torchvision import transforms
     from torchvision.models import (
+        ConvNeXt_Tiny_Weights,
         EfficientNet_B0_Weights, EfficientNet_B2_Weights, EfficientNet_B3_Weights,
         MobileNet_V3_Large_Weights,
+        convnext_tiny,
         efficientnet_b0, efficientnet_b2, efficientnet_b3,
         mobilenet_v3_large,
     )
@@ -837,7 +874,31 @@ def main(argv=None):
         device=device,
     )
 
-    if args.oversample_minority_classes:
+    if args.balance_classes_and_sources:
+        extra_roots = [path.expanduser().resolve() for path in args.extra_data_dir]
+
+        def source_for(path):
+            resolved = path.resolve()
+            for index, root in enumerate(extra_roots):
+                if resolved.is_relative_to(root):
+                    return f"external_{index + 1}"
+            return "official_tfds"
+
+        labels = [label for _path, label in records["train"]]
+        sources = [source_for(path) for path, _label in records["train"]]
+        sample_weights = _class_source_sample_weights(labels, sources)
+        sampler = torch.utils.data.WeightedRandomSampler(
+            weights=sample_weights,
+            num_samples=len(records["train"]),
+            replacement=True,
+            generator=torch.Generator().manual_seed(args.seed),
+        )
+        train_loader = DataLoader(
+            CassavaDataset(records["train"], train_transform),
+            sampler=sampler,
+            **loader_args,
+        )
+    elif args.oversample_minority_classes:
         # Distinct mechanism from --class-weight-power: that reweights the loss
         # gradient but every epoch still sees each real image exactly once.
         # Sampling with replacement, weighted by inverse class frequency, means
@@ -877,6 +938,7 @@ def main(argv=None):
         "efficientnet_b2": (efficientnet_b2, EfficientNet_B2_Weights.IMAGENET1K_V1),
         "efficientnet_b3": (efficientnet_b3, EfficientNet_B3_Weights.IMAGENET1K_V1),
         "mobilenet_v3_large": (mobilenet_v3_large, MobileNet_V3_Large_Weights.IMAGENET1K_V2),
+        "convnext_tiny": (convnext_tiny, ConvNeXt_Tiny_Weights.IMAGENET1K_V1),
     }
     builder, pretrained_weights = builders[args.architecture]
     network = builder(weights=pretrained_weights)
@@ -1148,6 +1210,7 @@ def main(argv=None):
                 },
                 "class_weight_power": args.class_weight_power,
                 "oversample_minority_classes": args.oversample_minority_classes,
+                "balance_classes_and_sources": args.balance_classes_and_sources,
                 "pipeline": args.pipeline,
                 "label_smoothing": args.label_smoothing,
                 "imagenet_initialization": True,

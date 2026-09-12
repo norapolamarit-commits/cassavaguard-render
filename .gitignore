@@ -7,8 +7,10 @@ backend/training/.venv-detector/
 /.venv/
 /.venv-detector/
 backend/training/__pycache__/
-backend/training/data/
+backend/training/data/*
+!backend/training/data/cassava_3d_weight_2022.csv
 backend/training/runs/
+backend/training/candidates/
 yolo*.pt
 
 __pycache__/
@@ -29,6 +31,9 @@ node_modules/
 # meant to be source-controlled; on Render this lives on the mounted persistent disk
 # instead (see DATA_DIR in backend/config.py + render.yaml).
 database/
+.venv-training/
+data/pseudo_field_*/
+data/candidates/
 uploads/
 
 # Two trained model files exceed GitHub's 100MB single-file limit and are NOT the

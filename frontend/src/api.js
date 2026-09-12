@@ -61,11 +61,18 @@
     fieldsGeo: () => request('/api/fields/geojson'),
     field: (id) => request('/api/fields/' + id),
     createField: (payload) => request('/api/fields', { method: 'POST', body: payload }),
+    chat: (message, language = 'th') => request('/api/chat', { method: 'POST', body: { message, language } }),
 
     predictImage: (file, source, field_id) => {
       const fd = new FormData(); fd.append('file', file); fd.append('source', source);
       if (field_id) fd.append('field_id', field_id);
       return request('/api/predict/image', { method: 'POST', form: fd });
+    },
+    predictImages: (items, field_id) => {
+      const fd = new FormData();
+      items.forEach((item) => { fd.append('files', item.file); fd.append('sources', item.source); });
+      if (field_id) fd.append('field_id', field_id);
+      return request('/api/predict/images', { method: 'POST', form: fd });
     },
     predictCsv: (file, field_id) => {
       const fd = new FormData(); fd.append('file', file);
@@ -73,6 +80,24 @@
       return request('/api/predict/csv', { method: 'POST', form: fd });
     },
     classes: () => request('/api/predict/classes'),
+    predictionContext: (id) => request(`/api/predict/context/${id}`),
+    yieldEstimate: (payload) => request('/api/predict/yield-estimate', { method: 'POST', body: payload }),
+    rootWeight: (payload) => request('/api/predict/root-weight', { method: 'POST', body: payload }),
+    rootSize: (file, view = 'side') => {
+      const fd = new FormData(); fd.append('file', file); fd.append('view', view);
+      return request('/api/predict/root-size', { method: 'POST', form: fd });
+    },
+    saveRootImageSet: (files) => {
+      const fd = new FormData(); files.forEach((file) => fd.append('files', file));
+      return request('/api/predict/root-image-sets', { method: 'POST', form: fd });
+    },
+    saveRootVideoSet: (file) => {
+      const fd = new FormData(); fd.append('file', file);
+      return request('/api/predict/root-video-sets', { method: 'POST', form: fd });
+    },
+    startRootReconstruction: (payload) => request('/api/predict/reconstruction', { method: 'POST', body: payload }),
+    rootReconstructionStatus: (jobId) => request(`/api/predict/reconstruction/${jobId}`),
+    saveHarvestMeasurement: (payload) => request('/api/predict/harvest-measurements', { method: 'POST', body: payload }),
 
     satMeta: () => request('/api/satellite/meta'),
     satTimeline: (id, months = 12) => request(`/api/satellite/${id}/timeline?months=${months}`),

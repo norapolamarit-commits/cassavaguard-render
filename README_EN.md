@@ -104,6 +104,15 @@ python serve.py
 
 Open <http://127.0.0.1:8800/> and check <http://127.0.0.1:8800/api/health>.
 
+When an image diagnosis is linked to a field, the system combines the CNN result
+with live weather, approximate terrain elevation, and satellite indices to produce
+field-specific guidance. This evidence does not
+change CNN disease probabilities, and unavailable sources are disclosed explicitly.
+
+The CNN response is returned first. The web client then calls
+`/api/predict/context/{prediction_id}` separately, so slow or unavailable satellite
+data cannot discard the image diagnosis and synthetic values are never substituted.
+
 On Windows PowerShell, activate the environment with:
 
 ```powershell
@@ -195,6 +204,16 @@ current state through the [Model Readiness API](https://cassavaguard-render.onre
 - Published: 228 images; accepted into Train: 225; near-duplicates quarantined: 3
 - Healthy 91 / CBB 46 / CMD 88
 - Used only for training; official Validation and Test remained untouched.
+
+### Figshare Cassava Image Dataset3 — additional real images
+
+- Dataset: [Figshare Cassava Image Dataset3](https://doi.org/10.6084/m9.figshare.21769070.v2)
+- Publisher: Viet Chau Nguyen; licence: CC BY 4.0
+- Archive checksum matches the Figshare API: MD5 `10ac3eb77b5f933235fe805957c0971d`
+- 7,131 decoded/deduplicated publisher-train images: CBSD 2,397 / CMD 3,978 / Healthy 756
+- Two within-source exact duplicates were removed; no overlap with TFDS was found
+- The 1,786-image publisher test split remains sealed external evaluation data
+- The source has no CBB/CGM labels, so those labels are never inferred or fabricated
 
 Raw datasets are not stored in GitHub because of size, licensing, and privacy.
 Every new source must pass provenance, label-mapping, licence, and leakage review.
@@ -331,6 +350,9 @@ described in the [Render deployment guide](deploy/render/README.md).
 |---|---|---|
 | `GET` | `/api/health` | Service health and runtime readiness |
 | `POST` | `/api/predict/image` | Validate and analyze a leaf image |
+| `POST` | `/api/predict/images` | Fuse 2–4 leaf and whole-plant views |
+| `POST` | `/api/predict/yield-estimate` | Return a quality-gated fresh-root weight range |
+| `POST` | `/api/predict/harvest-measurements` | Store destructive-harvest labels for future training |
 | `GET` | `/api/models` | Model registry and artifact status |
 | `GET` | `/api/models/readiness` | Per-class readiness |
 | `GET` | `/api/models/compare` | Model-comparison metrics |
@@ -339,6 +361,32 @@ described in the [Render deployment guide](deploy/render/README.md).
 
 Schemas and examples are in the [API reference](docs/API.md). Swagger UI is
 available at `/api/docs` only in development when `ENABLE_API_DOCS=true`.
+
+> The current weight range is a scenario model, not an ML model validated on paired
+> image–weight observations. It reports `production_eligible=false` until sufficient
+> destructive-harvest labels exist and a candidate passes a held-out test.
+
+The initial range is anchored to 216 measured height/weight pairs from the CC BY 4.0
+[Abegunde et al. (2024) dataset](https://doi.org/10.17632/gh2nfyyknj.1). It contains
+no images paired to harvest weight and comes from Nigeria, so it is used only as a
+wide external prior—not as evidence of Thai-field accuracy.
+
+### Yield-model training pipeline
+
+After verified destructive-harvest measurements have been recorded from the result
+screen, export them and train a candidate:
+
+```bash
+python -m backend.training.export_yield_labels --output data/yield/verified_harvest_labels.csv
+python -m backend.training.train_yield_regressor \
+  --input data/yield/verified_harvest_labels.csv \
+  --output-dir tmp/candidates/yield
+```
+
+Training fails closed below 150 labels or five independent fields. It uses field-grouped
+Train/Validation/Test splits and targets at least 95% of sealed-Test samples within 20%
+relative error with `R² ≥ 0.60`. Output remains a candidate and never replaces the
+production estimator automatically.
 
 ## Documentation
 

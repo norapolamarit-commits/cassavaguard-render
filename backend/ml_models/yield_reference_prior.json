@@ -1,0 +1,33 @@
+{
+  "artifact_id": "cassava_yield_reference_prior_gh2nfyyknj_v1",
+  "purpose": "external agronomic prior; not paired with CassavaGuard images",
+  "source": {
+    "doi": "10.17632/gh2nfyyknj.1",
+    "url": "https://data.mendeley.com/datasets/gh2nfyyknj/1",
+    "license": "CC BY 4.0",
+    "workbook_sha256": "54bb7012b87c83a8601e22936ca3f9542f8d66b77286ad826bc3fe8fc78c4142",
+    "authors": "Abegunde et al.",
+    "published_year": 2024,
+    "geography": "Nigeria; demonstration-plot accessions collected from 290 source fields"
+  },
+  "records": {
+    "valid_height_weight_pairs": 216,
+    "reported_accessions": 470
+  },
+  "fresh_root_weight_kg": {
+    "p10": 0.23,
+    "p25": 0.3975,
+    "median": 0.76,
+    "p75": 1.385,
+    "p90": 2.5975,
+    "min": 0.09,
+    "max": 5.84
+  },
+  "height_weight_pearson_r": 0.05991,
+  "limitations": [
+    "No plant or leaf images are paired with these harvest records.",
+    "The source geography and cultivars are not a Thai-field validation set.",
+    "Height alone has weak correlation with harvested root weight."
+  ],
+  "production_eligible": false
+}

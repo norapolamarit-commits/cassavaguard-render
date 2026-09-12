@@ -77,6 +77,31 @@ class Prediction(Base):
     field = relationship("Field", back_populates="predictions")
 
 
+class HarvestMeasurement(Base):
+    """Verified destructive-harvest label paired with an image prediction."""
+
+    __tablename__ = "harvest_measurements"
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=now, nullable=False, index=True)
+    measured_at = Column(DateTime, default=now, nullable=False, index=True)
+    total_fresh_root_weight_kg = Column(Float, nullable=False)
+    harvested_plant_count = Column(Integer, nullable=False)
+    weight_kg_per_plant = Column(Float, nullable=False)
+    age_months = Column(Float, nullable=False)
+    height_cm = Column(Float, nullable=False)
+    stem_count = Column(Integer, nullable=False)
+    variety = Column(String, default="unknown", nullable=False, index=True)
+    field_code = Column(String, default="", nullable=False, index=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    root_volume_cm3_per_plant = Column(Float, nullable=True)
+    root_images_json = Column(Text, default="[]", nullable=False)
+    season = Column(String, default="", nullable=False)
+    notes = Column(Text, default="")
+    prediction_id = Column(Integer, ForeignKey("predictions.id"), nullable=False, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+
+
 class Alert(Base):
     __tablename__ = "alerts"
     id = Column(Integer, primary_key=True)

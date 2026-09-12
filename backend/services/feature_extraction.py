@@ -34,6 +34,42 @@ SOIL_FEATURE_NAMES = ["ph", "om_pct", "n_ppm", "p_ppm", "k_ppm", "cec", "moistur
 FUSION_FEATURE_NAMES = FEATURE_NAMES + SATELLITE_FEATURE_NAMES + SOIL_FEATURE_NAMES
 
 
+def gray_world_white_balance(image: Image.Image) -> Image.Image:
+    """Deterministic gray-world correction shared by training and serving."""
+    array = np.asarray(image.convert("RGB"), dtype=np.float32)
+    channel_means = array.reshape(-1, 3).mean(axis=0)
+    gray = float(channel_means.mean())
+    scale = np.clip(gray / np.clip(channel_means, 1.0, None), 0.5, 2.0)
+    return Image.fromarray(np.clip(array * scale, 0, 255).astype(np.uint8))
+
+
+def leaf_background_crop(
+    image: Image.Image,
+    margin: float = 0.08,
+    min_area_fraction: float = 0.02,
+) -> Image.Image:
+    """Conservative vegetation crop shared by training and serving."""
+    hsv = np.asarray(image.convert("HSV"))
+    hue_degrees = hsv[..., 0].astype(np.float32) * (360.0 / 255.0)
+    saturation, value = hsv[..., 1], hsv[..., 2]
+    mask = ((hue_degrees >= 30) & (hue_degrees <= 170)
+            & (saturation > 25) & (value > 20))
+    if mask.sum() < min_area_fraction * mask.size:
+        return image
+    rows, cols = np.where(mask)
+    y0, y1 = int(rows.min()), int(rows.max())
+    x0, x1 = int(cols.min()), int(cols.max())
+    height, width = mask.shape
+    margin_y = int((y1 - y0) * margin)
+    margin_x = int((x1 - x0) * margin)
+    return image.crop((
+        max(0, x0 - margin_x),
+        max(0, y0 - margin_y),
+        min(width, x1 + margin_x + 1),
+        min(height, y1 + margin_y + 1),
+    ))
+
+
 def load_image(image_bytes: bytes) -> Image.Image:
     img = Image.open(__import__("io").BytesIO(image_bytes)).convert("RGB")
     img.thumbnail((TARGET_SIZE, TARGET_SIZE))

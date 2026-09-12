@@ -1,0 +1,17 @@
+{
+  "model_id": "thai_root_volume_weight_v1",
+  "samples": 19,
+  "cultivars": 7,
+  "validation": "leave-one-cultivar-out",
+  "mae_kg": 0.3341,
+  "rmse_kg": 0.3745,
+  "r2": 0.9316,
+  "within_20_percent": 1.0,
+  "prediction_interval_abs_error_p95_kg": 0.6938,
+  "volume_range_cm3": [
+    2206.0,
+    6679.0
+  ],
+  "source_doi": "10.1038/s41598-022-14325-4",
+  "source_table": "Supplementary Table S2"
+}

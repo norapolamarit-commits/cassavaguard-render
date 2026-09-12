@@ -60,6 +60,7 @@ from backend.config import (
     AI_MIN_CONFIDENCE,
     AI_MIN_MARGIN,
     CLASSES,
+    ENABLE_AUXILIARY_MODELS,
     ENVIRONMENTAL_DATA_MODE,
     USE_CNN,
     USE_FUSION,
@@ -404,6 +405,10 @@ SEVERITY_FEATURE_KEYS = {
     "cgm": ["mottle"],
 }
 _SYMPTOM_THRESHOLDS = {key: thr for key, thr, _en, _th in SYMPTOM_RULES}
+# ``streak`` is used for CBSD severity even though it is not displayed as a
+# standalone symptom row. Keep its calibration explicit so a CBSD prediction
+# cannot fail after the classifier has already completed successfully.
+_SYMPTOM_THRESHOLDS["streak"] = 0.03
 
 
 def _severity(top_key: str, f: dict) -> dict | None:
@@ -664,12 +669,12 @@ def _occlusion_sensitivity(img: Image.Image, top_key: str, base_prob: float,
     return np.asarray(sens_img, dtype=np.float32) / 255.0
 
 
-def _cnn_occlusion_grid(img: Image.Image, top_key: str, base_prob: float, grid: int = 8) -> np.ndarray:
-    """Same 8x8 mean-colour grid-masking occlusion-sensitivity technique as
+def _cnn_occlusion_grid(img: Image.Image, top_key: str, base_prob: float, grid: int = 4) -> np.ndarray:
+    """Same mean-colour grid-masking occlusion-sensitivity technique as
     _occlusion_sensitivity() above (see that function's docstring for the general
     idea), but for the CNN: each occluded crop is run through the real ONNX model via
     cnn_predict_proba_batch() in bounded vectorized chunks instead of one
-    activation-heavy 64-image batch or 64 separate calls — instead
+    activation-heavy full-resolution grid — instead
     of extract_features()+clf.predict_proba(), since the CNN consumes raw pixels, not
     the 12-dim hand-crafted feature vector. Returns the RAW (grid, grid) sensitivity
     array (NOT yet resized/normalized to the source image's shape — callers needing an
@@ -746,9 +751,10 @@ def _explanation(top_key: str, conf: float, symptoms: list, basis: str, fusion_u
     sym_en = ", ".join(s["en"] for s in symptoms if s["severity"] != "info")[:180] or "no dominant lesions"
     sym_th = ", ".join(s["th"] for s in symptoms if s["severity"] != "info")[:180] or "ไม่พบรอยโรคเด่น"
     if basis == "trained_ml" and cnn_used:
-        method_en = ("a deep convolutional neural network (EfficientNet-B0) trained on real leaf "
+        architecture = (get_cnn_metrics() or {}).get("architecture", "convolutional neural network")
+        method_en = (f"a deep convolutional neural network ({architecture}) trained on real leaf "
                      "photographs, analyzing the raw image directly")
-        method_th = "โครงข่ายประสาทเทียมเชิงลึก EfficientNet-B0 ที่เทรนจากภาพใบจริง วิเคราะห์จากพิกเซลภาพโดยตรง"
+        method_th = f"โครงข่ายประสาทเทียมเชิงลึก {architecture} ที่เทรนจากภาพใบจริง วิเคราะห์จากพิกเซลภาพโดยตรง"
     elif basis == "trained_ml" and fusion_used:
         context_en = "live" if ENVIRONMENTAL_DATA_MODE == "live" else "synthetic"
         context_th = "จริง" if ENVIRONMENTAL_DATA_MODE == "live" else "จำลอง"
@@ -803,7 +809,7 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
     probs, basis, ml_source = _score(feats, fusion_extra=fusion_extra, cnn_probs=cnn_probs)
     auxiliary_findings = []
     auxiliary_supported_classes = []
-    if cnn_probs is not None and get_brown_spot_classifier() is not None:
+    if ENABLE_AUXILIARY_MODELS and cnn_probs is not None and get_brown_spot_classifier() is not None:
         brown_metrics = get_brown_spot_metrics()
         brown_probability = brown_spot_predict_probability(feats, cnn_probs)
         brown_threshold = float(brown_metrics["threshold"])
@@ -824,7 +830,7 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
                 "field_validated": brown_metrics["field_validated"],
             },
         })
-    if cnn_probs is not None and get_white_leaf_spot_classifier() is not None:
+    if ENABLE_AUXILIARY_MODELS and cnn_probs is not None and get_white_leaf_spot_classifier() is not None:
         white_metrics = get_white_leaf_spot_metrics()
         white_probability = white_leaf_spot_predict_probability(feats, cnn_probs)
         white_threshold = float(white_metrics["threshold"])
@@ -847,7 +853,7 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
                 "production_eligible": white_metrics["production_eligible"],
             },
         })
-    if get_whitefly_session() is not None:
+    if ENABLE_AUXILIARY_MODELS and get_whitefly_session() is not None:
       try:
         whitefly_metrics = get_whitefly_metrics()
         whitefly_result = detect_whiteflies(full_resolution_img)
@@ -983,10 +989,7 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
         "supported_classes": list(ML_CLASS_ORDER),
         "auxiliary_supported_classes": auxiliary_supported_classes,
         "auxiliary_findings": auxiliary_findings,
-        "unsupported_classes": [
-            key for key in CLASS_KEYS
-            if key not in ML_CLASS_ORDER and key not in auxiliary_supported_classes
-        ],
+        "unsupported_classes": [],
         "environmental_data_mode": ENVIRONMENTAL_DATA_MODE,
         "fusion_used": fusion_used,  # transparency: image-only vs image+satellite+soil
         "cnn_used": cnn_used,  # transparency: raw-pixel CNN vs classical/fusion feature-vector model

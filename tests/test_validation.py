@@ -1,3 +1,8 @@
+def test_public_prediction_classes_are_restricted_to_five(client, farmer_headers):
+    rows = client.get("/api/predict/classes", headers=farmer_headers).json()
+    assert {row["key"] for row in rows} == {"healthy", "cbb", "cbsd", "cmd", "cgm"}
+
+
 def test_satellite_dates_are_validated(client, farmer_headers):
     field_id = client.get("/api/fields", headers=farmer_headers).json()[0]["id"]
     response = client.get(

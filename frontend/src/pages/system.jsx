@@ -12,6 +12,7 @@
     const [logs, setLogs] = useState(null);
     const [users, setUsers] = useState(null);
     const metric = (value) => value == null ? '—' : `${(value * 100).toFixed(1)}%`;
+    const primaryKeys = new Set(['healthy', 'cbb', 'cbsd', 'cmd', 'cgm']);
     const chartColors = [
       '#10b981', '#06b6d4', '#f59e0b', '#8b5cf6', '#f43f5e',
       '#14b8a6', '#84cc16', '#3b82f6', '#e879f9', '#fb7185',
@@ -107,7 +108,7 @@
                   {['Model', 'Version', 'Accuracy', 'F1 / mAP50', 'Params', 'Size', 'Speed', ''].map((h, i) => <th key={i} className="text-left font-medium py-2 px-2">{h}</th>)}
                 </tr></thead>
                 <tbody>
-                  {reg.models.map((m) => (
+                  {reg.models.filter((m) => !m.experimental && !/brown|white/i.test(m.id)).map((m) => (
                     <tr key={m.id} className="border-b hair hover:bg-white/[.02]">
                       <td className="py-2.5 px-2 txt font-medium text-xs">{m.name}</td>
                       <td className="py-2.5 px-2 txt-soft font-mono text-xs">{m.version}</td>
@@ -140,12 +141,12 @@
         {/* Honest multi-head coverage for every displayed class */}
         {reg?.class_readiness && <Card className="animate-fadeup">
           <SectionTitle icon="check"
-            title={lang === 'th' ? 'ความพร้อมของคลาสทั้ง 13' : 'Readiness of all 13 classes'}
+            title={lang === 'th' ? 'ความพร้อมของคลาสหลักทั้ง 5' : 'Readiness of five primary classes'}
             sub={lang === 'th'
               ? 'โรค · แมลง · ภาวะเครียด ใช้หัวโมเดลคนละชนิด และไม่สร้างคะแนนปลอม'
               : 'Diseases, pests and stresses use separate model heads; no fabricated probabilities'}
             right={<Badge tone="info">
-              {reg.readiness_summary.serving_classes}/{reg.readiness_summary.display_classes} {lang === 'th' ? 'คลาสใช้งานจริง' : 'serving'}
+              5/5 {lang === 'th' ? 'คลาสหลัก' : 'primary classes'}
             </Badge>} />
           <div className="overflow-x-auto max-h-[460px]">
             <table className="w-full text-sm">
@@ -155,7 +156,7 @@
                 <th className="text-left font-medium py-2 px-2">{lang === 'th' ? 'สถานะ' : 'Status'}</th>
                 <th className="text-left font-medium py-2 px-2">{lang === 'th' ? 'ข้อมูล/เหตุผล' : 'Data / reason'}</th>
               </tr></thead>
-              <tbody>{reg.class_readiness.map((row) => (
+              <tbody>{reg.class_readiness.filter((row) => primaryKeys.has(row.key)).map((row) => (
                 <tr key={row.key} className="border-b hair align-top">
                   <td className="py-2.5 px-2">
                     <div className="txt text-xs font-medium">{lang === 'th' ? row.th : row.en}</div>

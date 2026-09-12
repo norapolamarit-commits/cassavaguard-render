@@ -42,7 +42,11 @@ import numpy as np
 from PIL import Image
 
 from backend.config import AI_SERVING_MODE, BASE_DIR, IS_PRODUCTION
-from backend.services.feature_extraction import ML_CLASS_ORDER
+from backend.services.feature_extraction import (
+    ML_CLASS_ORDER,
+    gray_world_white_balance,
+    leaf_background_crop,
+)
 from backend.services.model_contract import verify_artifact
 
 ML_MODELS_DIR = BASE_DIR / "backend" / "ml_models"
@@ -54,10 +58,10 @@ _metrics = None
 _loaded = False
 _access_lock = threading.RLock()
 
-# Occlusion attribution evaluates 64 masked views.  Sending all of them through
-# ONNX in one call can exceed a 512 MB Render instance once activation tensors are
-# allocated, even though the model artifact itself is small.  Chunking preserves
-# identical logits while bounding peak inference memory.
+# Occlusion attribution uses a bounded grid of masked views. Sending all views
+# through ONNX in one call can exceed a 512 MB Render instance once activation
+# tensors are allocated. Chunking preserves identical logits while bounding peak
+# inference memory.
 MAX_INFERENCE_BATCH = max(1, int(os.getenv("CNN_MAX_INFERENCE_BATCH", "1")))
 
 
@@ -124,6 +128,13 @@ def _load():
         if not isinstance(temperature, (int, float)) or not np.isfinite(temperature) or temperature <= 0:
             print("[ai_engine] cnn_metrics.json has an invalid calibration temperature — "
                   "refusing to load the CNN model.")
+            return
+        serving_pipeline = meta.get("training", {}).get("pipeline", "none")
+        if serving_pipeline not in {
+            "none", "color_constancy", "leaf_crop", "field_robust", "tiled_crop"
+        }:
+            print(f"[ai_engine] CNN artifact requires unsupported serving pipeline "
+                  f"{serving_pipeline!r} — refusing to load the model.")
             return
         if (
             IS_PRODUCTION
@@ -215,16 +226,28 @@ def get_cnn_metrics():
         return _metrics
 
 
-def cnn_preprocess(img: Image.Image) -> np.ndarray:
+def cnn_preprocess(img: Image.Image, meta: dict | None = None) -> np.ndarray:
     """Resize (no crop) to cnn_metrics.json's img_size, HWC uint8 -> CHW float32 /255,
     then per-channel normalize with cnn_metrics.json's normalize_mean/normalize_std —
     mirrors the training notebook's eval_transform exactly (see module docstring).
     Reads mean/std/img_size from cnn_metrics.json rather than hardcoding them, so a
     future retrain that changes normalization is picked up automatically. Returns
     shape (1, 3, H, W) float32, ready for session.run(None, {"image": x})."""
-    meta = get_cnn_metrics()
+    meta = meta or get_cnn_metrics()
     img_size = meta["img_size"]
-    resized = img.convert("RGB").resize((img_size, img_size), Image.BILINEAR)
+    prepared_image = img.convert("RGB")
+    pipeline = meta.get("training", {}).get("pipeline", "none")
+    if pipeline == "color_constancy":
+        prepared_image = gray_world_white_balance(prepared_image)
+    elif pipeline == "leaf_crop":
+        prepared_image = leaf_background_crop(prepared_image)
+    elif pipeline == "field_robust":
+        prepared_image = leaf_background_crop(gray_world_white_balance(prepared_image))
+    # tiled_crop is deliberately train-only; saliency_crop candidates are not
+    # publishable until their deterministic transform is added here and verified.
+    elif pipeline not in {"none", "tiled_crop"}:
+        raise ValueError(f"CNN artifact requires unsupported serving pipeline {pipeline!r}")
+    resized = prepared_image.resize((img_size, img_size), Image.BILINEAR)
     arr = np.asarray(resized, dtype=np.float32)
     input_scale = meta.get("input_scale", "imagenet_normalized")
     if input_scale == "zero_to_255":

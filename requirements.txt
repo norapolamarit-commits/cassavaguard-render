@@ -9,6 +9,7 @@ numpy==2.0.2
 scipy==1.13.1
 scikit-learn==1.6.1
 joblib==1.5.3
+trimesh==4.8.3
 onnxruntime==1.19.2
 email-validator==2.3.0
 alembic==1.16.5

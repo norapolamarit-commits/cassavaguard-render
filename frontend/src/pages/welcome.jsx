@@ -6,12 +6,12 @@
     const { lang } = window.CG.Store.useStore();
     const th = lang === 'th';
     const features = th ? [
-      ['brain', 'วิเคราะห์ภาพด้วย AI', 'จำแนกโรคหลัก พร้อมตรวจ Brown Leaf Spot, White Leaf Spot และ Whitefly แบบโปร่งใส'],
-      ['satellite', 'ข้อมูลแปลงแบบรอบด้าน', 'ดูอากาศ ภาพดาวเทียม ดิน และประวัติร่วมกับผลจากภาพ'],
+      ['brain', 'วิเคราะห์ภาพด้วย AI', 'จำแนกเฉพาะ 5 คลาสหลักที่มีโมเดลรองรับ'],
+      ['satellite', 'ข้อมูลแปลงแบบรอบด้าน', 'ดูอากาศ ภูมิประเทศ ภาพดาวเทียม และประวัติร่วมกับผลจากภาพ'],
       ['book', 'มีคู่มือทุกขั้นตอน', 'แนะนำการถ่ายภาพ อ่าน Confidence และตรวจยืนยันผลก่อนตัดสินใจ'],
     ] : [
-      ['brain', 'AI image diagnosis', 'Primary disease classification plus transparent Brown Leaf Spot, White Leaf Spot and Whitefly checks.'],
-      ['satellite', 'Whole-field context', 'Review weather, satellite, soil and history alongside image evidence.'],
+      ['brain', 'AI image diagnosis', 'Diagnosis is restricted to the five model-backed primary classes.'],
+      ['satellite', 'Whole-field context', 'Review weather, terrain, satellite and history alongside image evidence.'],
       ['book', 'Guidance at every step', 'Learn photo capture, confidence interpretation and field verification before acting.'],
     ];
 
@@ -27,7 +27,7 @@
               <Icon name="leaf" className="w-16 h-16 -rotate-6" />
             </div>
             <span className="absolute -left-8 top-9 glass rounded-2xl px-3 py-2 text-xs txt-soft">AI + Field data</span>
-            <span className="absolute -right-10 bottom-8 glass rounded-2xl px-3 py-2 text-xs text-brand-300">{th ? '5 คลาสหลัก + ผลเสริม' : '5 primary + auxiliary'}</span>
+            <span className="absolute -right-10 bottom-8 glass rounded-2xl px-3 py-2 text-xs text-brand-300">{th ? '5 คลาสหลัก' : '5 primary classes'}</span>
           </div>
 
           <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-20 max-w-3xl">
@@ -38,8 +38,8 @@
             </h2>
             <p className="txt-soft text-base sm:text-lg leading-relaxed mt-5 max-w-2xl">
               {th
-                ? 'CassavaGuard รวมภาพถ่ายจากแปลง อากาศ ดาวเทียม และข้อมูลดิน เพื่อช่วยคัดกรองความเสี่ยงและติดตามสุขภาพพืชในที่เดียว'
-                : 'CassavaGuard combines field photos, weather, satellite and soil evidence to screen risks and monitor crop health in one place.'}
+                ? 'CassavaGuard รวมภาพถ่ายจากแปลง อากาศ ภูมิประเทศ และดาวเทียม เพื่อช่วยคัดกรองความเสี่ยงและติดตามสุขภาพพืชในที่เดียว'
+                : 'CassavaGuard combines field photos, weather, terrain and satellite evidence to screen risks and monitor crop health in one place.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
               <button onClick={() => go('predict')} className="grad-brand text-white rounded-2xl px-6 py-3.5 font-bold flex items-center justify-center gap-2 shadow-xl shadow-brand-500/25 hover:scale-[1.02] active:scale-[.98] transition">
@@ -72,14 +72,14 @@
               {th ? (
                 <>
                   <p>CassavaGuard เป็นแอปพลิเคชันบนโทรศัพท์มือถือที่ใช้ปัญญาประดิษฐ์ (AI) เพื่อช่วยเกษตรกรผู้ปลูกมันสำปะหลังในการติดตามสุขภาพของพืชและคัดกรองโรคเบื้องต้น โครงการนี้พัฒนาขึ้นเพื่อแก้ไขปัญหาการผลิตมันสำปะหลัง เช่น การระบาดของโรค และการพึ่งพาการสังเกตด้วยสายตาของเกษตรกรเพียงอย่างเดียว ซึ่งอาจทำให้การจัดการพืชล่าช้าหรือไม่แม่นยำ</p>
-                  <p>แอปพลิเคชันวิเคราะห์ภาพใบมันสำปะหลังร่วมกับข้อมูลสภาพอากาศ ตัวชี้วัดคุณภาพดิน และข้อมูลจากดาวเทียม โดยใช้ระบบ AI ที่ผสาน CNN, Multimodal Data Fusion, Classical Machine Learning และ Heuristic Rules เพื่อระบุสภาพของพืชในกลุ่มโรคหลัก ได้แก่ Healthy, CBB, CBSD, CMD และ CGM พร้อมแสดงระดับความมั่นใจ ระดับความรุนแรงของอาการ (Disease Severity) คะแนนสุขภาพพืชโดยรวม (Health Score) Heatmap ที่ชี้ตำแหน่งซึ่ง AI ให้ความสำคัญในการวิเคราะห์ และคำแนะนำในการจัดการที่รวมหลักฐานจากภาพ ดิน อากาศ และดาวเทียมเข้าด้วยกัน</p>
+                  <p>แอปพลิเคชันวิเคราะห์ภาพใบมันสำปะหลังร่วมกับสภาพอากาศ ภูมิประเทศ และข้อมูลดาวเทียม เพื่อระบุสภาพของพืชในกลุ่มโรคหลัก ได้แก่ Healthy, CBB, CBSD, CMD และ CGM พร้อมแสดงระดับความมั่นใจ ความรุนแรง Heatmap และคำแนะนำที่อ้างอิงหลักฐานของแปลง</p>
                   <p>แอปพลิเคชันนี้ช่วยให้เกษตรกรได้รับข้อมูลที่รวดเร็ว สะดวก และใช้อ้างอิงประกอบการตัดสินใจ เพื่อสนับสนุนการเกษตรแม่นยำ ลดความสูญเสียจากการตรวจพบโรคล่าช้า และวางแผนจัดการแปลงได้ทันท่วงทีมากขึ้น การประเมินภาวะขาดธาตุอาหารและการคาดการณ์ผลผลิตเป็นทิศทางการพัฒนาต่อไปของโครงการ ซึ่งจะเปิดใช้งานเมื่อมีข้อมูลจริงเพียงพอสำหรับฝึกโมเดลอย่างน่าเชื่อถือ</p>
                   <p>ปัจจุบันระบบอยู่ในขั้นผู้ช่วยคัดกรองเบื้องต้น และยังต้องผ่านการทดสอบภาคสนามอย่างเป็นทางการก่อนนำไปใช้ในการตัดสินใจทางการเกษตรโดยอัตโนมัติ ผลวิเคราะห์จากระบบจึงเป็นข้อมูลประกอบการตัดสินใจ ไม่ใช่ผลวินิจฉัยยืนยันที่ใช้แทนผู้เชี่ยวชาญได้</p>
                 </>
               ) : (
                 <>
                   <p>CassavaGuard is a mobile application that uses artificial intelligence (AI) to help cassava farmers monitor plant health and screen for disease early. The project was built to address problems in cassava production such as disease outbreaks and reliance on visual inspection alone, which can delay or reduce the accuracy of crop management decisions.</p>
-                  <p>The application analyzes cassava leaf photos together with weather data, soil quality indicators and satellite data, using an AI system that combines a CNN, multimodal data fusion, classical machine learning and heuristic rules to identify the primary disease classes — Healthy, CBB, CBSD, CMD and CGM — along with a confidence score, a disease severity estimate, an overall plant health score, a heatmap showing where the AI focused its analysis, and management recommendations that combine evidence from the image, soil, weather and satellite data.</p>
+                  <p>The application analyzes cassava leaf photos with weather, terrain and satellite evidence to identify the primary classes — Healthy, CBB, CBSD, CMD and CGM — and provides confidence, severity, a heatmap and field-grounded guidance.</p>
                   <p>The application gives farmers fast, convenient information to support decision-making, enabling precision agriculture, reducing losses from delayed disease detection, and allowing more timely field management. Nutrient-deficiency assessment and yield forecasting are future directions for the project, to be enabled once enough real data exists to train those models reliably.</p>
                   <p>The system is currently at the stage of an early screening assistant and still requires formal field validation before its output can be used to automate agricultural decisions. Results from the system are decision-support information, not a confirmed diagnosis that replaces an expert.</p>
                 </>

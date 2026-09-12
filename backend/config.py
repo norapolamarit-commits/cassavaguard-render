@@ -224,6 +224,11 @@ MODEL_REGISTRY, ACTIVE_MODEL = _load_model_registry()
 # distribution (TFDS's distribution may not match what users actually upload).
 USE_CNN = _env_bool("USE_CNN", default=False)
 
+# Public diagnosis is intentionally restricted to the verified five-way head.
+# Auxiliary artifacts remain auditable in the model registry but do not execute
+# during user predictions unless an explicit research environment enables them.
+ENABLE_AUXILIARY_MODELS = _env_bool("ENABLE_AUXILIARY_MODELS", default=False)
+
 # The current fusion dataset derives synthetic canopy health/NDVI from the target
 # disease label because TFDS has no paired field observations.  That is useful for
 # an end-to-end architecture experiment, but it is target leakage and must not drive

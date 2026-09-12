@@ -1,0 +1,2 @@
+# Optional local worker dependencies. COLMAP itself is installed with Homebrew/apt.
+trimesh==4.8.3

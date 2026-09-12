@@ -2,7 +2,7 @@
 
 **ภาษาไทย** | [English](README_EN.md)
 
-> ระบบช่วยคัดกรองโรคและศัตรูมันสำปะหลังจากภาพใบพืช พร้อมข้อมูลอากาศ ดาวเทียม ดิน
+> ระบบช่วยคัดกรองโรคและศัตรูมันสำปะหลังจากภาพใบพืช พร้อมข้อมูลอากาศ ภูมิประเทศ และดาวเทียม
 > ประวัติการวิเคราะห์ และคำแนะนำที่ตรวจสอบแหล่งข้อมูลย้อนหลังได้
 
 [เปิดแอป](https://cassavaguard-render.onrender.com/) ·
@@ -101,6 +101,15 @@ python serve.py
 
 เปิด <http://127.0.0.1:8800/> และตรวจ <http://127.0.0.1:8800/api/health>
 
+เมื่อวิเคราะห์ภาพโดยเลือกแปลง ระบบจะรวมผล CNN กับหลักฐานสภาพอากาศจริง
+ค่าความสูงภูมิประเทศโดยประมาณ และภาพดาวเทียมเพื่อสร้างคำแนะนำ
+เฉพาะแปลง ข้อมูลเหล่านี้ไม่เปลี่ยนค่าความน่าจะเป็นโรคจาก CNN และระบบจะแจ้ง
+ตรงไปตรงมาหากแหล่งข้อมูลใดยังไม่มีหรือเรียกใช้งานไม่ได้
+
+ผล CNN จะถูกส่งกลับก่อน จากนั้นหน้าเว็บเรียก `/api/predict/context/{prediction_id}`
+เพื่อโหลดหลักฐานสิ่งแวดล้อมแยกต่างหาก ดาวเทียมที่ช้าหรือขัดข้องจึงไม่ทำให้ผล
+วิเคราะห์ภาพสูญหาย และระบบไม่สร้างค่าจำลองมาทดแทนข้อมูลจริง
+
 Windows PowerShell ใช้คำสั่งเปิด environment ต่อไปนี้แทน:
 
 ```powershell
@@ -188,6 +197,16 @@ Whitefly เป็นงาน Object Detection จึงประเมิน�
 - เผยแพร่ 228 ภาพ; รับเข้า Train 225 ภาพ; กัก near-duplicates 3 ภาพ
 - Healthy 91 / CBB 46 / CMD 88
 - ใช้ใน Train เท่านั้น ไม่แตะ Validation/Test
+
+### Figshare Cassava Image Dataset3 — ข้อมูลจริงเพิ่มเติม
+
+- Dataset: [Figshare Cassava Image Dataset3](https://doi.org/10.6084/m9.figshare.21769070.v2)
+- ผู้เผยแพร่: Viet Chau Nguyen, License: CC BY 4.0
+- checksum archive ตรงกับ API ของ Figshare: MD5 `10ac3eb77b5f933235fe805957c0971d`
+- รับเข้า train-only หลัง decode/deduplicate 7,131 ภาพ: CBSD 2,397 / CMD 3,978 / Healthy 756
+- ตัด exact duplicates ภายในแหล่งข้อมูล 2 ภาพ และไม่พบภาพซ้ำกับ TFDS
+- เก็บ publisher test 1,786 ภาพไว้เป็น sealed external evaluation ไม่ใช้ฝึก
+- ไม่มี CBB/CGM จึงไม่สร้างหรือเดา label สองคลาสนี้
 
 Dataset ดิบไม่อยู่ใน GitHub เพราะขนาด เงื่อนไข license และความเป็นส่วนตัว
 Pipeline ต้องตรวจ provenance, label mapping และ leakage ก่อนรับข้อมูลใหม่ทุกครั้ง
@@ -321,6 +340,9 @@ backend/training/.venv-torch/bin/python \
 |---|---|---|
 | `GET` | `/api/health` | Health และ runtime readiness |
 | `POST` | `/api/predict/image` | ตรวจและวิเคราะห์ภาพ |
+| `POST` | `/api/predict/images` | รวมผลภาพใบและภาพทั้งต้น 2–4 ภาพ |
+| `POST` | `/api/predict/yield-estimate` | คำนวณช่วงน้ำหนักหัวสดแบบมี quality gate |
+| `POST` | `/api/predict/harvest-measurements` | เก็บน้ำหนักที่ขุดชั่งจริงเป็น label สำหรับฝึกโมเดล |
 | `GET` | `/api/models` | Model registry และสถานะ artifact |
 | `GET` | `/api/models/readiness` | ความพร้อมรายคลาส |
 | `GET` | `/api/models/compare` | Metric สำหรับเปรียบเทียบโมเดล |
@@ -329,6 +351,30 @@ backend/training/.venv-torch/bin/python \
 
 Schema และตัวอย่าง request อยู่ใน [API Reference](docs/API.md) ส่วน Swagger UI เปิดที่
 `/api/docs` เฉพาะ Development เมื่อ `ENABLE_API_DOCS=true`
+
+> ช่วงน้ำหนักปัจจุบันเป็นแบบจำลองสถานการณ์ ไม่ใช่โมเดล ML ที่ผ่านการทดสอบจาก
+> ข้อมูลภาพ–น้ำหนักคู่กัน ระบบจึงระบุ `production_eligible=false` จนกว่าจะมีข้อมูล
+> น้ำหนักจากการขุดชั่งจริงเพียงพอและผ่าน holdout test
+
+ช่วงเริ่มต้นอ้างอิงการกระจายน้ำหนักที่วัดจริง 216 ระเบียนจากชุดข้อมูล
+[Abegunde et al. (2024)](https://doi.org/10.17632/gh2nfyyknj.1) ซึ่งมีใบอนุญาต
+CC BY 4.0 ข้อมูลนี้ไม่มีภาพคู่กับน้ำหนักและมาจากไนจีเรีย จึงใช้เป็น prior แบบช่วงกว้าง
+เท่านั้น ไม่ใช้ยืนยันความแม่นยำในประเทศไทย
+
+### Pipeline ฝึกโมเดลน้ำหนัก
+
+หลังบันทึกค่าขุดชั่งจริงจากหน้าผลวิเคราะห์ ให้ส่งออกและฝึก candidate ด้วยคำสั่ง:
+
+```bash
+python -m backend.training.export_yield_labels --output data/yield/verified_harvest_labels.csv
+python -m backend.training.train_yield_regressor \
+  --input data/yield/verified_harvest_labels.csv \
+  --output-dir tmp/candidates/yield
+```
+
+Pipeline จะหยุดทันทีถ้ามีน้อยกว่า 150 ตัวอย่างหรือน้อยกว่า 5 แปลง แบ่งข้อมูลตามแปลง
+เป็น Train/Validation/Test และตั้งเป้าให้ตัวอย่าง Test อย่างน้อย 95% มีค่าคลาดเคลื่อนไม่เกิน
+20% พร้อม `R² ≥ 0.60` ไฟล์ที่ได้เป็น candidate เท่านั้นและจะไม่แทนโมเดล production อัตโนมัติ
 
 ## เอกสารทั้งหมด
 
