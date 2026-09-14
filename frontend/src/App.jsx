@@ -1,7 +1,7 @@
 /* CassavaGuard consumer shell: photo-first, calm, and touch-friendly. */
 (function () {
   const { useState, useEffect, useCallback } = React;
-  const { Icon, ToastHost, Modal } = window.CG.UI;
+  const { Icon, ToastHost, Modal, Spinner } = window.CG.UI;
   const P = window.CG.Pages;
   const PRIMARY = [
     { key: 'predict', icon: 'camera', th: 'วิเคราะห์', en: 'Analyze' },
