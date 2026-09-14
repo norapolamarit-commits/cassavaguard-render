@@ -18,5 +18,8 @@ test -s frontend/dist/app.css
 # Fail the deploy if a committed runtime model is missing, tampered with, or has
 # an incompatible ONNX/sklearn contract. Training data and training environments
 # are intentionally not part of the deployment bundle.
-"$python_cmd" backend/training/verify_artifacts.py --require-cnn --include-fusion
+# Render serves the active 5-class CNN bundle. Legacy auxiliary models were
+# trained against the previous B2 feature contract and are deliberately
+# disabled, so verify only the deployable B3 artifact here.
+"$python_cmd" backend/training/verify_artifacts.py --cnn-only
 "$python_cmd" backend/training/quality_gate.py

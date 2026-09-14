@@ -22,7 +22,7 @@ GitHub 100 MB จะไม่ถูกส่งขึ้น GitHub หรือ 
 รันจาก root ของโปรเจกต์:
 
 ```bash
-python backend/training/verify_artifacts.py --require-cnn --include-fusion
+python backend/training/verify_artifacts.py --cnn-only
 python backend/training/quality_gate.py
 npm ci
 npm run build
