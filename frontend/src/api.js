@@ -63,15 +63,19 @@
     createField: (payload) => request('/api/fields', { method: 'POST', body: payload }),
     chat: (message, language = 'th') => request('/api/chat', { method: 'POST', body: { message, language } }),
 
-    predictImage: (file, source, field_id) => {
+    predictImage: (file, source, field_id, client_observed_at, client_timestamp_kind) => {
       const fd = new FormData(); fd.append('file', file); fd.append('source', source);
       if (field_id) fd.append('field_id', field_id);
+      if (client_observed_at) fd.append('client_observed_at', client_observed_at);
+      if (client_timestamp_kind) fd.append('client_timestamp_kind', client_timestamp_kind);
       return request('/api/predict/image', { method: 'POST', form: fd });
     },
-    predictImages: (items, field_id) => {
+    predictImages: (items, field_id, client_observed_at, client_timestamp_kind) => {
       const fd = new FormData();
       items.forEach((item) => { fd.append('files', item.file); fd.append('sources', item.source); });
       if (field_id) fd.append('field_id', field_id);
+      if (client_observed_at) fd.append('client_observed_at', client_observed_at);
+      if (client_timestamp_kind) fd.append('client_timestamp_kind', client_timestamp_kind);
       return request('/api/predict/images', { method: 'POST', form: fd });
     },
     predictCsv: (file, field_id) => {

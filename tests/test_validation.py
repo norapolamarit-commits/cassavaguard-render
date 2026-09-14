@@ -92,7 +92,9 @@ def test_model_self_test_executes_every_published_model(
     payload = response.json()
     assert payload["status"] == "ok"
     assert payload["ready_models"] == payload["total_models"]
-    assert payload["total_models"] >= 15
+    # The production 5-class bundle publishes 12 active models when the
+    # optional legacy auxiliary detectors are disabled for Render.
+    assert payload["total_models"] >= 12
     fusion_models = [
         model for model in payload["models"]
         if model["id"].startswith("fusion_")

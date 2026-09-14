@@ -8,7 +8,7 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
 
   <link rel="stylesheet" href="./vendor/leaflet/leaflet.css" />
-  <link rel="stylesheet" href="./dist/app.css?v=20260901-five-classes" />
+  <link rel="stylesheet" href="./dist/app.css?v=20260914-chat-modal-fix" />
 
   <script src="./vendor/react.js"></script>
   <script src="./vendor/prop-types.js"></script>
@@ -87,6 +87,10 @@
     .plant-3d-canvas{ width:100%; height:390px; display:block; cursor:grab; touch-action:none; }
     .plant-3d-canvas:active{ cursor:grabbing; }
     .plant-3d-badge{ position:absolute; top:12px; left:12px; padding:6px 9px; border-radius:10px; background:rgba(15,23,42,.72); color:#d1fae5; font-size:10px; font-weight:800; letter-spacing:.04em; backdrop-filter:blur(8px); }
+    .plant-view-switch{ position:absolute; left:50%; top:11px; transform:translateX(-50%); display:flex; gap:3px; padding:3px; border-radius:12px; background:rgba(7,17,28,.76); box-shadow:0 8px 24px rgba(2,8,23,.18); backdrop-filter:blur(10px); z-index:2; }
+    .plant-view-switch button{ display:flex; align-items:center; gap:5px; border:0; border-radius:9px; padding:6px 9px; color:#cbd5e1; background:transparent; font-size:10px; font-weight:750; white-space:nowrap; transition:.18s ease; }
+    .plant-view-switch button:hover{ color:#fff; background:rgba(255,255,255,.08); }
+    .plant-view-switch button.active{ color:#052e2b; background:#5eead4; box-shadow:0 4px 14px rgba(45,212,191,.28); }
     .plant-stage-caption{ position:absolute; left:12px; right:12px; bottom:10px; padding:7px 10px; border-radius:10px; text-align:center; color:#64748b; background:rgba(255,255,255,.76); backdrop-filter:blur(8px); font-size:11px; font-weight:600; }
     .plant-stage-legend{ position:absolute; top:12px; right:12px; display:flex; flex-direction:column; gap:5px; padding:7px 9px; border-radius:11px; color:#475569; background:rgba(255,255,255,.72); backdrop-filter:blur(9px); font-size:10px; font-weight:700; }
     .plant-stage-legend span{ display:flex; align-items:center; gap:6px; }
@@ -162,16 +166,21 @@
     .harvest-form{ padding:15px; border-radius:17px; border:1px solid rgba(16,185,129,.18); background:rgba(16,185,129,.05); }
     .harvest-form label{ display:flex; flex-direction:column; gap:7px; color:#64748b; font-size:13px; font-weight:700; }
     .harvest-form input,.harvest-form textarea{ width:100%; padding:10px 12px; color:inherit; background:rgba(255,255,255,.7); }
+    html.chat-modal-open{ overflow:hidden; }
     .advice-chat{ position:fixed; right:22px; bottom:22px; z-index:950; display:flex; flex-direction:column; align-items:flex-end; gap:12px; }
+    .advice-chat.open{ inset:0; padding:22px; justify-content:flex-end; pointer-events:none; }
+    .advice-chat-backdrop{ position:absolute; inset:0; z-index:-1; pointer-events:auto; cursor:default; background:rgba(2,8,16,.28); backdrop-filter:blur(2px); }
+    .advice-chat.open .advice-chat-panel,.advice-chat.open .advice-chat-fab{ pointer-events:auto; }
     .advice-chat-fab{ min-height:52px; padding:0 18px; border-radius:18px; display:flex; align-items:center; gap:8px; color:white; font-weight:800; background:linear-gradient(135deg,#059669,#0891b2); box-shadow:0 18px 40px -15px rgba(5,150,105,.8); }
-    .advice-chat-panel{ width:min(390px,calc(100vw - 24px)); height:min(570px,calc(100vh - 120px)); display:grid; grid-template-rows:auto 1fr auto auto; overflow:hidden; border-radius:24px; color:#dbe7f3; background:#071521; border:1px solid rgba(94,234,212,.22); box-shadow:0 28px 80px -24px rgba(0,0,0,.85); }
+    .advice-chat-panel{ width:min(390px,calc(100vw - 24px)); height:min(570px,calc(100dvh - 120px)); display:grid; grid-template-rows:auto minmax(0,1fr) auto auto; overflow:hidden; overscroll-behavior:contain; border-radius:24px; color:#dbe7f3; background:#071521; border:1px solid rgba(94,234,212,.22); box-shadow:0 28px 80px -24px rgba(0,0,0,.85); }
     .advice-chat-panel header{ padding:16px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(148,163,184,.14); background:linear-gradient(120deg,rgba(16,185,129,.16),rgba(6,182,212,.08)); }
     .advice-chat-panel header b,.advice-chat-panel header span{ display:block; }.advice-chat-panel header span{ margin-top:3px; color:#8fa3b7; font-size:11px; }.advice-chat-panel header button{ padding:7px; }
     .advice-chat-messages{ overflow:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
     .chat-message{ max-width:88%; padding:10px 12px; border-radius:16px; font-size:13px; line-height:1.55; }.chat-message.assistant{ align-self:flex-start; background:#102334; border:1px solid rgba(148,163,184,.12); }.chat-message.user{ align-self:flex-end; color:white; background:#078b72; }
     .chat-quick{ display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }.chat-quick button{ padding:5px 8px; border-radius:9px; color:#6ee7b7; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.22); font-size:11px; }
     .advice-chat-panel form{ margin:0 12px 8px; display:grid; grid-template-columns:1fr 42px; gap:7px; }.advice-chat-panel form input{ min-width:0; padding:10px 12px; border-radius:13px; color:#e5edf7; background:#102334; border:1px solid rgba(148,163,184,.18); }.advice-chat-panel form button{ border-radius:12px; display:grid; place-items:center; color:white; background:#059669; }.advice-chat-panel small{ padding:0 15px 12px; color:#71869a; font-size:10px; }
-    @media(max-width:767px){ .advice-chat{ right:12px; bottom:82px; }.advice-chat-fab span{ display:none; }.advice-chat-fab{ width:54px; padding:0; justify-content:center; border-radius:50%; }.advice-chat-panel{ height:calc(100vh - 180px); } }
+    .chat-source{ display:block; margin-top:6px; color:#6ee7b7; font-size:9px; font-weight:700; letter-spacing:.02em; }
+    @media(max-width:767px){ .advice-chat{ right:12px; bottom:calc(82px + env(safe-area-inset-bottom)); }.advice-chat.open{ inset:0; padding:12px 12px calc(82px + env(safe-area-inset-bottom)); }.advice-chat-fab span{ display:none; }.advice-chat-fab{ width:54px; padding:0; justify-content:center; border-radius:50%; }.advice-chat-panel{ height:min(620px,calc(100dvh - 170px)); min-height:300px; } }
     html.dark .harvest-form input,html.dark .harvest-form textarea{ color:#e5edf7; background:rgba(15,23,42,.55); }
     /* ---- Product-wide UI system: inherited by every route ---- */
     .cg-card{ position:relative; border-radius:24px; overflow:hidden; box-shadow:0 18px 55px -38px rgba(15,42,66,.55); }
@@ -204,7 +213,7 @@
       .mobile-dock{ display:none!important; }
       .utility-button.md\:hidden{ display:none!important; }
     }
-    @media (max-width:640px){ .model-inputs{ grid-template-columns:1fr; } .plant-stage{ min-height:350px; }.plant-3d-canvas{ height:360px; } .plant-stage-legend{ display:none; } .diagnosis-intro{ align-items:start; } .diagnosis-trust{ display:none; } .diagnosis-intro h1{ font-size:34px; } .diagnosis-intro p{ font-size:15px; } .workflow-steps li{ flex-direction:column; gap:5px; text-align:center; } .workflow-steps li i{ top:16px; left:50%; right:-50%; } .capture-zone{ min-height:330px; padding:20px; } .cg-card{ border-radius:20px; padding:16px!important; } main th,main td{ padding:11px 10px; } }
+    @media (max-width:640px){ .model-inputs{ grid-template-columns:1fr; } .plant-stage{ min-height:350px; }.plant-3d-canvas{ height:360px; } .plant-stage-legend{ display:none; } .plant-view-switch{ top:48px; } .diagnosis-intro{ align-items:start; } .diagnosis-trust{ display:none; } .diagnosis-intro h1{ font-size:34px; } .diagnosis-intro p{ font-size:15px; } .workflow-steps li{ flex-direction:column; gap:5px; text-align:center; } .workflow-steps li i{ top:16px; left:50%; right:-50%; } .capture-zone{ min-height:330px; padding:20px; } .cg-card{ border-radius:20px; padding:16px!important; } main th,main td{ padding:11px 10px; } }
     html.light .glass{ background:rgba(255,255,255,.9); border-color:rgba(15,23,42,.07); box-shadow:0 18px 55px -32px rgba(15,42,66,.4); }
     html.light .glass-strong{ background:rgba(255,255,255,.97); }
     @media (max-width:640px){ .glass.rounded-2xl{ border-radius:20px; } }
@@ -240,6 +249,6 @@
 <body>
   <div id="root" class="theme-bg"></div>
 
-  <script src="./dist/app.js?v=20260912-complete-ui"></script>
+  <script src="./dist/app.js?v=20260914-chat-modal-fix"></script>
 </body>
 </html>

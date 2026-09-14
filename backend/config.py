@@ -126,6 +126,23 @@ LOG_RETENTION_ROWS = int(os.environ.get("LOG_RETENTION_ROWS", "10000"))
 # by synthetic values without an explicit ENVIRONMENTAL_DATA_MODE=synthetic.
 PROVIDER_TIMEOUT_SECONDS = float(os.environ.get("PROVIDER_TIMEOUT_SECONDS", "30"))
 PROVIDER_CACHE_TTL_SECONDS = int(os.environ.get("PROVIDER_CACHE_TTL_SECONDS", "21600"))
+
+# Optional grounded LLM for the advisory chatbot. Groq exposes an
+# OpenAI-compatible endpoint and has a free-plan quota. The API key always stays
+# on the server; when it is absent or the provider is unavailable, chat falls
+# back to the curated agronomy response in advice_chatbot.py.
+CHAT_LLM_PROVIDER = os.environ.get("CHAT_LLM_PROVIDER", "groq").strip().lower()
+CHAT_LLM_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
+CHAT_LLM_MODEL = os.environ.get("CHAT_LLM_MODEL", "qwen/qwen3.6-27b").strip()
+CHAT_LLM_BASE_URL = os.environ.get(
+    "CHAT_LLM_BASE_URL", "https://api.groq.com/openai/v1"
+).rstrip("/")
+CHAT_LLM_TIMEOUT_SECONDS = float(os.environ.get("CHAT_LLM_TIMEOUT_SECONDS", "20"))
+CHAT_LLM_MAX_TOKENS = int(os.environ.get("CHAT_LLM_MAX_TOKENS", "500"))
+if CHAT_LLM_PROVIDER not in {"groq", "disabled"}:
+    raise RuntimeError("CHAT_LLM_PROVIDER must be either groq or disabled.")
+if not 64 <= CHAT_LLM_MAX_TOKENS <= 1000:
+    raise RuntimeError("CHAT_LLM_MAX_TOKENS must be between 64 and 1000.")
 OPEN_METEO_BASE_URL = os.environ.get(
     "OPEN_METEO_BASE_URL", "https://api.open-meteo.com/v1/forecast"
 ).rstrip("/")

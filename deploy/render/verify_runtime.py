@@ -13,6 +13,7 @@ from backend.config import (
     AI_FIELD_VALIDATED,
     AI_SERVING_MODE,
     APP_ENV,
+    ENABLE_AUXILIARY_MODELS,
     USE_CNN,
 )
 from backend.services.brown_spot_classifier import get_brown_spot_classifier
@@ -39,12 +40,18 @@ def verify_runtime() -> dict:
     if not USE_CNN:
         raise RuntimeError("Render bundle requires USE_CNN=true")
 
-    heads = {
-        "cnn_efficientnet_b2": get_cnn_session() is not None,
-        "brown_leaf_spot": get_brown_spot_classifier() is not None,
-        "white_leaf_spot_review_only": get_white_leaf_spot_classifier() is not None,
-        "whitefly_review_only": get_whitefly_session() is not None,
-    }
+    session = get_cnn_session()
+    from backend.services.cnn_classifier import get_cnn_metrics
+
+    metadata = get_cnn_metrics() or {}
+    model_id = metadata.get("model_id", "cnn_primary")
+    heads = {model_id: session is not None}
+    if ENABLE_AUXILIARY_MODELS:
+        heads.update({
+            "brown_leaf_spot": get_brown_spot_classifier() is not None,
+            "white_leaf_spot_review_only": get_white_leaf_spot_classifier() is not None,
+            "whitefly_review_only": get_whitefly_session() is not None,
+        })
     unavailable = [name for name, ready in heads.items() if not ready]
     if unavailable:
         raise RuntimeError(f"required runtime model(s) unavailable: {unavailable}")

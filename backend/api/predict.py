@@ -32,6 +32,7 @@ from backend.services.root_weight_model import predict_from_volume
 from backend.services.root_size_model import predict as predict_root_size
 from backend.services import photogrammetry
 from backend.services import video_frames
+from backend.services.capture_time import analyze as analyze_capture_time
 
 router = APIRouter(prefix="/api/predict", tags=["predict"])
 
@@ -358,6 +359,8 @@ async def predict_image(
     file: UploadFile = File(...),
     source: str = Form("leaf"),
     field_id: int = Form(None),
+    client_observed_at: Optional[str] = Form(None),
+    client_timestamp_kind: Optional[str] = Form(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -376,6 +379,7 @@ async def predict_image(
         raise HTTPException(503, f"AI model unavailable: {e}") from e
     except Exception as e:
         raise HTTPException(422, f"Could not process image: {e}")
+    result["capture_context"] = analyze_capture_time(data, client_observed_at, field, client_timestamp_kind)
     filename = _safe_filename(file.filename, "upload.jpg")
     pid = _persist(db, result, user.id, field.id if field else None, filename, image_bytes=data)
     result["prediction_id"] = pid
@@ -387,6 +391,8 @@ async def predict_images(
     files: list[UploadFile] = File(...),
     sources: list[str] = Form(...),
     field_id: int = Form(None),
+    client_observed_at: Optional[str] = Form(None),
+    client_timestamp_kind: Optional[str] = Form(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -413,6 +419,7 @@ async def predict_images(
         payloads.append((data, _safe_filename(upload.filename, "upload.jpg")))
     result = _aggregate_image_results(results, normalized_sources)
     first_data, first_name = payloads[0]
+    result["capture_context"] = analyze_capture_time(first_data, client_observed_at, field, client_timestamp_kind)
     result["prediction_id"] = _persist(
         db, result, user.id, field.id if field else None,
         f"multi-view-{first_name}", image_bytes=first_data,

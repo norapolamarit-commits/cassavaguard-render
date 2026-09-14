@@ -283,6 +283,14 @@ def parse_args(argv=None):
         help="sample every class equally, then every available source equally within "
              "that class; recommended when adding large external datasets",
     )
+    parser.add_argument(
+        "--max-external-share-per-class", type=float, default=0.5,
+        help=(
+            "maximum sampler probability assigned to all external sources within "
+            "each class when --balance-classes-and-sources is enabled; 0.2-0.3 "
+            "is recommended for small cross-domain supplements"
+        ),
+    )
     parser.add_argument("--label-smoothing", type=float, default=0.08)
     parser.add_argument("--output-dir", type=Path, default=MODEL_DIR,
                         help="write candidate artifacts outside backend/ml_models until promoted")
@@ -293,7 +301,12 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def _class_source_sample_weights(labels: list[int], sources: list[str]) -> list[float]:
+def _class_source_sample_weights(
+    labels: list[int],
+    sources: list[str],
+    max_external_share: float = 0.5,
+    official_source: str = "official_tfds",
+) -> list[float]:
     """Equalize classes, then sources within each class.
 
     A large external CMD dataset must not swamp scarce official CBB examples, and
@@ -302,12 +315,24 @@ def _class_source_sample_weights(labels: list[int], sources: list[str]) -> list[
     """
     if len(labels) != len(sources) or not labels:
         raise ValueError("labels and sources must be non-empty and aligned")
+    if not 0.0 <= max_external_share < 1.0:
+        raise ValueError("max_external_share must be in [0, 1)")
     cell_counts = Counter(zip(labels, sources))
-    sources_per_class: dict[int, int] = Counter(label for label, _ in cell_counts)
-    return [
-        1.0 / (sources_per_class[label] * cell_counts[(label, source)])
-        for label, source in zip(labels, sources)
-    ]
+    sources_by_class: dict[int, list[str]] = {}
+    for label, source in cell_counts:
+        sources_by_class.setdefault(label, []).append(source)
+
+    cell_mass = {}
+    for label, class_sources in sources_by_class.items():
+        external = [source for source in class_sources if source != official_source]
+        if official_source in class_sources and external:
+            cell_mass[(label, official_source)] = 1.0 - max_external_share
+            for source in external:
+                cell_mass[(label, source)] = max_external_share / len(external)
+        else:
+            for source in class_sources:
+                cell_mass[(label, source)] = 1.0 / len(class_sources)
+    return [cell_mass[(label, source)] / cell_counts[(label, source)] for label, source in zip(labels, sources)]
 
 
 def _find_data_dir(explicit: Path | None) -> Path:
@@ -755,6 +780,8 @@ def main(argv=None):
         raise SystemExit("class-weight-power must be between 0 and 1")
     if not 0.0 <= args.label_smoothing < 1.0:
         raise SystemExit("label-smoothing must be in [0, 1)")
+    if not 0.0 <= args.max_external_share_per_class < 1.0:
+        raise SystemExit("max-external-share-per-class must be in [0, 1)")
     if args.oversample_minority_classes and args.balance_classes_and_sources:
         raise SystemExit(
             "choose either --oversample-minority-classes or "
@@ -886,7 +913,11 @@ def main(argv=None):
 
         labels = [label for _path, label in records["train"]]
         sources = [source_for(path) for path, _label in records["train"]]
-        sample_weights = _class_source_sample_weights(labels, sources)
+        sample_weights = _class_source_sample_weights(
+            labels,
+            sources,
+            max_external_share=args.max_external_share_per_class,
+        )
         sampler = torch.utils.data.WeightedRandomSampler(
             weights=sample_weights,
             num_samples=len(records["train"]),
@@ -1211,6 +1242,7 @@ def main(argv=None):
                 "class_weight_power": args.class_weight_power,
                 "oversample_minority_classes": args.oversample_minority_classes,
                 "balance_classes_and_sources": args.balance_classes_and_sources,
+                "max_external_share_per_class": args.max_external_share_per_class,
                 "pipeline": args.pipeline,
                 "label_smoothing": args.label_smoothing,
                 "imagenet_initialization": True,

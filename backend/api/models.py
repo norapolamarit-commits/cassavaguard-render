@@ -10,6 +10,7 @@ from backend.config import (
     ACTIVE_MODEL,
     BASE_DIR,
     CLASSES,
+    ENABLE_AUXILIARY_MODELS,
     MODEL_REGISTRY,
     USE_CNN,
 )
@@ -309,21 +310,21 @@ def self_test(_user: User = Depends(get_current_user)):
         "classes": list(cnn_meta["classes"]) if cnn_meta else [],
         "output_shape": [None, len(cnn_meta["classes"])] if cnn_meta else None,
     }
-    brown_classifier = get_brown_spot_classifier()
+    brown_classifier = get_brown_spot_classifier() if ENABLE_AUXILIARY_MODELS else None
     brown_meta = get_brown_spot_metrics() if brown_classifier is not None else None
-    brown = {
+    brown = ({
         "id": brown_meta["model_id"] if brown_meta else "brown_leaf_spot_auxiliary",
         "status": "ready" if brown_classifier is not None else "unavailable",
         "active": bool(brown_classifier is not None),
         "classes": list(brown_meta["classes"]) if brown_meta else [],
         "output_shape": [None, 2] if brown_meta else None,
         "task": "auxiliary_binary_classification",
-    }
-    white_classifier = get_white_leaf_spot_classifier()
+    } if ENABLE_AUXILIARY_MODELS else None)
+    white_classifier = get_white_leaf_spot_classifier() if ENABLE_AUXILIARY_MODELS else None
     white_meta = (
         get_white_leaf_spot_metrics() if white_classifier is not None else None
     )
-    white = {
+    white = ({
         "id": (
             white_meta["model_id"]
             if white_meta else "white_leaf_spot_auxiliary"
@@ -335,12 +336,12 @@ def self_test(_user: User = Depends(get_current_user)):
         "classes": list(white_meta["classes"]) if white_meta else [],
         "output_shape": [None, 2] if white_meta else None,
         "task": "auxiliary_binary_classification",
-    }
-    whitefly_session = get_whitefly_session()
+    } if ENABLE_AUXILIARY_MODELS else None)
+    whitefly_session = get_whitefly_session() if ENABLE_AUXILIARY_MODELS else None
     whitefly_meta = (
         get_whitefly_metrics() if whitefly_session is not None else None
     )
-    whitefly = {
+    whitefly = ({
         "id": (
             whitefly_meta["model_id"]
             if whitefly_meta else "whitefly_detector"
@@ -358,7 +359,7 @@ def self_test(_user: User = Depends(get_current_user)):
             whitefly_meta.get("evaluation_warning") if whitefly_meta else None
         ),
         "task": "object_detection_and_counting",
-    }
+    } if ENABLE_AUXILIARY_MODELS else None)
     fusion = verify_all_fusion_classifiers()
     fusion = [
         row for row in fusion
@@ -370,9 +371,9 @@ def self_test(_user: User = Depends(get_current_user)):
     ]
     models = [
         cnn,
-        brown,
-        *([white] if white_meta else []),
-        *([whitefly] if whitefly_meta else []),
+        *([brown] if brown is not None else []),
+        *([white] if white is not None and white_meta else []),
+        *([whitefly] if whitefly is not None and whitefly_meta else []),
         *classical,
         *fusion,
     ]

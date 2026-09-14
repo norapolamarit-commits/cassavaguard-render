@@ -15,6 +15,8 @@ import * as THREE from 'three';
     const [plantPreview, setPlantPreview] = useState(null);
     const [busy, setBusy] = useState(false);
     const [result, setResult] = useState(null);
+    const [observedAt, setObservedAt] = useState(null);
+    const [timestampKind, setTimestampKind] = useState('file_selected');
     const [fields, setFields] = useState([]);
     const [fieldId, setFieldId] = useState('');
     const [drag, setDrag] = useState(false);
@@ -26,8 +28,10 @@ import * as THREE from 'three';
 
     useEffect(() => { window.CG.API_CLIENT.fields().then(setFields).catch(() => {}); }, []);
 
-    const pick = (f) => {
+    const pick = (f, kind = 'file_selected') => {
       if (!f) return;
+      setObservedAt(new Date().toISOString());
+      setTimestampKind(kind);
       setFile(f); setResult(null);
       if (f.type.startsWith('image/')) { const url = URL.createObjectURL(f); setPreview(url); }
       else setPreview(null);
@@ -52,8 +56,8 @@ import * as THREE from 'three';
                         : plantFile
                           ? await window.CG.API_CLIENT.predictImages([
                               { file, source }, { file: plantFile, source: 'plant' },
-                            ], fieldId || null)
-                          : await window.CG.API_CLIENT.predictImage(file, source, fieldId || null);
+                            ], fieldId || null, observedAt, timestampKind)
+                          : await window.CG.API_CLIENT.predictImage(file, source, fieldId || null, observedAt, timestampKind);
         setResult(r);
         toast(lang === 'th' ? 'วิเคราะห์สำเร็จ' : 'Analysis complete', 'success');
       } catch (e) { toast(e.message, 'error'); }
@@ -213,7 +217,7 @@ import * as THREE from 'three';
         </div>
 
         <CameraModal open={camOpen} onClose={() => setCamOpen(false)}
-          onCapture={(f) => { pick(f); setCamOpen(false); }} />
+          onCapture={(f) => { pick(f, 'camera_capture'); setCamOpen(false); }} />
       </div>
     );
   }
@@ -365,6 +369,8 @@ import * as THREE from 'three';
               <span className="txt-dim text-[11px]">{lang === 'th' ? r.severity.note_th : r.severity.note_en}</span>
             </div>
           )}
+
+          {r.capture_context && <CaptureTimeCard context={r.capture_context} />}
 
           <div className="flex items-center gap-4">
             <ProgressRing value={top.confidence * 100} size={84} label={t('confidence')} />
@@ -626,6 +632,28 @@ import * as THREE from 'three';
     );
   }
 
+  function CaptureTimeCard({ context }) {
+    const { lang } = window.CG.Store.useStore();
+    const actual = context.is_actual_capture_time;
+    const captured = new Date(context.captured_at);
+    const shown = Number.isNaN(captured.getTime()) ? context.captured_at : captured.toLocaleString(lang === 'th' ? 'th-TH' : 'en-GB');
+    const cropDays = context.crop_timing?.days_after_planting_at_capture;
+    return <div className="mb-3 rounded-xl border border-sky-500/25 bg-sky-500/[.07] p-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="txt text-xs font-semibold flex items-center gap-1.5"><Icon name="history" className="w-4 h-4 text-sky-300" />{lang === 'th' ? 'วิเคราะห์ช่วงเวลาถ่าย' : 'Capture-time analysis'}</div>
+        <Badge tone={actual ? 'low' : 'medium'}>{actual ? (lang === 'th' ? 'เวลาจาก EXIF' : 'EXIF time') : (lang === 'th' ? 'เวลาทดแทน' : 'Fallback time')}</Badge>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
+        <div><div className="txt-dim text-[10px]">{lang === 'th' ? 'วันและเวลา' : 'Date & time'}</div><div className="txt font-semibold mt-0.5">{shown}</div></div>
+        <div><div className="txt-dim text-[10px]">{lang === 'th' ? 'ช่วงวัน' : 'Day period'}</div><div className="txt font-semibold mt-0.5">{lang === 'th' ? context.period_of_day.th : context.period_of_day.en}</div></div>
+        <div><div className="txt-dim text-[10px]">{lang === 'th' ? 'ช่วงฤดู' : 'Season'}</div><div className="txt font-semibold mt-0.5">{lang === 'th' ? context.season.th : context.season.en}</div></div>
+        <div><div className="txt-dim text-[10px]">{lang === 'th' ? 'อายุแปลง ณ ตอนถ่าย' : 'Crop age at capture'}</div><div className="txt font-semibold mt-0.5">{Number.isFinite(cropDays) && cropDays >= 0 ? (lang === 'th' ? `${cropDays} วัน` : `${cropDays} days`) : '—'}</div></div>
+      </div>
+      {!actual && <p className="text-amber-300 text-[10px] mt-2 leading-relaxed">{lang === 'th' ? context.warnings?.[0]?.th : context.warnings?.[0]?.en}</p>}
+      <p className="txt-dim text-[10px] mt-1">{lang === 'th' ? 'ข้อมูลเวลาช่วยอธิบายบริบทเท่านั้น ไม่เปลี่ยนค่าความน่าจะเป็นโรคของโมเดล' : 'Time adds context only and does not alter model disease probabilities.'}</p>
+    </div>;
+  }
+
   function CassavaPlantModel({ result }) {
     const { lang } = window.CG.Store.useStore();
     const [ageMonths, setAgeMonths] = useState(10);
@@ -660,6 +688,7 @@ import * as THREE from 'three';
     const [rootWeight, setRootWeight] = useState(null);
     const [rootWeightBusy, setRootWeightBusy] = useState(false);
     const [rootWeightError, setRootWeightError] = useState('');
+    const [digitalTwinView, setDigitalTwinView] = useState('whole');
     const top = result.top3[0];
     const severity = result.severity?.level || (top.key === 'healthy' ? 'mild' : 'moderate');
     const health = Number(result.health_score?.score ?? Math.round((1 - top.confidence * 0.55) * 100));
@@ -783,8 +812,12 @@ import * as THREE from 'three';
 
         <div className="grid sm:grid-cols-[minmax(250px,1fr)_minmax(190px,.75fr)] gap-4 items-center">
           <div className="plant-stage" role="img" aria-label={lang === 'th' ? `แบบจำลองสามมิติต้นมันสำปะหลัง ผล ${diseaseLabel}` : `3D cassava plant simulation showing ${diseaseLabel}`}>
-            <Cassava3DCanvas disease={top.key} affectedCount={affectedCount} severity={severity} maturity={maturity} health={health} stemCount={stemCount} rootAbundance={rootAbundance} rootCount={estimatedRootCount} rootLength={rootLength} rootDiameter={rootDiameter} />
-            <div className="plant-3d-badge">3D LIVE • {lang === 'th' ? 'ลากหมุน • เลื่อนซูม' : 'drag to rotate • scroll to zoom'}</div>
+            <Cassava3DCanvas viewMode={digitalTwinView} disease={top.key} affectedCount={affectedCount} severity={severity} maturity={maturity} health={health} stemCount={stemCount} rootAbundance={rootAbundance} rootCount={estimatedRootCount} rootLength={rootLength} rootDiameter={rootDiameter} />
+            <div className="plant-3d-badge">DIGITAL TWIN • {lang === 'th' ? 'ลากหมุน • เลื่อนซูม' : 'drag to rotate • scroll to zoom'}</div>
+            <div className="plant-view-switch" role="group" aria-label={lang === 'th' ? 'เลือกมุมแบบจำลอง' : 'Choose model view'}>
+              <button type="button" className={digitalTwinView === 'whole' ? 'active' : ''} onClick={() => setDigitalTwinView('whole')}><Icon name="leaf" className="w-3.5 h-3.5" />{lang === 'th' ? 'ทั้งต้น' : 'Whole plant'}</button>
+              <button type="button" className={digitalTwinView === 'roots' ? 'active' : ''} onClick={() => setDigitalTwinView('roots')}><Icon name="cube" className="w-3.5 h-3.5" />{lang === 'th' ? 'ดูหัว' : 'Root system'}</button>
+            </div>
             <div className="plant-stage-legend"><span><i className="legend-leaf" />{lang === 'th' ? 'ทรงพุ่ม' : 'Canopy'}</span><span><i className="legend-root" />{lang === 'th' ? 'หัวใต้ดินจำลอง' : 'Simulated roots'}</span></div>
             <div className="plant-stage-caption">{lang === 'th' ? 'ภาพจำลองตามสถานการณ์ • ไม่ใช่การสแกนโครงสร้างจริง' : 'Scenario visualization • not an actual structural scan'}</div>
           </div>
@@ -900,7 +933,7 @@ import * as THREE from 'three';
     );
   }
 
-  function Cassava3DCanvas({ disease, affectedCount, severity, maturity, health, stemCount, rootAbundance, rootCount, rootLength, rootDiameter }) {
+  function Cassava3DCanvas({ viewMode, disease, affectedCount, severity, maturity, health, stemCount, rootAbundance, rootCount, rootLength, rootDiameter }) {
     const canvasRef = useRef(null);
     useEffect(() => {
       const canvas = canvasRef.current;
@@ -921,8 +954,9 @@ import * as THREE from 'three';
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
-      camera.position.set(0.15, 2.45, 7.6);
-      camera.lookAt(0, 1.05, 0);
+      const rootView = viewMode === 'roots';
+      camera.position.set(rootView ? 0.1 : 0.15, rootView ? -0.4 : 2.45, rootView ? 5.2 : 7.6);
+      camera.lookAt(0, rootView ? -0.9 : 1.05, 0);
       scene.fog = new THREE.FogExp2(0x071b22, 0.045);
       scene.add(new THREE.HemisphereLight(0xdaf8ff, 0x4b2d16, 2.35));
       const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
@@ -951,6 +985,9 @@ import * as THREE from 'three';
       const rootTipMaterial = material({ color: 0x81502d, roughness: 1 });
       const soilMaterial = material({ color: 0x59351f, roughness: 1, transparent: true, opacity: 0.52 });
       const leafGroups = [];
+      const canopy = new THREE.Group();
+      const rootSystem = new THREE.Group();
+      plant.add(canopy, rootSystem);
 
       const ground = mesh(new THREE.CylinderGeometry(2.15, 2.0, 0.58, 64, 1, true, 0, Math.PI * 1.72), soilMaterial);
       ground.position.y = -0.72; ground.receiveShadow = true; plant.add(ground);
@@ -972,11 +1009,11 @@ import * as THREE from 'three';
         const stemAngle = stemIndex / visibleStemCount * Math.PI * 2 + 0.35;
         const base = new THREE.Vector3(Math.cos(stemAngle) * stemIndex * 0.045, -0.48, Math.sin(stemAngle) * stemIndex * 0.045);
         const tip = new THREE.Vector3(Math.cos(stemAngle) * stemIndex * 0.16, stemHeight - 0.48 - stemIndex * 0.08, Math.sin(stemAngle) * stemIndex * 0.16);
-        plant.add(cylinderBetween(base, tip, 0.075 - stemIndex * 0.006, stemMaterial, 14));
+        canopy.add(cylinderBetween(base, tip, 0.075 - stemIndex * 0.006, stemMaterial, 14));
         for (let node = 0; node < 8; node += 1) {
           const amount = (node + 1) / 10;
           const ring = mesh(new THREE.TorusGeometry(0.077 - stemIndex * 0.006, 0.009, 5, 18), stemNodeMaterial);
-          ring.position.lerpVectors(base, tip, amount); ring.rotation.x = Math.PI / 2; plant.add(ring);
+          ring.position.lerpVectors(base, tip, amount); ring.rotation.x = Math.PI / 2; canopy.add(ring);
         }
       }
 
@@ -998,21 +1035,21 @@ import * as THREE from 'three';
         root.position.set(Math.cos(angle) * 0.30, -0.48, Math.sin(angle) * 0.30);
         root.rotation.z = Math.cos(angle) * (0.30 + (index % 2) * 0.10); root.rotation.x = Math.sin(angle) * (0.30 + (index % 2) * 0.10);
         root.rotation.y = -angle;
-        plant.add(root);
+        rootSystem.add(root);
         for (let ridgeIndex = 1; ridgeIndex <= 3; ridgeIndex += 1) {
           const ridge = mesh(new THREE.TorusGeometry(0.12 * normalizedDiameter * variation * rootAbundance, 0.006, 5, 24), rootTipMaterial);
           ridge.position.set(Math.cos(angle) * (0.30 + ridgeIndex * 0.035), -0.48 - ridgeIndex * 0.22 * normalizedLength * variation, Math.sin(angle) * (0.30 + ridgeIndex * 0.035));
-          ridge.rotation.x = Math.PI / 2; ridge.rotation.z = Math.cos(angle) * 0.32; plant.add(ridge);
+          ridge.rotation.x = Math.PI / 2; ridge.rotation.z = Math.cos(angle) * 0.32; rootSystem.add(ridge);
         }
         const tipStart = new THREE.Vector3(Math.cos(angle) * 0.68, -1.34 * normalizedLength * variation, Math.sin(angle) * 0.68);
         const tipEnd = new THREE.Vector3(Math.cos(angle + 0.18) * 0.92, tipStart.y - 0.26, Math.sin(angle + 0.18) * 0.92);
-        plant.add(cylinderBetween(tipStart, tipEnd, 0.014, rootTipMaterial, 6));
+        rootSystem.add(cylinderBetween(tipStart, tipEnd, 0.014, rootTipMaterial, 6));
         const feederCurve = new THREE.CatmullRomCurve3([
           tipEnd,
           new THREE.Vector3(Math.cos(angle + 0.28) * 1.05, tipEnd.y - 0.16, Math.sin(angle + 0.28) * 1.05),
           new THREE.Vector3(Math.cos(angle + 0.42) * 1.18, tipEnd.y - 0.34, Math.sin(angle + 0.42) * 1.18),
         ]);
-        plant.add(mesh(new THREE.TubeGeometry(feederCurve, 10, 0.008, 5, false), rootTipMaterial));
+        rootSystem.add(mesh(new THREE.TubeGeometry(feederCurve, 10, 0.008, 5, false), rootTipMaterial));
       }
 
       const leafShape = new THREE.Shape();
@@ -1028,7 +1065,7 @@ import * as THREE from 'three';
         const branchLength = 0.72 + (index % 3) * 0.13;
         const branchStart = new THREE.Vector3(0, height, 0);
         const branchEnd = new THREE.Vector3(Math.cos(angle) * branchLength, height + 0.18, Math.sin(angle) * branchLength);
-        plant.add(cylinderBetween(branchStart, branchEnd, 0.022, petioleMaterial));
+        canopy.add(cylinderBetween(branchStart, branchEnd, 0.022, petioleMaterial));
         const leafGroup = new THREE.Group();
         leafGroup.position.copy(branchEnd);
         leafGroup.rotation.set(-1.08 + (index % 3) * 0.05, 0, -angle - Math.PI / 2);
@@ -1055,7 +1092,16 @@ import * as THREE from 'three';
             leafGroup.add(spot);
           }
         }
-        plant.add(leafGroup);
+        canopy.add(leafGroup);
+      }
+
+      if (rootView) {
+        canopy.visible = false;
+        ground.material.opacity = 0.16;
+        soilTop.material.transparent = true;
+        soilTop.material.opacity = 0.1;
+        rootSystem.scale.setScalar(1.25);
+        rootSystem.position.y = 0.24;
       }
 
       plant.position.y = 0.05;
@@ -1106,7 +1152,7 @@ import * as THREE from 'three';
         materials.forEach((item) => item.dispose());
         renderer.dispose();
       };
-    }, [disease, affectedCount, severity, maturity, health, stemCount, rootAbundance, rootCount, rootLength, rootDiameter]);
+    }, [viewMode, disease, affectedCount, severity, maturity, health, stemCount, rootAbundance, rootCount, rootLength, rootDiameter]);
     return <canvas ref={canvasRef} className="plant-3d-canvas" tabIndex="0" aria-label="Interactive WebGL cassava model. Drag to rotate and scroll to zoom." />;
   }
 

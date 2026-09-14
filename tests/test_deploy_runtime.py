@@ -10,6 +10,7 @@ def _valid_environment(monkeypatch):
     monkeypatch.setattr(runtime_check, "AI_SERVING_MODE", "review_only")
     monkeypatch.setattr(runtime_check, "AI_FIELD_VALIDATED", False)
     monkeypatch.setattr(runtime_check, "USE_CNN", True)
+    monkeypatch.setattr(runtime_check, "ENABLE_AUXILIARY_MODELS", False)
     monkeypatch.setattr(runtime_check, "get_cnn_session", lambda: object())
     monkeypatch.setattr(runtime_check, "get_brown_spot_classifier", lambda: object())
     monkeypatch.setattr(runtime_check, "get_white_leaf_spot_classifier", lambda: object())
@@ -30,5 +31,5 @@ def test_verify_runtime_remains_fail_closed(monkeypatch):
     _valid_environment(monkeypatch)
     monkeypatch.setattr(runtime_check, "get_cnn_session", lambda: None)
 
-    with pytest.raises(RuntimeError, match="cnn_efficientnet_b2"):
+    with pytest.raises(RuntimeError, match="cnn_efficientnet_b3"):
         runtime_check.verify_runtime()

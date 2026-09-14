@@ -118,25 +118,43 @@
     const [open, setOpen] = useState(false);
     const [input, setInput] = useState('');
     const [busy, setBusy] = useState(false);
+    const messagesRef = React.useRef(null);
     const [messages, setMessages] = useState([{ role: 'assistant', text: lang === 'th' ? 'สวัสดีครับ ผมช่วยอธิบายผลล่าสุดและแนะนำขั้นตอนดูแลได้' : 'Hello. I can explain your latest result and suggest next care steps.' }]);
+    React.useEffect(() => {
+      if (!open) return undefined;
+      const scrollY = window.scrollY;
+      document.documentElement.classList.add('chat-modal-open');
+      return () => {
+        document.documentElement.classList.remove('chat-modal-open');
+        window.scrollTo({ top: scrollY, behavior: 'instant' });
+      };
+    }, [open]);
     const send = async (value) => {
       const text = (value || input).trim(); if (!text || busy) return;
       setMessages((items) => [...items, { role: 'user', text }]); setInput(''); setBusy(true);
       try {
         const result = await window.CG.API_CLIENT.chat(text, lang);
-        setMessages((items) => [...items, { role: 'assistant', text: result.reply, quick: result.quick_replies }]);
+        setMessages((items) => [...items, {
+          role: 'assistant', text: result.reply, quick: result.quick_replies,
+          source: result.llm_used ? `LLM · ${result.model}` : (lang === 'th' ? 'คำแนะนำสำรองที่ตรวจสอบแล้ว' : 'Verified fallback guidance')
+        }]);
       } catch (error) {
         setMessages((items) => [...items, { role: 'assistant', text: error.message || (lang === 'th' ? 'เชื่อมต่อผู้ช่วยไม่ได้' : 'Assistant unavailable') }]);
       } finally { setBusy(false); }
     };
-    return <div className={`advice-chat ${open ? 'open' : ''}`}>
-      {open && <section className="advice-chat-panel" aria-label={lang === 'th' ? 'ผู้ช่วยแนะนำ' : 'Advice assistant'}>
-        <header><div><b>{lang === 'th' ? 'ผู้ช่วย CassavaGuard' : 'CassavaGuard Assistant'}</b><span>{lang === 'th' ? 'อ้างอิงผลวิเคราะห์ล่าสุด' : 'Grounded in your latest result'}</span></div><button onClick={() => setOpen(false)} aria-label="Close"><Icon name="close" className="w-5 h-5" /></button></header>
-        <div className="advice-chat-messages">{messages.map((message, index) => <div key={index} className={`chat-message ${message.role}`}><p>{message.text}</p>{message.quick && <div className="chat-quick">{message.quick.map((item) => <button key={item} onClick={() => send(item)}>{item}</button>)}</div>}</div>)}{busy && <div className="chat-message assistant"><Spinner className="w-4 h-4" /></div>}</div>
-        <form onSubmit={(event) => { event.preventDefault(); send(); }}><input maxLength="500" value={input} onChange={(event) => setInput(event.target.value)} placeholder={lang === 'th' ? 'ถามเรื่องผล โรค น้ำ ปุ๋ย หรือผลผลิต…' : 'Ask about results, disease, water, fertilizer…'} /><button disabled={busy || !input.trim()}><Icon name="play" className="w-4 h-4" /></button></form>
+    React.useEffect(() => {
+      const box = messagesRef.current;
+      if (box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+    }, [messages, busy]);
+    return <div className={`advice-chat ${open ? 'open' : ''}`} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+      {open && <button type="button" className="advice-chat-backdrop" onClick={() => setOpen(false)} aria-label={lang === 'th' ? 'ปิดผู้ช่วย' : 'Close assistant'} />}
+      {open && <section className="advice-chat-panel" aria-label={lang === 'th' ? 'ผู้ช่วยแนะนำ' : 'Advice assistant'} onClick={(event) => event.stopPropagation()}>
+        <header><div><b>{lang === 'th' ? 'ผู้ช่วย CassavaGuard' : 'CassavaGuard Assistant'}</b><span>{lang === 'th' ? 'อ้างอิงผลวิเคราะห์ล่าสุด' : 'Grounded in your latest result'}</span></div><button type="button" onClick={() => setOpen(false)} aria-label="Close"><Icon name="close" className="w-5 h-5" /></button></header>
+        <div ref={messagesRef} className="advice-chat-messages" aria-live="polite">{messages.map((message, index) => <div key={index} className={`chat-message ${message.role}`}><p>{message.text}</p>{message.source && <span className="chat-source">{message.source}</span>}{message.quick && <div className="chat-quick">{message.quick.map((item) => <button type="button" key={item} onClick={() => send(item)}>{item}</button>)}</div>}</div>)}{busy && <div className="chat-message assistant"><Spinner className="w-4 h-4" /></div>}</div>
+        <form onSubmit={(event) => { event.preventDefault(); event.stopPropagation(); send(); }}><input maxLength="500" value={input} onChange={(event) => setInput(event.target.value)} placeholder={lang === 'th' ? 'ถามเรื่องผล โรค น้ำ ปุ๋ย หรือผลผลิต…' : 'Ask about results, disease, water, fertilizer…'} /><button type="submit" disabled={busy || !input.trim()}><Icon name="play" className="w-4 h-4" /></button></form>
         <small>{lang === 'th' ? 'คำแนะนำเพื่อคัดกรอง ไม่แทนผู้เชี่ยวชาญหรือผลห้องปฏิบัติการ' : 'Screening guidance; not a substitute for expert or laboratory confirmation.'}</small>
       </section>}
-      <button className="advice-chat-fab" onClick={() => setOpen((value) => !value)} aria-label={lang === 'th' ? 'เปิดผู้ช่วยแนะนำ' : 'Open advice assistant'}><Icon name={open ? 'close' : 'bulb'} className="w-6 h-6" /><span>{lang === 'th' ? 'ถามผู้ช่วย' : 'Ask'}</span></button>
+      <button type="button" className="advice-chat-fab" onClick={() => setOpen((value) => !value)} aria-label={lang === 'th' ? 'เปิดผู้ช่วยแนะนำ' : 'Open advice assistant'}><Icon name={open ? 'close' : 'bulb'} className="w-6 h-6" /><span>{lang === 'th' ? 'ถามผู้ช่วย' : 'Ask'}</span></button>
     </div>;
   }
   window.CG.App = App;

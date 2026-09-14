@@ -37,6 +37,14 @@ services:
         value: "true"
       - key: USE_FUSION
         value: "false"
+      - key: ENABLE_AUXILIARY_MODELS
+        value: "false"
+      - key: CHAT_LLM_PROVIDER
+        value: groq
+      - key: CHAT_LLM_MODEL
+        value: qwen/qwen3.6-27b
+      - key: GROQ_API_KEY
+        sync: false
       - key: AI_SERVING_MODE
         value: review_only
       - key: AI_FIELD_VALIDATED
