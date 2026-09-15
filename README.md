@@ -46,6 +46,7 @@
 - [สถาปัตยกรรม](#สถาปัตยกรรม)
 - [พัฒนาและทดสอบ](#พัฒนาและทดสอบ)
 - [Deploy บน Render](#deploy-บน-render)
+- [ติดตั้งบนมือถือ](#ติดตั้งบนมือถือ)
 - [เอกสารทั้งหมด](#เอกสารทั้งหมด)
 - [ข้อจำกัดและความปลอดภัย](#ข้อจำกัดและความปลอดภัย)
 
@@ -376,12 +377,19 @@ Pipeline จะหยุดทันทีถ้ามีน้อยกว่�
 เป็น Train/Validation/Test และตั้งเป้าให้ตัวอย่าง Test อย่างน้อย 95% มีค่าคลาดเคลื่อนไม่เกิน
 20% พร้อม `R² ≥ 0.60` ไฟล์ที่ได้เป็น candidate เท่านั้นและจะไม่แทนโมเดล production อัตโนมัติ
 
+## ติดตั้งบนมือถือ
+
+- Android: ดาวน์โหลด `releases/mobile/CassavaGuard-Android-v1.0-debug.apk` สำหรับติดตั้งทดสอบโดยตรง
+- iOS: เปิด `ios/App/App.xcodeproj` ด้วย Xcode แล้วลงนามด้วย Apple Developer Team ของผู้ใช้
+- ขั้นตอนทั้งหมด: [คู่มือ Android และ iOS](docs/MOBILE_BUILD_TH.md)
+
 ## เอกสารทั้งหมด
 
 ### คู่มือ
 
 - [คู่มือทุกขั้นตอน: ติดตั้ง ใช้ พัฒนา GitHub และ Render](docs/COMPLETE_WORKFLOW_TH.md)
 - [คู่มือผู้ใช้ภาษาไทย](docs/USER_GUIDE_TH.md)
+- [คู่มือสร้างและติดตั้ง Android/iOS](docs/MOBILE_BUILD_TH.md)
 - [คู่มือการใช้แอป PDF](docs/reports/CassavaGuard_App_Usage_Guide_TH.pdf)
 - [API Reference](docs/API.md)
 - [คู่มือฝึกโมเดลและจัดการข้อมูล](docs/TRAINING.md)
