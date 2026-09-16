@@ -1,0 +1,282 @@
+{
+  "model_id": "cnn_validation_selected_ensemble",
+  "selection": {
+    "set": "validation",
+    "metric": "macro_f1",
+    "test_used_for_selection": false
+  },
+  "weight_a": 0.7,
+  "weight_b": 0.3,
+  "tta": false,
+  "model_a": {
+    "path": "backend/training/candidates/retrain_20260913/cnn_b3_field/cnn_efficientnet_b3.onnx",
+    "model_id": "cnn_efficientnet_b3"
+  },
+  "model_b": {
+    "path": "backend/training/candidates/goal95_convnext_official/cnn_convnext_tiny.onnx",
+    "model_id": "cnn_convnext_tiny"
+  },
+  "validation": {
+    "accuracy": 0.900267,
+    "accuracy_correct": 1688,
+    "sample_count": 1875,
+    "accuracy_wilson_95": [
+      0.885875,
+      0.913022
+    ],
+    "balanced_accuracy": 0.862151,
+    "macro_f1": 0.863524,
+    "log_loss": 0.325048,
+    "brier_multiclass": 0.156266,
+    "ece_15_bins": 0.025609,
+    "confusion_matrix": [
+      [
+        94,
+        1,
+        8,
+        2,
+        0
+      ],
+      [
+        3,
+        106,
+        27,
+        7,
+        8
+      ],
+      [
+        10,
+        15,
+        426,
+        21,
+        6
+      ],
+      [
+        4,
+        1,
+        17,
+        837,
+        25
+      ],
+      [
+        4,
+        1,
+        11,
+        16,
+        225
+      ]
+    ],
+    "per_class": {
+      "healthy": {
+        "precision": 0.817391,
+        "recall": 0.895238,
+        "f1": 0.854545,
+        "support": 105
+      },
+      "cbb": {
+        "precision": 0.854839,
+        "recall": 0.701987,
+        "f1": 0.770909,
+        "support": 151
+      },
+      "cbsd": {
+        "precision": 0.871166,
+        "recall": 0.891213,
+        "f1": 0.881075,
+        "support": 478
+      },
+      "cmd": {
+        "precision": 0.947905,
+        "recall": 0.946833,
+        "f1": 0.947368,
+        "support": 884
+      },
+      "cgm": {
+        "precision": 0.852273,
+        "recall": 0.875486,
+        "f1": 0.863724,
+        "support": 257
+      }
+    }
+  },
+  "test": {
+    "accuracy": 0.905499,
+    "accuracy_correct": 1696,
+    "sample_count": 1873,
+    "accuracy_wilson_95": [
+      0.891409,
+      0.917929
+    ],
+    "balanced_accuracy": 0.866762,
+    "macro_f1": 0.870594,
+    "log_loss": 0.311726,
+    "brier_multiclass": 0.147259,
+    "ece_15_bins": 0.027472,
+    "confusion_matrix": [
+      [
+        94,
+        0,
+        8,
+        2,
+        1
+      ],
+      [
+        7,
+        113,
+        19,
+        10,
+        5
+      ],
+      [
+        5,
+        14,
+        425,
+        17,
+        15
+      ],
+      [
+        5,
+        2,
+        17,
+        848,
+        13
+      ],
+      [
+        2,
+        3,
+        8,
+        24,
+        216
+      ]
+    ],
+    "per_class": {
+      "healthy": {
+        "precision": 0.831858,
+        "recall": 0.895238,
+        "f1": 0.862385,
+        "support": 105
+      },
+      "cbb": {
+        "precision": 0.856061,
+        "recall": 0.733766,
+        "f1": 0.79021,
+        "support": 154
+      },
+      "cbsd": {
+        "precision": 0.890985,
+        "recall": 0.892857,
+        "f1": 0.89192,
+        "support": 476
+      },
+      "cmd": {
+        "precision": 0.941176,
+        "recall": 0.958192,
+        "f1": 0.949608,
+        "support": 885
+      },
+      "cgm": {
+        "precision": 0.864,
+        "recall": 0.853755,
+        "f1": 0.858847,
+        "support": 253
+      }
+    }
+  },
+  "quality_target": {
+    "metric": "held_out_test_accuracy",
+    "threshold": 0.95,
+    "point_estimate_passed": false,
+    "wilson_lower_95_passed": false
+  },
+  "dataset_audit": {
+    "method": "SHA-256 of decoded RGB pixel shape+bytes",
+    "conflicting_label_groups_quarantined": 18,
+    "same_label_duplicate_groups_deduplicated": 8,
+    "exact_removed_by_split": {
+      "train": 36,
+      "validation": 13,
+      "test": 11
+    },
+    "removed_by_split": {
+      "train": 37,
+      "validation": 14,
+      "test": 12
+    },
+    "duplicate_manifest_sha256": "c52234d65408725a0e40a7f7c83048906594f724b79c82d1d103ca1ca088f0e8",
+    "test_access_before_selection": "structural duplicate quarantine only; no model outputs",
+    "raw_split_counts": {
+      "train": 5656,
+      "validation": 1889,
+      "test": 1885
+    },
+    "effective_split_counts": {
+      "train": 5619,
+      "validation": 1875,
+      "test": 1873
+    },
+    "perceptual_duplicate_audit": {
+      "method": "identical 64-bit dHash and 64-bit pHash Hamming distance <= 3",
+      "dhash_size": 8,
+      "phash_size": 8,
+      "phash_source_size": 32,
+      "max_phash_hamming": 3,
+      "cross_split_candidate_groups": 2,
+      "conflicting_label_groups_quarantined": 1,
+      "same_label_groups_deduplicated": 1,
+      "removed_by_split": {
+        "train": 1,
+        "validation": 1,
+        "test": 1
+      },
+      "policy": "quarantine all candidates before training/evaluation pending manual review",
+      "manual_review_required": true,
+      "manual_review_manifest_sha256": "118367b9a4b8551319a4c2c170a31c8baeadd32956aa556df08240a7fa86768f",
+      "manual_review_manifest": [
+        {
+          "decision": "quarantine_all_label_conflict",
+          "review_status": "pending",
+          "occurrences": [
+            {
+              "split": "train",
+              "path": "train/cbsd/train-cbsd-55.jpg",
+              "label": "cbsd",
+              "exact_sha256": "d61409fe88e8c0fbbbd1a3508a8ce8bda9713560deaad4f45e98aa84034c8d8f",
+              "dhash64": "8d31b03a595490c8",
+              "phash64": "d9ea6073a3b4a41e"
+            },
+            {
+              "split": "validation",
+              "path": "validation/healthy/validation-healthy-82.jpg",
+              "label": "healthy",
+              "exact_sha256": "029861f1187ecb7a7bf80886a0e9fede306c57a1978103b56ef536ac978d9c89",
+              "dhash64": "8d31b03a595490c8",
+              "phash64": "d9ea6073a3b4a41e"
+            }
+          ]
+        },
+        {
+          "decision": "keep_earliest_split_occurrence",
+          "review_status": "pending",
+          "occurrences": [
+            {
+              "split": "validation",
+              "path": "validation/cmd/validation-cmd-138.jpg",
+              "label": "cmd",
+              "exact_sha256": "d45de412781da5d68aa55623acd171a2c989d706fa279154b0d65ca0ef093969",
+              "dhash64": "69cdc3e2cad63666",
+              "phash64": "85c33e314dcd4bc6"
+            },
+            {
+              "split": "test",
+              "path": "test/cmd/test-cmd-592.jpg",
+              "label": "cmd",
+              "exact_sha256": "d45a44ee5a80ff0c77d220194623beea394486d66ee8640e4961e88129f5cc63",
+              "dhash64": "69cdc3e2cad63666",
+              "phash64": "85c33e314dcd4bc6"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

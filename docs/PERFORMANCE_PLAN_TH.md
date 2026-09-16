@@ -3,9 +3,10 @@
 ## เป้าหมายและผู้ควบคุมงาน
 
 Supervisor รับผิดชอบ acceptance gate, การแบ่งขอบเขตไฟล์, การรวมงาน และการอนุมัติ
-ตัวเลขสุดท้าย เป้าหมายหลักคือ held-out accuracy ของโมเดลจำแนกภาพ 5 คลาสมากกว่า
-75% โดยต้องรักษา macro-F1 และ calibration เพื่อไม่ให้ accuracy สูงจากคลาส CMD
-ที่มีจำนวนมากกว่าเพียงคลาสเดียว
+ตัวเลขสุดท้าย เป้าหมายพัฒนาคือ held-out accuracy ของโมเดลจำแนกภาพ 5 คลาสอย่างน้อย
+95% ส่วน 75% เป็นเพียง release safety gate ขั้นต่ำของระบบเดิม ไม่ใช่เป้าหมายสำเร็จ
+โดยต้องรักษา macro-F1, per-class recall และ calibration เพื่อไม่ให้ accuracy สูงจาก
+คลาส CMD ที่มีจำนวนมากกว่าเพียงคลาสเดียว
 
 Baseline ที่ตรวจแล้ว:
 
@@ -70,3 +71,21 @@ independent Thai-field evaluation ตัว gate จะแสดง warning ข�
 - decode JPEG 3,200×2,400 median 161.51 → 84.75 ms (เร็วขึ้น 47.5%)
 - classifier thumbnail เหมือนเดิมทุกพิกเซล และ model session ถูก warm/reuse ใน
   process เดียวกับ Uvicorn
+# ผลทดลองเป้าหมาย Accuracy 95% — 16 กันยายน 2026
+
+ทดลอง ConvNeXt-Tiny บน official split ที่กัก exact/perceptual duplicate แล้ว และสร้าง
+ensemble โดยเลือกน้ำหนักจาก validation เท่านั้น (`EfficientNet-B3 0.70 + ConvNeXt 0.30`)
+ก่อนเปิด held-out test ได้ผลดังนี้:
+
+- Test accuracy: **90.55%** (1,696/1,873)
+- Macro-F1: **87.06%**
+- Balanced accuracy: **86.68%**
+- CBB recall: **73.38%**
+- Accuracy Wilson 95% CI: **89.14–91.79%**
+- เป้าหมาย 95%: **ยังไม่ผ่าน** ทั้ง point estimate และ Wilson lower bound
+
+ผลนี้ดีกว่า EfficientNet-B3 ที่ deploy อยู่ แต่ ConvNeXt ONNX มีขนาด 106 MB และ
+ensemble ต้องรันสองโมเดล จึงยังไม่ promote ขึ้น Render จนกว่าจะลดขนาด ทดสอบ latency
+บน Render CPU และเพิ่มข้อมูล CBB/healthy ที่ตรวจ label จากโดเมนเดียวกับงานจริง
+ห้ามปรับน้ำหนัก ensemble จาก test set รอบนี้อีก; การทดลองถัดไปต้องใช้ validation หรือ
+ชุดข้อมูลใหม่ และต้องมี independent Thai-field test ก่อนอ้าง production accuracy.
