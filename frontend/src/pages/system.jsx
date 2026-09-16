@@ -109,7 +109,7 @@
                 </tr></thead>
                 <tbody>
                   {reg.models.filter((m) => !m.experimental && !/brown|white/i.test(m.id)).map((m) => (
-                    <tr key={m.id} className="border-b hair hover:bg-white/[.02]">
+                    <tr key={m.id} className="border-b hair hover:brightness-95">
                       <td className="py-2.5 px-2 txt font-medium text-xs">{m.name}</td>
                       <td className="py-2.5 px-2 txt-soft font-mono text-xs">{m.version}</td>
                       <td className="py-2.5 px-2 txt font-mono text-xs">{metric(m.accuracy)}</td>

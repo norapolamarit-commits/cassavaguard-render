@@ -8,11 +8,13 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50: "#ecfdf5", 100: "#d1fae5", 200: "#a7f3d0", 300: "#6ee7b7",
-          400: "#34d399", 500: "#10b981", DEFAULT: "#10b981", 600: "#059669",
-          700: "#047857", 800: "#065f46", 900: "#064e3b",
+          50: "#eefaf0", 100: "#d3f4da", 200: "#a8e8b8", 300: "#74d68f",
+          400: "#43c96e", 500: "#1ba24a", DEFAULT: "#1ba24a", 600: "#158a3f",
+          700: "#137a38", 800: "#0f5f2c", 900: "#0b4a23",
         },
-        cyan2: { DEFAULT: "#06b6d4", light: "#22d3ee" },
+        /* Warm secondary (sun/soil). Kept under the historical "cyan2" key so
+           existing accent classes across pages recolor to the new warm tone. */
+        cyan2: { DEFAULT: "#f4a621", light: "#f6b84a" },
         ink: { DEFAULT: "#0b1220", 800: "#111a2b", 700: "#18233b" },
       },
       fontFamily: {

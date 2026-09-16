@@ -45,9 +45,9 @@
         case 'predict': return <P.Predict />;
         case 'history': return <P.History />;
         case 'recommendations': return <P.Recommendations initialField={routeArg} />;
-        case 'weather': return <P.Weather initialField={routeArg} />;
+        case 'weather': return <P.Weather initialField={routeArg} go={go} />;
         case 'map': return <P.FieldMap go={go} />;
-        case 'satellite': return <P.Satellite initialField={routeArg} />;
+        case 'satellite': return <P.Satellite initialField={routeArg} go={go} />;
         case 'dashboard': return <P.Dashboard go={go} />;
         case 'system': return <P.System />;
         case 'guide': return <P.Guide />;

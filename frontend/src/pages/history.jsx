@@ -95,7 +95,7 @@
                   {rows.map((r) => {
                     const c = classes.find((x) => x.key === r.top_class) || { th: r.top_class, en: r.top_class };
                     return (
-                      <tr key={r.id} className="border-b hair hover:bg-white/[.02] transition">
+                      <tr key={r.id} className="border-b hair hover:brightness-95 transition">
                         <td className="py-2.5 px-2 txt-dim font-mono text-xs">#{r.id}</td>
                         <td className="py-2.5 px-2 txt-soft text-xs">{r.created_at.replace('T', ' ').slice(0, 16)}</td>
                         <td className="py-2.5 px-2"><span className="txt-soft text-xs capitalize">{r.source}</span></td>

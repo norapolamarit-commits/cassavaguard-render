@@ -15,9 +15,10 @@
     return v > 0.6 ? '#065f46' : v > 0.45 ? '#10b981' : v > 0.3 ? '#fbbf24' : '#dc2626';
   };
 
-  function SatellitePage({ initialField }) {
+  function SatellitePage({ initialField, go }) {
     const { t, lang, toast } = window.CG.Store.useStore();
     const [fields, setFields] = useState([]);
+    const [fieldsLoaded, setFieldsLoaded] = useState(false);
     const [fid, setFid] = useState(initialField || null);
     const [index, setIndex] = useState('ndvi');
     const [timeline, setTimeline] = useState(null);
@@ -27,7 +28,7 @@
     const [compare, setCompare] = useState(null);
 
     useEffect(() => {
-      window.CG.API_CLIENT.fields().then((f) => { setFields(f); if (!fid && f.length) setFid(f[0].id); });
+      window.CG.API_CLIENT.fields().then((f) => { setFields(f); if (!fid && f.length) setFid(f[0].id); }).finally(() => setFieldsLoaded(true));
     }, []);
 
     useEffect(() => {
@@ -50,6 +51,13 @@
     }, [index, fid]);
 
     const cur = timeline ? timeline[tIdx] : null;
+
+    if (fieldsLoaded && fields.length === 0) {
+      return <NoFieldsEmptyState lang={lang} go={go} icon="satellite"
+        title={lang === 'th' ? 'ยังไม่มีแปลงให้ติดตามดาวเทียม' : 'No field to track yet'}
+        body={lang === 'th' ? 'เพิ่มแปลงแรกของคุณพร้อมพิกัดจริง เพื่อดู NDVI ความเขียว และแนวโน้มจากดาวเทียม' : 'Add your first field with real coordinates to see NDVI, vegetation health, and satellite trends.'} />;
+    }
+
     return (
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -178,6 +186,10 @@
 
   function FieldPicker({ fields, fid, setFid }) {
     const { lang } = window.CG.Store.useStore();
+    if (fields.length === 0) {
+      // An empty <select> renders as a blank, confusing control — say so instead.
+      return <span className="glass rounded-xl px-3 py-2 txt-dim text-sm">{lang === 'th' ? 'ยังไม่มีแปลง' : 'No fields yet'}</span>;
+    }
     return (
       <select value={fid || ''} onChange={(e) => setFid(Number(e.target.value))}
               className="glass rounded-xl px-3 py-2 txt text-sm bg-transparent focus:outline-none focus:ring-2 ring-brand-500/40">
@@ -186,7 +198,22 @@
     );
   }
 
+  // Shared empty state for any field-scoped page (weather, satellite, soil…)
+  // when the signed-in user has not created a field yet.
+  function NoFieldsEmptyState({ lang, go, icon, title, body }) {
+    const { Card, Icon } = window.CG.UI;
+    return (
+      <Card className="animate-fadeup text-center py-12">
+        <div className="cg-section-icon mx-auto" style={{ width: 56, height: 56 }}><Icon name={icon} className="w-6 h-6" /></div>
+        <h3 className="txt font-bold text-lg mt-4">{title}</h3>
+        <p className="txt-soft text-sm mt-2 max-w-md mx-auto">{body}</p>
+        {go && <button onClick={() => go('map')} className="primary-action mt-5 mx-auto px-6"><Icon name="map" className="w-4 h-4" />{lang === 'th' ? 'เพิ่มแปลงแรกของคุณ' : 'Add your first field'}</button>}
+      </Card>
+    );
+  }
+
   window.CG.Pages = window.CG.Pages || {};
   window.CG.Pages.Satellite = SatellitePage;
   window.CG.FieldPicker = FieldPicker;
+  window.CG.NoFieldsEmptyState = NoFieldsEmptyState;
 })();

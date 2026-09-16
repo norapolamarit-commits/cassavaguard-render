@@ -4,7 +4,7 @@
   const Ctx = createContext(null);
 
   function Provider({ children }) {
-    const [theme, setTheme] = useState(() => localStorage.getItem('cg_theme') || 'dark');
+    const [theme, setTheme] = useState(() => localStorage.getItem('cg_theme') || 'light');
     const [lang, setLang]   = useState(() => localStorage.getItem('cg_lang') || 'en');
     const [user, setUser]   = useState(null);
     const [booted, setBooted] = useState(false);

@@ -86,7 +86,7 @@
       brand: 'from-brand-500/20 to-cyan2/10 text-brand-300',
       cyan:  'from-cyan2/20 to-brand-500/10 text-cyan2-light',
       amber: 'from-amber-500/20 to-orange-500/10 text-amber-300',
-      rose:  'from-rose-500/20 to-red-500/10 text-rose-300',
+      rose:  'from-rose-500/20 to-red-500/10 text-red-500',
       violet:'from-violet-500/20 to-fuchsia-500/10 text-violet-300',
     };
     const fmt = (n) => decimals ? n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
@@ -99,7 +99,7 @@
             <Icon name={icon} className="w-5 h-5" />
           </div>
           {delta != null && (
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${delta >= 0 ? 'text-brand-300 bg-brand-500/10' : 'text-rose-300 bg-rose-500/10'}`}>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${delta >= 0 ? 'text-brand-300 bg-brand-500/10' : 'text-red-500 bg-red-500/10'}`}>
               {delta >= 0 ? '▲' : '▼'} {Math.abs(delta)}%
             </span>
           )}
@@ -122,8 +122,8 @@
       online:'text-brand-300 bg-brand-500/12 border-brand-500/25',
       medium:'text-amber-300 bg-amber-500/12 border-amber-500/25',
       warning:'text-amber-300 bg-amber-500/12 border-amber-500/25',
-      high: 'text-rose-300 bg-rose-500/12 border-rose-500/25',
-      critical:'text-rose-300 bg-rose-500/12 border-rose-500/25',
+      high: 'text-red-500 bg-red-500/12 border-rose-500/25',
+      critical:'text-red-500 bg-red-500/12 border-rose-500/25',
       info: 'text-cyan2-light bg-cyan2/12 border-cyan2/25',
       slate:'txt-soft bg-slate-500/10 border-slate-500/20',
       // Per-disease-class tones — one distinct hue per class key (13 total incl. healthy)
@@ -216,7 +216,7 @@
              className={`glass-strong cg-modal relative w-full ${wide ? 'max-w-4xl' : 'max-w-lg'} max-h-[88vh] overflow-y-auto no-scrollbar animate-fadeup shadow-2xl`}>
           <div className="flex items-center justify-between p-5 border-b hair sticky top-0 glass-strong z-10">
             <h3 className="txt font-bold text-lg">{title}</h3>
-            <button onClick={onClose} className="txt-dim hover:txt w-8 h-8 grid place-items-center rounded-lg hover:bg-white/5"><Icon name="close" /></button>
+            <button onClick={onClose} className="txt-dim hover:txt w-8 h-8 grid place-items-center rounded-lg hover:brightness-95"><Icon name="close" /></button>
           </div>
           <div className="p-5">{children}</div>
         </div>

@@ -6,22 +6,30 @@
 
   const COND_ICON = { sunny: 'sun', partly_cloudy: 'cloud', cloudy: 'cloud', rain: 'drop', storm: 'drop' };
 
-  function WeatherPage({ initialField }) {
+  function WeatherPage({ initialField, go }) {
     const { t, lang, toast } = window.CG.Store.useStore();
     const [fields, setFields] = useState([]);
+    const [fieldsLoaded, setFieldsLoaded] = useState(false);
     const [fid, setFid] = useState(initialField || null);
     const [cur, setCur] = useState(null);
     const [hist, setHist] = useState(null);
     const [fc, setFc] = useState(null);
 
-    useEffect(() => { window.CG.API_CLIENT.fields().then((f) => { setFields(f); if (!fid && f.length) setFid(f[0].id); }); }, []);
+    useEffect(() => { window.CG.API_CLIENT.fields().then((f) => { setFields(f); if (!fid && f.length) setFid(f[0].id); }).finally(() => setFieldsLoaded(true)); }, []);
     useEffect(() => {
+      if (!fid) return;
       const API = window.CG.API_CLIENT;
       setCur(null); setHist(null); setFc(null);
       API.weatherCurrent(fid).then(setCur).catch((e) => toast(e.message, 'error'));
       API.weatherHistory(fid, 30).then((r) => setHist(r.series)).catch(() => {});
       API.weatherForecast(fid, 7).then((r) => setFc(r.series)).catch(() => {});
     }, [fid]);
+
+    if (fieldsLoaded && fields.length === 0) {
+      return <window.CG.NoFieldsEmptyState lang={lang} go={go} icon="cloud"
+        title={lang === 'th' ? 'ยังไม่มีแปลงให้ดูสภาพอากาศ' : 'No field to check weather for yet'}
+        body={lang === 'th' ? 'เพิ่มแปลงแรกของคุณพร้อมพิกัดจริง เพื่อดูอากาศปัจจุบัน พยากรณ์ และแนวโน้มย้อนหลัง' : 'Add your first field with real coordinates to see current, forecast, and historical weather.'} />;
+    }
 
     const metrics = cur ? [
       { icon: 'temp', label: lang === 'th' ? 'อุณหภูมิ' : 'Temperature', v: cur.temp_c, u: '°C', tone: 'amber' },

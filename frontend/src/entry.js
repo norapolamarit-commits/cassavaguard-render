@@ -5,6 +5,7 @@ import "./store.js";
 import "./ui.jsx";
 import "./charts.jsx";
 import "./map.jsx";
+import "./pages/auth.jsx";
 import "./pages/dashboard.jsx";
 import "./pages/fieldmap.jsx";
 import "./pages/predict.jsx";

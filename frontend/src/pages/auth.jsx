@@ -57,12 +57,30 @@
 
     const fillDemo = (d) => { setEmail(d.email); setPw(d.pw); setMode('login'); };
 
+    // One-tap entry for someone who just wants to try the app: silently
+    // registers a throwaway farmer account behind the scenes so there is no
+    // form to fill in first.
+    const [guestBusy, setGuestBusy] = useState(false);
+    const continueAsGuest = async () => {
+      setGuestBusy(true);
+      try {
+        const stamp = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        await register({
+          email: `guest.${stamp}@cassavaguard.demo`,
+          password: `Guest-${stamp}-${Math.random().toString(36).slice(2, 8)}`,
+          full_name: lang === 'th' ? 'ผู้เยี่ยมชม' : 'Guest User',
+          language: lang,
+        });
+        toast(lang === 'th' ? 'เข้าใช้งานแบบผู้เยี่ยมชมแล้ว' : 'Continuing as guest', 'success');
+      } catch (err) { toast(err.message, 'error'); }
+      finally { setGuestBusy(false); }
+    };
+
     return (
       <div className="min-h-screen theme-bg grid lg:grid-cols-2">
         {/* brand side */}
-        <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden">
-          <div className="absolute inset-0 grad-brand opacity-[.08]" />
-          <div className="absolute -right-20 top-1/4 w-96 h-96 rounded-full grad-brand opacity-20 blur-3xl animate-floaty" />
+        <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden" style={{ background: 'var(--cg-brand-softer)' }}>
+          <div className="absolute -right-20 top-1/4 w-96 h-96 rounded-full grad-brand opacity-[.14] blur-3xl animate-floaty" />
           <div className="relative flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl grad-brand grid place-items-center text-white shadow-lg"><Icon name="leaf" className="w-6 h-6" /></div>
             <div><div className="txt font-bold text-lg">CassavaGuard <span className="grad-text">AI</span></div><div className="txt-dim text-xs">{t('app_tag')}</div></div>
@@ -107,8 +125,8 @@
                 )}
                 {mode !== 'reset' && <Field icon="globe" label={t('email')} type="email" value={email} onChange={setEmail} required />}
                 {mode !== 'forgot' && <Field icon="cpu" label={t('password')} type="password" value={pw} onChange={setPw} required minLength={mode === 'login' ? undefined : 10} />}
-                {mode === 'login' && <button type="button" onClick={() => setMode('forgot')} className="text-xs text-brand-400 hover:underline">{t('forgot_pw')}</button>}
-                <button disabled={busy} className="w-full grad-brand text-white font-semibold rounded-xl py-3 flex items-center justify-center gap-2 disabled:opacity-50 hover:brightness-110 transition shadow-lg shadow-brand-500/20">
+                {mode === 'login' && <button type="button" onClick={() => setMode('forgot')} className="text-xs font-semibold hover:underline" style={{ color: 'var(--cg-brand-strong)' }}>{t('forgot_pw')}</button>}
+                <button disabled={busy} className="primary-action w-full">
                   {busy ? <Spinner className="w-5 h-5" /> : <Icon name="logout" className="w-4 h-4 rotate-180" />}
                   {mode === 'login' ? t('login') : mode === 'register' ? t('register') : mode === 'reset' ? (lang === 'th' ? 'บันทึกรหัสผ่าน' : 'Save password') : (lang === 'th' ? 'ส่งลิงก์' : 'Send link')}
                 </button>
@@ -116,16 +134,30 @@
 
               <div className="mt-4 text-center text-sm txt-soft">
                 {mode === 'login' ? (
-                  <>{t('no_account')} <button onClick={() => setMode('register')} className="text-brand-400 font-semibold hover:underline">{t('register')}</button></>
+                  <>{t('no_account')} <button onClick={() => setMode('register')} className="font-semibold hover:underline" style={{ color: 'var(--cg-brand-strong)' }}>{t('register')}</button></>
                 ) : mode === 'register' || mode === 'forgot' ? (
-                  <>{t('have_account')} <button onClick={() => setMode('login')} className="text-brand-400 font-semibold hover:underline">{t('login')}</button></>
+                  <>{t('have_account')} <button onClick={() => setMode('login')} className="font-semibold hover:underline" style={{ color: 'var(--cg-brand-strong)' }}>{t('login')}</button></>
                 ) : null}
               </div>
+
+              {(mode === 'login' || mode === 'register') && (
+                <>
+                  <div className="flex items-center gap-3 my-4">
+                    <div className="flex-1 h-px" style={{ background: 'var(--cg-border)' }} />
+                    <span className="txt-dim text-xs font-semibold">{lang === 'th' ? 'หรือ' : 'or'}</span>
+                    <div className="flex-1 h-px" style={{ background: 'var(--cg-border)' }} />
+                  </div>
+                  <button type="button" onClick={continueAsGuest} disabled={guestBusy} className="secondary-action w-full">
+                    {guestBusy ? <Spinner className="w-5 h-5" /> : <Icon name="play" className="w-4 h-4" />}
+                    {lang === 'th' ? 'ดำเนินการต่อแบบผู้เยี่ยมชม' : 'Continue as Guest'}
+                  </button>
+                  <p className="txt-dim text-[11px] text-center mt-2">{lang === 'th' ? 'สร้างบัญชีเกษตรกรชั่วคราวให้อัตโนมัติ ไม่ต้องกรอกฟอร์ม' : 'Creates a temporary Farmer account instantly — no form needed.'}</p>
+                </>
+              )}
             </div>
 
-            <button onClick={onGuide}
-              className="w-full mt-3 glass rounded-xl px-4 py-2.5 txt-soft hover:txt flex items-center justify-center gap-2 text-sm font-medium">
-              <Icon name="book" className="w-4 h-4 text-brand-400" />{t('nav_guide')}
+            <button onClick={onGuide} className="secondary-action w-full mt-3 text-sm">
+              <Icon name="book" className="w-4 h-4" style={{ color: 'var(--cg-brand-strong)' }} />{t('nav_guide')}
             </button>
 
             {/* demo accounts */}
@@ -133,7 +165,7 @@
               <div className="txt-dim text-xs font-semibold uppercase mb-2 flex items-center gap-1.5"><Icon name="check" className="w-3.5 h-3.5" />{t('demo_accounts')}</div>
               <div className="space-y-1.5">
                 {DEMO.map((d) => (
-                  <button key={d.role} onClick={() => fillDemo(d)} className="w-full flex items-center justify-between glass rounded-lg px-3 py-2 hover:bg-white/[.04] transition text-left">
+                  <button key={d.role} onClick={() => fillDemo(d)} className="w-full flex items-center justify-between glass rounded-lg px-3 py-2 hover:brightness-95 transition text-left">
                     <span className="txt text-xs font-medium capitalize">{t(d.role)}</span>
                     <span className="txt-dim text-[11px] font-mono">{d.email}</span>
                   </button>

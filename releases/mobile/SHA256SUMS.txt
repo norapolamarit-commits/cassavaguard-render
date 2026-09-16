@@ -1,1 +1,1 @@
-4676957bba45b6e9abd327e370d5b9ff08eafbe546cc9189056d9e9130c448c8  CassavaGuard-Android-v1.0-debug.apk
+2dc988ce0b3da91ff790212caa60bfa934aaa027d1440a040b128f5b7fa9759a  CassavaGuard-Android-v1.0-debug.apk

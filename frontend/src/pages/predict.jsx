@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
+
+let rectAreaLightInitDone = false;
 
 /* AI Diagnosis: upload leaf/plant/canopy/CSV, attribution map, explainability. */
 (function () {
@@ -82,7 +85,7 @@ import * as THREE from 'three';
             <h1 className="txt">{lang === 'th' ? 'ตรวจสุขภาพมันสำปะหลังจากภาพเดียว' : 'Understand cassava health from one photo'}</h1>
             <p className="txt-soft">{lang === 'th' ? 'ถ่ายภาพทั้งต้นที่ยังอยู่ในแปลง ระบบจะวิเคราะห์สุขภาพและประเมินช่วงผลผลิตโดยไม่ต้องขุดหัว' : 'Photograph the standing plant to analyze health and estimate a non-destructive yield range.'}</p>
           </div>
-          <div className="diagnosis-trust"><span><Icon name="check" className="w-4 h-4" />{lang === 'th' ? 'ไม่ต้องเข้าสู่ระบบ' : 'No sign-in'}</span><span><Icon name="cpu" className="w-4 h-4" />{lang === 'th' ? 'โมเดล 5 คลาส' : '5-class model'}</span></div>
+          <div className="diagnosis-trust"><span><Icon name="check" className="w-4 h-4" />{lang === 'th' ? 'ปลอดภัยด้วยบัญชีของคุณ' : 'Secured with your account'}</span><span><Icon name="cpu" className="w-4 h-4" />{lang === 'th' ? 'โมเดล 5 คลาส' : '5-class model'}</span></div>
         </section>
 
         <ol className="workflow-steps" aria-label={lang === 'th' ? 'ขั้นตอนการวิเคราะห์' : 'Analysis steps'}>
@@ -198,8 +201,8 @@ import * as THREE from 'three';
                 <div className="font-semibold text-brand-300 flex items-center gap-1"><Icon name="check" className="w-3.5 h-3.5" />{lang === 'th' ? 'ภาพที่เหมาะ' : 'Good photo'}</div>
                 <div className="txt-soft mt-1 leading-relaxed">{lang === 'th' ? 'แสงธรรมชาติ ภาพคม ใบกินพื้นที่ส่วนใหญ่ และถ่ายหลายมุม' : 'Natural light, sharp focus, leaf fills the frame, multiple angles.'}</div>
               </div>
-              <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3">
-                <div className="font-semibold text-rose-300 flex items-center gap-1"><Icon name="close" className="w-3.5 h-3.5" />{lang === 'th' ? 'ควรถ่ายใหม่' : 'Retake'}</div>
+              <div className="rounded-xl border border-rose-500/25 bg-red-500/10 p-3">
+                <div className="font-semibold text-red-500 flex items-center gap-1"><Icon name="close" className="w-3.5 h-3.5" />{lang === 'th' ? 'ควรถ่ายใหม่' : 'Retake'}</div>
                 <div className="txt-soft mt-1 leading-relaxed">{lang === 'th' ? 'ภาพสั่น ย้อนแสง ใบเล็ก พื้นหลังรก เปียกน้ำ หรือผ่านฟิลเตอร์สี' : 'Blur, backlight, tiny leaf, clutter, wet leaf, or color filters.'}</div>
               </div>
             </div>}
@@ -948,35 +951,49 @@ import * as THREE from 'three';
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.12;
+      renderer.toneMappingExposure = 1.18;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+      if (!rectAreaLightInitDone) { RectAreaLightUniformsLib.init(); rectAreaLightInitDone = true; }
+      const lightTheme = document.documentElement.classList.contains('light');
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
       const rootView = viewMode === 'roots';
       camera.position.set(rootView ? 0.1 : 0.15, rootView ? -0.4 : 2.45, rootView ? 5.2 : 7.6);
       camera.lookAt(0, rootView ? -0.9 : 1.05, 0);
-      scene.fog = new THREE.FogExp2(0x071b22, 0.045);
-      scene.add(new THREE.HemisphereLight(0xdaf8ff, 0x4b2d16, 2.35));
-      const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
-      keyLight.position.set(4, 7, 5); keyLight.castShadow = true;
-      keyLight.shadow.mapSize.set(1024, 1024); keyLight.shadow.camera.near = 0.5; keyLight.shadow.camera.far = 18; scene.add(keyLight);
-      const rimLight = new THREE.DirectionalLight(0x22d3ee, 1.1);
-      rimLight.position.set(-4, 3, -4); scene.add(rimLight);
-      const warmLight = new THREE.PointLight(0xffb86b, 1.2, 10);
-      warmLight.position.set(2.5, 0.2, 3.5); scene.add(warmLight);
+      // Airy, natural daylight — soft fog tuned per theme so the plant reads clearly.
+      scene.fog = lightTheme ? new THREE.FogExp2(0xe4f3ea, 0.014) : new THREE.FogExp2(0x0c211a, 0.028);
+      scene.add(new THREE.HemisphereLight(lightTheme ? 0xdcf2ff : 0x9fd8ea, 0x6a4a2c, lightTheme ? 2.1 : 1.7));
+      const keyLight = new THREE.DirectionalLight(0xfff6e6, 2.9);
+      keyLight.position.set(4, 7.5, 5); keyLight.castShadow = true;
+      keyLight.shadow.mapSize.set(2048, 2048); keyLight.shadow.camera.near = 0.5; keyLight.shadow.camera.far = 20; keyLight.shadow.bias = -0.0004; keyLight.shadow.radius = 4; scene.add(keyLight);
+      const fillLight = new THREE.DirectionalLight(0xcfeaff, 0.85);
+      fillLight.position.set(-5, 3.5, 4); scene.add(fillLight);
+      const rimLight = new THREE.DirectionalLight(0x8ff0ac, 1.15);
+      rimLight.position.set(-4, 4, -5); scene.add(rimLight);
+      const warmLight = new THREE.PointLight(0xffca82, 1.1, 12);
+      warmLight.position.set(2.5, 0.4, 3.5); scene.add(warmLight);
+      // Soft overhead "studio softbox" — gives the canopy a gentle top-down glow
+      // instead of flat/harsh lighting, without the cost of full post-processing.
+      const softbox = new THREE.RectAreaLight(0xf3fff5, 3.2, 4.4, 4.4);
+      softbox.position.set(0, 6.4, 1.6); softbox.lookAt(0, 1, 0); scene.add(softbox);
 
       const plant = new THREE.Group();
       scene.add(plant);
       const materials = [];
       const geometries = [];
       const material = (options) => { const value = new THREE.MeshStandardMaterial(options); materials.push(value); return value; };
+      // Fresh-leaf look: subtle clearcoat sheen + soft translucency read.
+      const leafMat = (options) => { const value = new THREE.MeshPhysicalMaterial({ roughness: 0.55, clearcoat: 0.4, clearcoatRoughness: 0.5, sheen: 0.5, sheenColor: new THREE.Color(0xa7f3c0), side: THREE.DoubleSide, ...options }); materials.push(value); return value; };
       const mesh = (geometry, meshMaterial) => { geometries.push(geometry); const value = new THREE.Mesh(geometry, meshMaterial); value.castShadow = true; value.receiveShadow = true; return value; };
-      const healthyLeaf = material({ color: 0x27a84b, roughness: 0.68, side: THREE.DoubleSide });
-      const youngLeaf = material({ color: 0x5bcf67, roughness: 0.7, side: THREE.DoubleSide });
-      const symptomColors = { cbb: 0x7c3d12, cbsd: 0xeab308, cmd: 0xfacc15, cgm: 0x9a6410 };
-      const affectedLeaf = material({ color: symptomColors[disease] || 0xa16207, roughness: 0.8, side: THREE.DoubleSide });
+      // A handful of tonal variants per leaf type (rather than one flat color)
+      // reads as real foliage instead of a single plastic-green blob.
+      const healthyLeafShades = [0x2aac52, 0x31b85c, 0x279a4a, 0x36bd63].map((c) => leafMat({ color: c }));
+      const youngLeafShades = [0x63d67c, 0x59cf76, 0x6fdb85].map((c) => leafMat({ color: c }));
+      const symptomColors = { cbb: 0x8a4a1a, cbsd: 0xd9a520, cmd: 0xf0d000, cgm: 0xa06a18 };
+      const affectedLeaf = leafMat({ color: symptomColors[disease] || 0xb07a12, roughness: 0.72, clearcoat: 0.2 });
+      const pickShade = (shades, seed) => shades[seed % shades.length];
       const stemMaterial = material({ color: 0x3f7d3a, roughness: 0.96 });
       const stemNodeMaterial = material({ color: 0x6d944d, roughness: 1 });
       const petioleMaterial = material({ color: 0xb45555, roughness: 0.86 });
@@ -1076,7 +1093,7 @@ import * as THREE from 'three';
         const leafScale = severity === 'severe' && isAffected ? 0.76 : 1;
         for (let lobe = 0; lobe < 7; lobe += 1) {
           const lobeAngle = (lobe - 3) * 0.39;
-          const leafletMaterial = isAffected ? affectedLeaf : index > 10 ? youngLeaf : healthyLeaf;
+          const leafletMaterial = isAffected ? affectedLeaf : index > 10 ? pickShade(youngLeafShades, index + lobe) : pickShade(healthyLeafShades, index + lobe);
           const leaflet = mesh(new THREE.ShapeGeometry(leafShape, 8), leafletMaterial);
           const lobeLength = (lobe === 3 ? 0.68 : 0.52 - Math.abs(lobe - 3) * 0.025) * leafScale;
           leaflet.scale.set(lobeLength, lobeLength, 1);

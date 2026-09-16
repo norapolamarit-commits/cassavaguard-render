@@ -62,7 +62,7 @@
 
         {/* summary strip */}
         <div className="grid grid-cols-3 gap-4">
-          <Card className="animate-fadeup"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-300 grid place-items-center"><Icon name="alert" /></div><div><div className="txt text-2xl font-bold">{counts.high}</div><div className="txt-dim text-xs">{t('high')}</div></div></div></Card>
+          <Card className="animate-fadeup"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-red-500/15 text-red-500 grid place-items-center"><Icon name="alert" /></div><div><div className="txt text-2xl font-bold">{counts.high}</div><div className="txt-dim text-xs">{t('high')}</div></div></div></Card>
           <Card className="animate-fadeup" style={{ animationDelay: '60ms' }}><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-300 grid place-items-center"><Icon name="bell" /></div><div><div className="txt text-2xl font-bold">{counts.medium}</div><div className="txt-dim text-xs">{t('medium')}</div></div></div></Card>
           <Card className="animate-fadeup" style={{ animationDelay: '120ms' }}><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-brand-500/15 text-brand-300 grid place-items-center"><Icon name="bulb" /></div><div><div className="txt text-2xl font-bold">{counts.total}</div><div className="txt-dim text-xs">{t('recommendation')}</div></div></div></Card>
         </div>
@@ -86,10 +86,10 @@
     const actions = lang === 'th' ? r.actions_th : r.actions_en;
     return (
       <Card hover className="animate-fadeup relative overflow-hidden" style={{ animationDelay: delay + 'ms' }}>
-        <div className={`absolute left-0 top-0 bottom-0 w-1 ${r.severity === 'high' ? 'bg-rose-500' : r.severity === 'medium' ? 'bg-amber-500' : 'bg-brand-500'}`} />
+        <div className={`absolute left-0 top-0 bottom-0 w-1 ${r.severity === 'high' ? 'bg-red-500' : r.severity === 'medium' ? 'bg-amber-500' : 'bg-brand-500'}`} />
         <div className="flex items-start justify-between gap-2 mb-3 pl-2">
           <div className="flex items-center gap-2.5">
-            <div className={`w-9 h-9 rounded-xl grid place-items-center ${r.severity === 'high' ? 'bg-rose-500/15 text-rose-300' : r.severity === 'medium' ? 'bg-amber-500/15 text-amber-300' : 'bg-brand-500/15 text-brand-300'}`}>
+            <div className={`w-9 h-9 rounded-xl grid place-items-center ${r.severity === 'high' ? 'bg-red-500/15 text-red-500' : r.severity === 'medium' ? 'bg-amber-500/15 text-amber-300' : 'bg-brand-500/15 text-brand-300'}`}>
               <Icon name={KIND_ICON[r.kind] || 'bulb'} className="w-5 h-5" />
             </div>
             <div>

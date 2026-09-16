@@ -5,9 +5,9 @@
   function themeColors() {
     const light = document.documentElement.classList.contains('light');
     return {
-      grid: light ? 'rgba(15,23,42,.08)' : 'rgba(148,163,184,.12)',
-      tick: light ? '#5b6b82' : '#93a4bd',
-      brand: '#10b981', cyan: '#06b6d4', amber: '#f59e0b', rose: '#f43f5e',
+      grid: light ? 'rgba(20,50,30,.10)' : 'rgba(150,200,165,.14)',
+      tick: light ? '#57685b' : '#a4b6a8',
+      brand: '#1ba24a', cyan: '#0ea5a0', amber: '#f4a621', rose: '#e23b3b',
       violet: '#8b5cf6', blue: '#3b82f6',
     };
   }
@@ -19,7 +19,7 @@
   // any class key not in this map, so a future new class never crashes the chart, just looks
   // generic until added here.
   const CLASS_COLORS = {
-    healthy: '#10b981', cmd: '#ef4444', cbsd: '#f97316', cbb: '#f59e0b', cgm: '#8b5cf6',
+    healthy: '#1ba24a', cmd: '#ef4444', cbsd: '#f97316', cbb: '#f59e0b', cgm: '#8b5cf6',
     cad: '#14b8a6', brown_leaf_spot: '#eab308', white_leaf_spot: '#84cc16', sed: '#06b6d4',
     mealybug: '#d946ef', whitefly: '#ec4899', water_stress: '#0ea5e9', nutrient_def: '#6366f1',
   };

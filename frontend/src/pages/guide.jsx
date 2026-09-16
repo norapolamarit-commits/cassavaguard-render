@@ -117,8 +117,8 @@
               <div className="font-semibold txt">{th ? 'ยังไม่รองรับ' : 'Unsupported'}</div>
               <div className="txt-soft mt-1">{th ? 'ยังไม่มีข้อมูลติดป้ายเพียงพอ ระบบจึงไม่สร้างคำวินิจฉัยของคลาสนั้น' : 'There is not enough labelled evidence, so the app does not invent a diagnosis for that class.'}</div>
             </div>
-            <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3">
-              <div className="font-semibold text-rose-300">{th ? 'โมเดลไม่พร้อม / บริการขัดข้อง' : 'Model unavailable / Service error'}</div>
+            <div className="rounded-xl border border-rose-500/25 bg-red-500/10 p-3">
+              <div className="font-semibold text-red-500">{th ? 'โมเดลไม่พร้อม / บริการขัดข้อง' : 'Model unavailable / Service error'}</div>
               <div className="txt-soft mt-1">{th ? 'อย่าใช้ผลเดิมแทน ให้ลองใหม่ เปิด “ระบบ & โมเดล” และแจ้งผู้ดูแลหากยังไม่พร้อม' : 'Do not substitute an old result. Retry, inspect System & Models, and notify the administrator if it persists.'}</div>
             </div>
           </div>
