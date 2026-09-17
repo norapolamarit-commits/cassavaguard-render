@@ -344,6 +344,52 @@ def test_detected_photo_is_persisted_under_logged_in_account(client, monkeypatch
     ).status_code == 404
 
 
+def test_admin_can_delete_a_user_and_their_data(client, admin_headers):
+    register = client.post("/api/auth/register", json={
+        "email": "delete-target@example.com",
+        "password": "delete-target-password",
+        "full_name": "Delete Target",
+        "language": "th",
+    })
+    assert register.status_code == 200, register.text
+    target_headers = {"Authorization": f"Bearer {register.json()['access_token']}"}
+    target_id = register.json()["user"]["id"]
+
+    photo = io.BytesIO()
+    Image.new("RGB", (64, 64), color=(0, 128, 0)).save(photo, format="JPEG")
+    photo.seek(0)
+    prediction = client.post(
+        "/api/predict/image",
+        headers=target_headers,
+        files={"file": ("leaf.jpg", photo, "image/jpeg")},
+    )
+    assert prediction.status_code == 200, prediction.text
+
+    response = client.delete(f"/api/admin/users/{target_id}", headers=admin_headers)
+    assert response.status_code == 204, response.text
+
+    assert client.get("/api/admin/users", headers=admin_headers).json()
+    remaining_ids = {u["id"] for u in client.get("/api/admin/users", headers=admin_headers).json()}
+    assert target_id not in remaining_ids
+
+    relogin = client.post(
+        "/api/auth/login-json",
+        json={"email": "delete-target@example.com", "password": "delete-target-password"},
+    )
+    assert relogin.status_code == 401
+
+
+def test_admin_cannot_delete_the_last_admin(client, admin_headers):
+    me = client.get("/api/auth/me", headers=admin_headers).json()
+    response = client.delete(f"/api/admin/users/{me['id']}", headers=admin_headers)
+    assert response.status_code == 409
+
+
+def test_delete_user_requires_admin_role(client, farmer_headers):
+    response = client.delete("/api/admin/users/1", headers=farmer_headers)
+    assert response.status_code == 403
+
+
 def test_upload_type_and_security_headers(client, farmer_headers):
     response = client.post(
         "/api/predict/image",

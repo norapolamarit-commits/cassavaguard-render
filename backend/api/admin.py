@@ -1,10 +1,10 @@
 """Admin-only user and role management."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from backend.core.security import require_role
 from backend.database import get_db
-from backend.models import User
+from backend.models import AlertRead, Field, Prediction, SoilSample, User
 from backend.schemas import RoleUpdate
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -49,3 +49,25 @@ def update_role(
     user.auth_version += 1
     db.commit()
     return _public(user)
+
+
+@router.delete("/users/{user_id}", status_code=204)
+def delete_user(
+    user_id: int,
+    admin: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db),
+):
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(404, "User not found")
+    if user.role == "admin":
+        other_admins = db.query(User).filter(User.role == "admin", User.id != user.id).count()
+        if other_admins == 0:
+            raise HTTPException(409, "Create another admin before deleting the last admin")
+    db.query(AlertRead).filter(AlertRead.user_id == user.id).delete()
+    db.query(Prediction).filter(Prediction.user_id == user.id).delete()
+    db.query(SoilSample).filter(SoilSample.user_id == user.id).update({"user_id": None})
+    db.query(Field).filter(Field.owner_id == user.id).update({"owner_id": None})
+    db.delete(user)
+    db.commit()
+    return Response(status_code=204)
