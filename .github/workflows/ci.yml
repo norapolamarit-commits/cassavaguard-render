@@ -17,7 +17,9 @@ jobs:
 
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m compileall -q backend migrations serve.py
-      - run: python backend/training/verify_artifacts.py --require-cnn --include-fusion
+      # Production serves the primary CNN only. Auxiliary/fusion artifacts are
+      # intentionally disabled until they are retrained against the current CNN.
+      - run: python backend/training/verify_artifacts.py --cnn-only
       - run: python backend/training/quality_gate.py
       - run: python -m pytest -q
 
