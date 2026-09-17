@@ -15,16 +15,12 @@
     const [result, setResult] = useState(null);
     const [observedAt, setObservedAt] = useState(null);
     const [timestampKind, setTimestampKind] = useState('file_selected');
-    const [fields, setFields] = useState([]);
-    const [fieldId, setFieldId] = useState('');
     const [drag, setDrag] = useState(false);
     const [camOpen, setCamOpen] = useState(false);
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const inputRef = useRef(null);
     const plantInputRef = useRef(null);
     const uploaderRef = useRef(null);
-
-    useEffect(() => { window.CG.API_CLIENT.fields().then(setFields).catch(() => {}); }, []);
 
     const pick = (f, kind = 'file_selected') => {
       if (!f) return;
@@ -40,22 +36,17 @@
       uploaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
-    const openAdvancedForField = () => {
-      setAdvancedOpen(true);
-      uploaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-
     const run = async () => {
       if (!file) { toast(lang === 'th' ? 'กรุณาเลือกไฟล์' : 'Please choose a file', 'warn'); return; }
       const isCsv = source === 'csv' || file.name.toLowerCase().endsWith('.csv');
       setBusy(true); setResult(null);
       try {
-        const r = isCsv ? await window.CG.API_CLIENT.predictCsv(file, fieldId || null)
+        const r = isCsv ? await window.CG.API_CLIENT.predictCsv(file, null)
                         : plantFile
                           ? await window.CG.API_CLIENT.predictImages([
                               { file, source }, { file: plantFile, source: 'plant' },
-                            ], fieldId || null, observedAt, timestampKind)
-                          : await window.CG.API_CLIENT.predictImage(file, source, fieldId || null, observedAt, timestampKind);
+                            ], null, observedAt, timestampKind)
+                          : await window.CG.API_CLIENT.predictImage(file, source, null, observedAt, timestampKind);
         setResult(r);
         toast(lang === 'th' ? 'วิเคราะห์สำเร็จ' : 'Analysis complete', 'success');
       } catch (e) { toast(e.message, 'error'); }
@@ -151,23 +142,6 @@
                     <label className="txt-dim text-xs">{lang === 'th' ? 'ชนิดภาพ' : 'Image type'}</label>
                     <div className="mt-1"><Segmented options={SRC} value={source} onChange={(v) => { setSource(v); setResult(null); }} /></div>
                   </div>
-                  {source !== 'csv' && <div>
-                    <label className="txt-dim text-xs">{lang === 'th' ? 'แปลงปลูก (ไม่บังคับ)' : 'Field (optional)'}</label>
-                    <select value={fieldId} onChange={(e) => setFieldId(e.target.value)}
-                            className="w-full mt-1 glass rounded-xl px-3 py-2.5 txt text-sm bg-transparent focus:outline-none focus:ring-2 ring-brand-500/40">
-                      <option value="" className="bg-ink-800">— {lang === 'th' ? 'วิเคราะห์จากรูปเท่านั้น' : 'Photo analysis only'} —</option>
-                      {fields.map((f) => <option key={f.id} value={f.id} className="bg-ink-800">{lang === 'th' ? f.name_th || f.name : f.name}</option>)}
-                    </select>
-                    <p className="txt-dim text-xs mt-1.5">{lang === 'th' ? 'เลือกเมื่อต้องการเสริมผลด้วยอากาศ ภูมิประเทศ และดาวเทียม' : 'Select to add weather, terrain, and satellite context.'}</p>
-                  </div>}
-                  {source === 'csv' && <div>
-                    <label className="txt-dim text-xs">{t('select_field')}</label>
-                    <select value={fieldId} onChange={(e) => setFieldId(e.target.value)}
-                            className="w-full mt-1 glass rounded-xl px-3 py-2 txt text-sm bg-transparent focus:outline-none focus:ring-2 ring-brand-500/40">
-                      <option value="" className="bg-ink-800">— {t('all_fields')} —</option>
-                      {fields.map((f) => <option key={f.id} value={f.id} className="bg-ink-800">{lang === 'th' ? f.name_th || f.name : f.name}</option>)}
-                    </select>
-                  </div>}
                 </div>
               )}
             </div>
@@ -222,7 +196,7 @@
           {!busy && !result && <Card className="min-h-[300px] grid place-items-center animate-fadeup"><Empty icon="brain" text={lang === 'th' ? 'อัปโหลดไฟล์เพื่อเริ่มการวิเคราะห์' : 'Upload a file to begin analysis'} /></Card>}
           {!busy && result && (result.source === 'csv'
             ? <CsvResult r={result} onRetake={retake} />
-            : <ImageResult r={result} preview={preview} fieldId={fieldId} onRetake={retake} onOpenAdvanced={openAdvancedForField} />)}
+            : <ImageResult r={result} preview={preview} onRetake={retake} />)}
         </div>}
 
         <CameraModal open={camOpen} onClose={() => setCamOpen(false)}
@@ -333,24 +307,12 @@
     );
   }
 
-  function ImageResult({ r, preview, fieldId, onRetake, onOpenAdvanced }) {
+  function ImageResult({ r, preview, onRetake }) {
     const { t, lang } = window.CG.Store.useStore();
     const top = r.top3[0];
     const [visualMode, setVisualMode] = useState('heat');
     const [detailsOpen, setDetailsOpen] = useState(false);
     const whiteflyFinding = r.auxiliary_findings?.find((item) => item.key === 'whitefly');
-    const [multimodal, setMultimodal] = useState(fieldId ? undefined : null);
-    const displayedRecs = multimodal?.recommendations;
-
-    useEffect(() => {
-      if (!fieldId || !r.prediction_id) { setMultimodal(null); return; }
-      let cancelled = false;
-      setMultimodal(undefined);
-      window.CG.API_CLIENT.predictionContext(r.prediction_id)
-        .then((d) => { if (!cancelled) setMultimodal(d); })
-        .catch((error) => { if (!cancelled) setMultimodal({ evidence: [], recommendations: [], partial: true, errors: [{ source: 'environment', error: error.message }] }); });
-      return () => { cancelled = true; };
-    }, [fieldId, r.prediction_id]);
 
     return (
       <>
@@ -407,53 +369,8 @@
           {/* Recommendation */}
           <div className="mt-4 glass rounded-xl p-3">
             <div className="txt-soft text-xs font-semibold mb-1.5 flex items-center gap-1.5"><Icon name="bulb" className="w-3.5 h-3.5 text-amber-400" />{lang === 'th' ? 'คำแนะนำ' : 'Recommendation'}</div>
-            {!fieldId ? (
-              <button onClick={onOpenAdvanced} className="text-brand-300 hover:text-brand-200 text-xs font-medium flex items-center gap-1.5 transition">
-                {lang === 'th' ? 'เลือกแปลงเพื่อรับคำแนะนำเฉพาะเจาะจง' : 'Attach a field for tailored recommendations'} <span aria-hidden="true">→</span>
-              </button>
-            ) : multimodal === undefined ? (
-              <div className="flex items-center gap-2 txt-dim text-xs"><Spinner className="w-4 h-4" />{lang === 'th' ? 'ผล AI พร้อมแล้ว · กำลังโหลดอากาศ ภูมิประเทศ และดาวเทียมเบื้องหลัง...' : 'AI result ready · loading weather, terrain and satellite evidence in the background...'}</div>
-            ) : displayedRecs && displayedRecs.length > 0 ? (
-              <ul className="space-y-2">
-                {displayedRecs.slice(0, 2).map((rec, i) => (
-                  <li key={i} className="text-xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="txt font-semibold">{lang === 'th' ? rec.title_th : rec.title_en}</span>
-                      <Badge tone={rec.severity}>{Math.round(rec.confidence * 100)}%</Badge>
-                    </div>
-                    {(lang === 'th' ? rec.actions_th : rec.actions_en)?.[0] && (
-                      <div className="txt-soft mt-0.5 flex items-start gap-1.5">
-                        <Icon name="check" className="w-3.5 h-3.5 text-brand-400 mt-0.5 shrink-0" />
-                        {(lang === 'th' ? rec.actions_th : rec.actions_en)[0]}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="txt-dim text-xs">{lang === 'th' ? 'ยังไม่มีคำแนะนำสำหรับแปลงนี้ในขณะนี้' : 'No recommendations for this field right now.'}</p>
-            )}
+            <p className="txt-soft text-xs leading-relaxed">{lang === 'th' ? r.explanation_th : r.explanation_en}</p>
           </div>
-
-          {multimodal && <div className="mt-3 rounded-xl border border-cyan-500/25 bg-cyan-500/[.07] p-3">
-            <div className="txt text-xs font-semibold flex items-center gap-1.5"><Icon name="map" className="w-4 h-4 text-cyan-300" />{lang === 'th' ? 'หลักฐานประกอบจากแปลง' : 'Field evidence used'}</div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-              {multimodal.evidence.map((item) => {
-                const labels = {
-                  weather: lang === 'th' ? 'สภาพอากาศ' : 'Weather',
-                  terrain: lang === 'th' ? 'ภูมิประเทศ' : 'Terrain',
-                  satellite: lang === 'th' ? 'ดาวเทียม' : 'Satellite',
-                };
-                const value = item.source === 'weather'
-                  ? `${item.summary?.rain_7d_mm ?? '—'} mm/7d`
-                  : item.source === 'terrain'
-                    ? `${item.elevation_m ?? '—'} m`
-                    : `NDVI ${item.summary?.ndvi ?? '—'}`;
-                return <div key={item.source} className="glass rounded-lg p-2"><div className="txt-dim text-[10px]">{labels[item.source]}</div><div className={`text-xs font-semibold mt-0.5 ${item.available ? 'txt' : 'text-amber-300'}`}>{value}</div></div>;
-              })}
-            </div>
-            <p className="txt-dim text-[10px] mt-2 leading-relaxed">{lang === 'th' ? multimodal.disclaimer_th : multimodal.disclaimer_en}</p>
-          </div>}
 
           <button onClick={onRetake} className="w-full mt-4 glass rounded-xl py-2.5 flex items-center justify-center gap-2 txt-soft hover:txt transition text-sm font-medium">
             <Icon name="history" className="w-4 h-4" />{lang === 'th' ? 'ถ่ายใหม่' : 'Retake'}

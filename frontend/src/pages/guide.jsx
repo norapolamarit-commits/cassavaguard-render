@@ -7,34 +7,28 @@
   // separate 5-item list) with a single clear sequence.
   const STEPS = {
     th: [
-      ['map', 'สร้างแปลง', 'ไปที่ “แผนที่แปลง” กด “เพิ่มแปลง” แล้วกรอกชื่อ จังหวัด พันธุ์ พื้นที่ และพิกัดจริง เพื่อให้ข้อมูลอากาศและดาวเทียมตรงพื้นที่'],
       ['camera', 'ถ่ายภาพให้ชัด', 'ใช้แสงธรรมชาติ ภาพไม่สั่น เห็นใบหรือต้นเต็มส่วนที่มีอาการ และหลีกเลี่ยงพื้นหลังรก'],
-      ['brain', 'วิเคราะห์ด้วย AI', 'เลือกแปลง อัปโหลดภาพ JPG/PNG แล้วกด “วิเคราะห์” ระบบจำแนกเฉพาะ 5 คลาสหลัก'],
+      ['brain', 'วิเคราะห์ด้วย AI', 'อัปโหลดภาพ JPG/PNG แล้วกด “วิเคราะห์” ระบบจำแนกเฉพาะ 5 คลาสหลัก'],
       ['check', 'ตรวจผลก่อนลงมือ', 'อ่านความมั่นใจและเหตุผลที่ต้องตรวจซ้ำ เปรียบเทียบกับอาการจริงก่อนดำเนินการ'],
-      ['history', 'ติดตามผล', 'ดูประวัติ คำแนะนำ ดาวเทียม และอากาศร่วมกัน ไม่ตัดสินจากภาพเดียว'],
+      ['history', 'ติดตามผล', 'บันทึกและเปรียบเทียบผลหลายครั้ง ไม่ตัดสินจากภาพเดียว'],
     ],
     en: [
-      ['map', 'Create a field', 'Open Field Map, choose Add field, then enter the real name, province, variety, area and coordinates so weather and satellite data match the site.'],
       ['camera', 'Capture a clear photo', 'Use daylight, avoid blur, show the affected leaf or plant clearly and keep the background simple.'],
-      ['brain', 'Run AI analysis', 'Choose a field, upload JPG/PNG, then analyze one of the five primary classes.'],
+      ['brain', 'Run AI analysis', 'Upload JPG/PNG, then analyze one of the five primary classes.'],
       ['check', 'Review before acting', 'Check confidence and review reasons against the plant before taking action.'],
-      ['history', 'Monitor over time', 'Use History, Recommendations, Satellite and Weather together instead of relying on one photo.'],
+      ['history', 'Monitor over time', 'Save and compare multiple results instead of relying on one photo.'],
     ],
   };
 
   const FEATURES = {
     th: [
-      ['map', 'แผนที่แปลง', 'เพิ่มและเลือกแปลง ดูขอบเขต ความเสี่ยง และชั้นข้อมูล NDVI/NDMI/SAVI'],
       ['brain', 'วิเคราะห์ด้วย AI', 'จำแนกเฉพาะ Healthy, CBB, CBSD, CMD และ CGM'],
-      ['satellite', 'ดาวเทียมและอากาศ', 'ใช้ Sentinel-2 และ Open-Meteo แบบ live พร้อมแหล่งที่มาและเวลา'],
-      ['bulb', 'คำแนะนำและประวัติ', 'รวมหลักฐานหลายแหล่ง บันทึกผล และส่งออก CSV/PDF'],
+      ['history', 'ประวัติส่วนตัว', 'บันทึกผลของแต่ละบัญชีและส่งออก CSV/PDF'],
       ['cpu', 'ระบบและโมเดล', 'ตรวจสถานะเซิร์ฟเวอร์และผลวัดโมเดลหลัก 5 คลาส'],
     ],
     en: [
-      ['map', 'Field Map', 'Create and select fields; inspect boundaries, risk and NDVI/NDMI/SAVI layers.'],
       ['brain', 'AI Diagnosis', 'Restricted to Healthy, CBB, CBSD, CMD and CGM.'],
-      ['satellite', 'Satellite and weather', 'Live Sentinel-2 and Open-Meteo data with provider and timestamp provenance.'],
-      ['bulb', 'Recommendations and history', 'Combines evidence, records results and exports CSV/PDF.'],
+      ['history', 'Private history', 'Stores results per account and exports CSV/PDF.'],
       ['cpu', 'System and models', 'Inspect server health and measured metrics for the five primary classes.'],
     ],
   };
@@ -82,7 +76,7 @@
 
         {/* One unified step timeline (reuses the same vertical-rail pattern as the Analyze page). */}
         <Card className="animate-fadeup">
-          <SectionTitle icon="play" title={th ? 'ใช้งานให้ครบวงจรใน 5 ขั้นตอน' : 'The complete workflow in 5 steps'} />
+          <SectionTitle icon="play" title={th ? 'ใช้งานให้ครบวงจรใน 4 ขั้นตอน' : 'The complete workflow in 4 steps'} />
           <ol className="step-rail">
             {steps.map(([icon, title, body]) => (
               <li key={title} className="active">
@@ -148,9 +142,6 @@
               </div>
               <div className="rounded-2xl p-3.5 txt-soft" style={{ background: 'var(--cg-surface-2)' }}>
                 {th ? 'CAD, SED, Mealybug, Water Stress และ Nutrient Deficiency ยังมีข้อมูลติดป้ายไม่พอ จึงไม่สร้างผลวินิจฉัยจากภาพแบบปลอม' : 'CAD, SED, Mealybug, Water Stress and Nutrient Deficiency lack sufficient labelled data, so the app does not fabricate image diagnoses.'}
-              </div>
-              <div className="rounded-2xl p-3.5 txt-soft" style={{ background: 'var(--cg-surface-2)' }}>
-                {th ? 'ข้อมูลอากาศเป็นผลแบบจำลองจากผู้ให้บริการ และภาพดาวเทียมอาจล่าช้าจากเมฆหรือรอบการผ่าน' : 'Weather is provider model output, and satellite imagery can be delayed by cloud cover or revisit timing.'}
               </div>
             </div>
           </Card>

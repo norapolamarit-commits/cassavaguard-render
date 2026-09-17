@@ -53,11 +53,11 @@
     const exportPdf = () => {
       if (!rows || !rows.length) { toast(t('no_data'), 'warn'); return; }
       const w = window.open('', '_blank');
-      const rowsHtml = rows.map((r) => `<tr><td>${r.id}</td><td>${escapeHtml(r.created_at.replace('T', ' ').slice(0, 16))}</td><td>${escapeHtml(r.source)}</td><td>${escapeHtml(r.top_class)}</td><td>${(r.confidence * 100).toFixed(1)}%</td><td>${escapeHtml(r.field_name || '-')}</td></tr>`).join('');
+      const rowsHtml = rows.map((r) => `<tr><td>${r.id}</td><td>${escapeHtml(r.created_at.replace('T', ' ').slice(0, 16))}</td><td>${escapeHtml(r.source)}</td><td>${escapeHtml(r.top_class)}</td><td>${(r.confidence * 100).toFixed(1)}%</td></tr>`).join('');
       w.document.write(`<html><head><title>CassavaGuard Prediction Report</title>
         <style>body{font-family:Inter,Arial,sans-serif;padding:32px;color:#0b1a2b}h1{color:#059669}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}th,td{border:1px solid #e2e8f0;padding:8px;text-align:left}th{background:#ecfdf5}</style>
         </head><body><h1>🌿 CassavaGuard AI — Prediction Report</h1><p>Generated ${new Date().toLocaleString()} · ${rows.length} records</p>
-        <table><thead><tr><th>ID</th><th>Date</th><th>Source</th><th>Class</th><th>Confidence</th><th>Field</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+        <table><thead><tr><th>ID</th><th>Date</th><th>Source</th><th>Class</th><th>Confidence</th></tr></thead><tbody>${rowsHtml}</tbody></table>
         <script>setTimeout(()=>window.print(),400)</script></body></html>`);
       w.document.close();
     };
@@ -89,7 +89,7 @@
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="txt-dim text-xs border-b hair">
-                  {['ID', lang === 'th' ? 'วันที่' : 'Date', lang === 'th' ? 'แหล่ง' : 'Source', lang === 'th' ? 'ผล' : 'Result', t('confidence'), lang === 'th' ? 'แปลง' : 'Field', ''].map((h, i) => <th key={i} className="text-left font-medium py-2 px-2">{h}</th>)}
+                  {['ID', lang === 'th' ? 'วันที่' : 'Date', lang === 'th' ? 'แหล่ง' : 'Source', lang === 'th' ? 'ผล' : 'Result', t('confidence'), ''].map((h, i) => <th key={i} className="text-left font-medium py-2 px-2">{h}</th>)}
                 </tr></thead>
                 <tbody>
                   {rows.map((r) => {
@@ -101,7 +101,6 @@
                         <td className="py-2.5 px-2"><span className="txt-soft text-xs capitalize">{r.source}</span></td>
                         <td className="py-2.5 px-2"><Badge tone={r.top_class || 'slate'}>{lang === 'th' ? c.th : c.en}</Badge></td>
                         <td className="py-2.5 px-2 txt font-mono text-xs tabular-nums">{(r.confidence * 100).toFixed(1)}%</td>
-                        <td className="py-2.5 px-2 txt-soft text-xs">{r.field_name || '—'}</td>
                         <td className="py-2.5 px-2"><div className="flex items-center gap-2">
                           <button onClick={() => openDetail(r.id)} title={lang === 'th' ? 'ดูรายละเอียด' : 'View details'} className="txt-soft hover:text-brand-400"><Icon name="chevron" className="w-4 h-4" /></button>
                           <button onClick={() => removePrediction(r)} title={lang === 'th' ? 'ลบผลและภาพ' : 'Delete result and images'} className="txt-dim hover:text-rose-400"><Icon name="close" className="w-4 h-4" /></button>

@@ -117,7 +117,7 @@
           <div className="relative grid xl:grid-cols-[1fr_260px] items-center gap-8">
             <div>
               <h1 className="txt text-4xl xl:text-5xl font-extrabold leading-tight">{lang === 'th' ? 'เกษตรแม่นยำ' : 'Precision agriculture'}<br /><span className="grad-text">{lang === 'th' ? 'ขับเคลื่อนด้วย AI' : 'powered by AI'}</span></h1>
-              <p className="txt-soft text-base mt-5 max-w-md leading-relaxed">{lang === 'th' ? 'ระบบสนับสนุนการตัดสินใจสำหรับเกษตรกรมันสำปะหลัง — วิเคราะห์ภาพ สภาพอากาศ ภูมิประเทศ และดาวเทียมพร้อมหลักฐานอ้างอิง' : 'Decision support for cassava farmers using image diagnosis, weather, terrain, and satellite evidence.'}</p>
+              <p className="txt-soft text-base mt-5 max-w-md leading-relaxed">{lang === 'th' ? 'ระบบวิเคราะห์สุขภาพมันสำปะหลังจากภาพถ่าย พร้อมประวัติและคำแนะนำที่เข้าใจง่าย' : 'Photo-based cassava health analysis with private history and clear guidance.'}</p>
               <div className="flex gap-7 mt-9">
                 {[
                   [modelStats && modelStats.accuracy != null ? (modelStats.accuracy * 100).toFixed(1) + '%' : '—', lang === 'th' ? 'ความแม่นยำ (จริง)' : 'Accuracy (real)'],
@@ -233,11 +233,6 @@
                 ))}
               </div>
             </div>}
-            {publicConfig.environmental_data_mode === 'synthetic' && (
-              <p className="txt-dim text-xs text-center mt-3 leading-relaxed">
-                {lang === 'th' ? 'ข้อมูลอากาศ ดาวเทียม และดินในรุ่นนี้เป็นข้อมูลจำลองสำหรับสาธิต' : 'Weather, satellite, and soil data are synthetic in this demo build.'}
-              </p>
-            )}
           </div>
         </div>
       </div>

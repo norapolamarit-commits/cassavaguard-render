@@ -7,15 +7,10 @@
   const PRIMARY = [
     { key: 'predict', icon: 'camera', th: 'วิเคราะห์', en: 'Analyze' },
     { key: 'history', icon: 'history', th: 'ประวัติ', en: 'History' },
-    { key: 'recommendations', icon: 'bulb', th: 'คำแนะนำ', en: 'Advice' },
-    { key: 'weather', icon: 'cloud', th: 'อากาศ', en: 'Weather' },
-  ];
-  const MORE = [
-    { key: 'map', icon: 'map', th: 'แผนที่แปลง', en: 'Field map' },
-    { key: 'satellite', icon: 'satellite', th: 'ข้อมูลดาวเทียม', en: 'Satellite' },
-    { key: 'dashboard', icon: 'grid', th: 'ภาพรวมข้อมูล', en: 'Overview' },
     { key: 'system', icon: 'cpu', th: 'สถานะ AI', en: 'AI status' },
     { key: 'guide', icon: 'book', th: 'วิธีใช้งาน', en: 'How to use' },
+  ];
+  const MORE = [
     { key: 'legal', icon: 'privacy', th: 'ความเป็นส่วนตัว', en: 'Privacy' },
   ];
   // Desktop side rail: every destination in one flat icon+label list.
@@ -67,11 +62,6 @@
       switch (route) {
         case 'predict': return <P.Predict />;
         case 'history': return <P.History />;
-        case 'recommendations': return <P.Recommendations initialField={routeArg} />;
-        case 'weather': return <P.Weather initialField={routeArg} go={go} />;
-        case 'map': return <P.FieldMap go={go} />;
-        case 'satellite': return <P.Satellite initialField={routeArg} go={go} />;
-        case 'dashboard': return <P.Dashboard go={go} />;
         case 'system': return <P.System />;
         case 'guide': return <P.Guide />;
         case 'legal': return <P.Legal />;
@@ -81,11 +71,6 @@
     const current = ALL_NAV.find((item) => item.key === route);
     const pageDescriptions = {
       history: { th: 'ย้อนดูผลวิเคราะห์และติดตามการเปลี่ยนแปลง', en: 'Review analyses and track changes over time' },
-      recommendations: { th: 'แนวทางดูแลที่เชื่อมกับผลวิเคราะห์ล่าสุด', en: 'Care guidance linked to your latest results' },
-      weather: { th: 'สภาพอากาศจริงสำหรับวางแผนงานในแปลง', en: 'Live weather context for field planning' },
-      map: { th: 'ดูตำแหน่งและสถานะของแต่ละแปลง', en: 'View the location and status of every field' },
-      satellite: { th: 'ติดตามความเขียวและการเปลี่ยนแปลงจากดาวเทียม', en: 'Track vegetation and change from satellite data' },
-      dashboard: { th: 'สรุปสิ่งสำคัญจากทุกแปลงในหน้าเดียว', en: 'The important signals across all fields' },
       system: { th: 'ข้อมูลโมเดล คุณภาพ และความพร้อมของระบบ', en: 'Model quality, evidence, and system readiness' },
       guide: { th: 'ถ่ายภาพและอ่านผลให้ถูกต้อง', en: 'Capture better photos and understand results' },
       legal: { th: 'การใช้ข้อมูล ข้อจำกัด และช่องทางติดต่อ', en: 'Data use, limitations, and contact information' },
