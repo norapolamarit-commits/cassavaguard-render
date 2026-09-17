@@ -9,6 +9,9 @@ backend/training/.venv-detector/
 backend/training/__pycache__/
 backend/training/data/*
 !backend/training/data/cassava_3d_weight_2022.csv
+!backend/training/data/makerere_healthy_cc0/
+backend/training/data/makerere_healthy_cc0/*
+!backend/training/data/makerere_healthy_cc0/source_manifest.json
 backend/training/runs/
 backend/training/candidates/
 yolo*.pt

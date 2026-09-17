@@ -3,6 +3,7 @@
   const { useState, useEffect, useCallback } = React;
   const { Icon, ToastHost, Modal, Spinner } = window.CG.UI;
   const P = window.CG.Pages;
+  // Mobile floating pill nav: 4 quick-reach items + a "Menu" pill for the rest.
   const PRIMARY = [
     { key: 'predict', icon: 'camera', th: 'วิเคราะห์', en: 'Analyze' },
     { key: 'history', icon: 'history', th: 'ประวัติ', en: 'History' },
@@ -17,12 +18,16 @@
     { key: 'guide', icon: 'book', th: 'วิธีใช้งาน', en: 'How to use' },
     { key: 'legal', icon: 'privacy', th: 'ความเป็นส่วนตัว', en: 'Privacy' },
   ];
+  // Desktop side rail: every destination in one flat icon+label list.
+  const ALL_NAV = [...PRIMARY, ...MORE];
 
   function App() {
-    const { lang, theme, toggleTheme, toggleLang, user, booted } = window.CG.Store.useStore();
+    const { lang, theme, toggleTheme, toggleLang, user, booted, logout, justLoggedIn, clearJustLoggedIn } = window.CG.Store.useStore();
     const [route, setRoute] = useState('predict');
     const [routeArg, setRouteArg] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [preAuthView, setPreAuthView] = useState(null); // null | 'guide' | 'legal'
+    const [welcomeOpen, setWelcomeOpen] = useState(false);
     const label = (item) => lang === 'th' ? item.th : item.en;
     const go = useCallback((next, arg = null) => {
       setRoute(next); setRouteArg(arg); setMenuOpen(false);
@@ -37,8 +42,26 @@
       }).catch(() => {});
     }, [user]);
 
+    // Pop a quick-start guide right after a login/register/guest action
+    // succeeds — not on every reload of an already-signed-in session.
+    useEffect(() => {
+      if (justLoggedIn) { setWelcomeOpen(true); clearJustLoggedIn(); }
+    }, [justLoggedIn]);
+
     if (!booted) return <div className="min-h-screen theme-bg grid place-items-center"><div className="brand-orbit"><Icon name="leaf" className="w-7 h-7" /></div></div>;
-    if (!user) return <div className="min-h-screen theme-bg grid place-items-center px-6 text-center"><div><div className="txt text-xl font-bold">CassavaGuard AI</div><p className="txt-soft mt-2">{lang === 'th' ? 'ไม่สามารถเชื่อมต่อ API ได้ กรุณาตรวจสอบว่า backend กำลังทำงาน' : 'Unable to connect to the API. Check that the backend is running.'}</p></div></div>;
+    if (!user) {
+      if (preAuthView) {
+        return (
+          <div className="min-h-screen theme-bg">
+            <header className="content-topbar">
+              <button onClick={() => setPreAuthView(null)} className="utility-button"><Icon name="chevron" className="w-4 h-4 rotate-180" />{lang === 'th' ? 'กลับไปเข้าสู่ระบบ' : 'Back to sign in'}</button>
+            </header>
+            <main className="max-w-4xl mx-auto w-full px-3 sm:px-6 py-6">{preAuthView === 'legal' ? <P.Legal /> : <P.Guide />}</main>
+          </div>
+        );
+      }
+      return <P.Auth onGuide={() => setPreAuthView('guide')} onPrivacy={() => setPreAuthView('legal')} />;
+    }
 
     const renderPage = () => {
       switch (route) {
@@ -55,7 +78,7 @@
         default: return <P.Predict />;
       }
     };
-    const current = [...PRIMARY, ...MORE].find((item) => item.key === route);
+    const current = ALL_NAV.find((item) => item.key === route);
     const pageDescriptions = {
       history: { th: 'ย้อนดูผลวิเคราะห์และติดตามการเปลี่ยนแปลง', en: 'Review analyses and track changes over time' },
       recommendations: { th: 'แนวทางดูแลที่เชื่อมกับผลวิเคราะห์ล่าสุด', en: 'Care guidance linked to your latest results' },
@@ -69,50 +92,107 @@
     };
 
     return (
-      <div className="min-h-screen theme-bg pb-24 md:pb-0">
+      <div className="min-h-screen theme-bg pb-28 md:pb-0">
         <a href="#main-content" className="skip-link">{lang === 'th' ? 'ข้ามไปยังเนื้อหาหลัก' : 'Skip to main content'}</a>
-        <header className="sticky top-0 z-[800] app-header">
-          <div className="max-w-7xl mx-auto h-[72px] px-4 sm:px-6 flex items-center gap-4">
-            <button onClick={() => go('predict')} className="flex items-center gap-3 shrink-0" aria-label="CassavaGuard">
-              <span className="brand-mark"><Icon name="leaf" className="w-6 h-6" /></span>
-              <span className="hidden sm:block text-left"><span className="txt block font-extrabold text-base leading-none">CassavaGuard</span><span className="brand-copy block mt-1">AI ตรวจสุขภาพมันสำปะหลัง</span></span>
+
+        {/* Desktop: wide labeled rail — icon + full-size text side by side,
+            every destination in one flat readable list, no hidden "More". */}
+        <nav className="side-rail" aria-label={lang === 'th' ? 'เมนูหลัก' : 'Main navigation'}>
+          <button onClick={() => go('predict')} className="side-brand" aria-label="CassavaGuard">
+            <span className="side-brand-mark brand-mark"><Icon name="leaf" className="w-5 h-5" /></span>
+            <span className="txt font-extrabold text-base">CassavaGuard</span>
+          </button>
+          {ALL_NAV.map((item) => (
+            <button key={item.key} onClick={() => go(item.key)} className={`side-item ${route === item.key ? 'active' : ''}`}>
+              <Icon name={item.icon} className="side-item-icon" /><span>{label(item)}</span>
             </button>
-            <nav className="hidden md:flex items-center justify-center gap-1 ml-auto" aria-label={lang === 'th' ? 'เมนูหลัก' : 'Main navigation'}>
-              {PRIMARY.map((item) => <NavButton key={item.key} item={item} active={route === item.key} text={label(item)} onClick={() => go(item.key)} />)}
-              <button onClick={() => setMenuOpen(true)} className="nav-pill txt-soft"><Icon name="grid" className="w-4 h-4" />{lang === 'th' ? 'เพิ่มเติม' : 'More'}</button>
-            </nav>
-            <div className="flex items-center gap-2 md:ml-3 ml-auto">
-              <button onClick={toggleLang} className="utility-button" aria-label={lang === 'th' ? 'เปลี่ยนเป็นภาษาอังกฤษ' : 'Switch to Thai'}>{lang === 'th' ? 'EN' : 'ไทย'}</button>
-              <button onClick={toggleTheme} className="utility-button square" aria-label={lang === 'th' ? 'เปลี่ยนธีม' : 'Change theme'}><Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" /></button>
-              <button onClick={() => setMenuOpen(true)} className="utility-button square md:hidden" aria-label={lang === 'th' ? 'เปิดเมนู' : 'Open menu'}><Icon name="menu" className="w-5 h-5" /></button>
-            </div>
+          ))}
+          <div className="side-rail-spacer" />
+          <div className="side-foot">
+            <button onClick={toggleLang} className="utility-button" aria-label={lang === 'th' ? 'เปลี่ยนเป็นภาษาอังกฤษ' : 'Switch to Thai'}><Icon name="globe" className="w-4 h-4" />{lang === 'th' ? 'เปลี่ยนเป็น English' : 'Switch to Thai'}</button>
+            <button onClick={toggleTheme} className="utility-button" aria-label={lang === 'th' ? 'เปลี่ยนธีม' : 'Change theme'}><Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" />{theme === 'dark' ? (lang === 'th' ? 'โหมดสว่าง' : 'Light mode') : (lang === 'th' ? 'โหมดมืด' : 'Dark mode')}</button>
+            <button onClick={logout} className="utility-button" title={user.full_name || user.email} aria-label={lang === 'th' ? 'ออกจากระบบ' : 'Log out'}><Icon name="logout" className="w-4 h-4" />{lang === 'th' ? 'ออกจากระบบ' : 'Log out'}</button>
           </div>
-        </header>
+        </nav>
 
-        {route !== 'predict' && <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-7"><div className="route-heading"><span className="page-icon"><Icon name={current?.icon || 'leaf'} className="w-5 h-5" /></span><div><h1 className="txt text-2xl sm:text-3xl font-extrabold">{current ? label(current) : 'CassavaGuard'}</h1>{pageDescriptions[route] && <p className="txt-soft text-sm mt-1">{lang === 'th' ? pageDescriptions[route].th : pageDescriptions[route].en}</p>}</div></div></div>}
-        <main id="main-content" tabIndex="-1" className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-7"><div key={route} className="page-enter">{renderPage()}</div></main>
+        <div className="app-main">
+          {/* Slim contextual topbar — the one place a page's name/description shows. */}
+          <header className="content-topbar">
+            <span className="page-icon shrink-0"><Icon name={current?.icon || 'leaf'} className="w-4 h-4" /></span>
+            <div className="min-w-0 flex-1">
+              <h1 className="txt text-base sm:text-lg font-extrabold leading-tight truncate">{current ? label(current) : 'CassavaGuard'}</h1>
+              {pageDescriptions[route] && <p className="txt-dim text-xs mt-0.5 truncate hidden sm:block">{lang === 'th' ? pageDescriptions[route].th : pageDescriptions[route].en}</p>}
+            </div>
+            <div className="flex items-center gap-2 shrink-0 md:hidden">
+              <button onClick={toggleLang} className="utility-button square" aria-label={lang === 'th' ? 'เปลี่ยนเป็นภาษาอังกฤษ' : 'Switch to Thai'}><span className="text-[11px]">{lang === 'th' ? 'EN' : 'ไทย'}</span></button>
+              <button onClick={toggleTheme} className="utility-button square" aria-label={lang === 'th' ? 'เปลี่ยนธีม' : 'Change theme'}><Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" /></button>
+            </div>
+          </header>
 
-        <nav className="mobile-dock md:hidden" aria-label={lang === 'th' ? 'เมนูหลัก' : 'Main navigation'}>
-          {PRIMARY.slice(0, 3).map((item) => <DockButton key={item.key} item={item} active={route === item.key} text={label(item)} onClick={() => go(item.key)} />)}
-          <DockButton item={{ icon: 'menu' }} active={MORE.some((item) => item.key === route) || route === 'weather'} text={lang === 'th' ? 'เมนู' : 'Menu'} onClick={() => setMenuOpen(true)} />
+          <main id="main-content" tabIndex="-1" className="w-full px-3 sm:px-6 py-4 sm:py-7"><div key={route} className="page-enter">{renderPage()}</div></main>
+        </div>
+
+        {/* Mobile: floating pill nav instead of a card-grid dock. */}
+        <nav className="mobile-pill-nav md:hidden" aria-label={lang === 'th' ? 'เมนูหลัก' : 'Main navigation'}>
+          {PRIMARY.map((item) => <PillButton key={item.key} item={item} active={route === item.key} label={label(item)} onClick={() => go(item.key)} />)}
+          <PillButton item={{ icon: 'menu' }} active={MORE.some((m) => m.key === route)} label={lang === 'th' ? 'เมนู' : 'Menu'} cta onClick={() => setMenuOpen(true)} />
         </nav>
 
         <Modal open={menuOpen} onClose={() => setMenuOpen(false)} title={lang === 'th' ? 'เมนูทั้งหมด' : 'All features'}>
+          <div className="flex items-center gap-3 mb-4 p-3 rounded-2xl" style={{ background: 'var(--cg-surface-2)' }}>
+            <span className="brand-mark shrink-0" style={{ width: 40, height: 40 }}><Icon name="leaf" className="w-5 h-5" /></span>
+            <div className="min-w-0 flex-1"><div className="txt font-bold text-sm truncate">{user.full_name || user.email}</div><div className="txt-soft text-xs truncate">{user.email}</div></div>
+            <button onClick={logout} className="utility-button square shrink-0" aria-label={lang === 'th' ? 'ออกจากระบบ' : 'Log out'}><Icon name="logout" className="w-4 h-4" /></button>
+          </div>
           <div className="grid grid-cols-2 gap-3">
-            {[...PRIMARY, ...MORE].map((item) => <button key={item.key} onClick={() => go(item.key)} className={`menu-tile ${route === item.key ? 'active' : ''}`}><span className="menu-tile-icon"><Icon name={item.icon} className="w-5 h-5" /></span><span>{label(item)}</span></button>)}
+            {ALL_NAV.map((item) => <button key={item.key} onClick={() => go(item.key)} className={`menu-tile ${route === item.key ? 'active' : ''}`}><span className="menu-tile-icon"><Icon name={item.icon} className="w-5 h-5" /></span><span>{label(item)}</span></button>)}
           </div>
         </Modal>
+        <WelcomeGuideModal open={welcomeOpen} onClose={() => setWelcomeOpen(false)} lang={lang} go={go} userName={user.full_name} />
         <AdviceChatbot lang={lang} />
         <ToastHost />
       </div>
     );
   }
 
-  function NavButton({ item, active, text, onClick }) {
-    return <button onClick={onClick} className={`nav-pill ${active ? 'active' : 'txt-soft'}`}><Icon name={item.icon} className="w-4 h-4" />{text}</button>;
+  // Condensed 3-step quick-start, popped as a message right after sign-in —
+  // not the full Guide page, just enough to get a first-time user moving.
+  function WelcomeGuideModal({ open, onClose, lang, go, userName }) {
+    const th = lang === 'th';
+    const steps = th ? [
+      ['camera', 'ถ่ายภาพต้นมันสำปะหลัง', 'ให้เห็นทั้งต้นในแสงธรรมชาติ ชัด ไม่ย้อนแสง'],
+      ['brain', 'กด "วิเคราะห์"', 'ระบบ AI จำแนกโรคให้ภายในไม่กี่วินาที'],
+      ['bulb', 'ดูผลและคำแนะนำ', 'อ่านความมั่นใจของผล แล้วทำตามคำแนะนำการดูแล'],
+    ] : [
+      ['camera', 'Photograph the plant', 'Show the whole plant in natural light, in focus.'],
+      ['brain', 'Tap "Analyze"', 'The AI classifies the disease in a few seconds.'],
+      ['bulb', 'Read the result', 'Check the confidence, then follow the care guidance.'],
+    ];
+    return (
+      <Modal open={open} onClose={onClose} title={th ? `ยินดีต้อนรับ${userName ? ', ' + userName : ''} 🌿` : `Welcome${userName ? ', ' + userName : ''} 🌿`}>
+        <p className="txt-soft text-sm leading-relaxed mb-4">{th ? 'เริ่มต้นใช้งาน CassavaGuard AI ง่ายๆ ใน 3 ขั้นตอน' : 'Get started with CassavaGuard AI in three simple steps.'}</p>
+        <ol className="step-rail">
+          {steps.map(([icon, title, body]) => (
+            <li key={title} className="active">
+              <span className="step-rail-dot"><Icon name={icon} className="w-4 h-4" /></span>
+              <div><b>{title}</b><p>{body}</p></div>
+            </li>
+          ))}
+        </ol>
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          <button onClick={() => { go('guide'); onClose(); }} className="secondary-action text-sm"><Icon name="book" className="w-4 h-4" />{th ? 'คู่มือฉบับเต็ม' : 'Full guide'}</button>
+          <button onClick={onClose} className="primary-action text-sm"><Icon name="camera" className="w-4 h-4" />{th ? 'เริ่มใช้งานเลย' : 'Start now'}</button>
+        </div>
+      </Modal>
+    );
   }
-  function DockButton({ item, active, text, onClick }) {
-    return <button onClick={onClick} className={`dock-item ${active ? 'active' : ''}`}><Icon name={item.icon} className="w-5 h-5" /><span>{text}</span></button>;
+
+  function PillButton({ item, active, label, onClick, cta }) {
+    return (
+      <button onClick={onClick} className={`pill-item ${cta ? 'pill-cta' : ''} ${active ? 'active' : ''}`} aria-label={label} title={label}>
+        <Icon name={item.icon} className={cta ? 'w-6 h-6' : 'w-5 h-5'} />
+      </button>
+    );
   }
   function AdviceChatbot({ lang }) {
     const [open, setOpen] = useState(false);

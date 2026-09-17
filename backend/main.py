@@ -148,7 +148,12 @@ app.mount("/dist", StaticFiles(directory=str(FRONTEND_DIR / "dist")), name="dist
 
 @app.get("/")
 def index():
-    return FileResponse(str(FRONTEND_DIR / "index.html"))
+    # index.html carries the app's inline design-system <style> block and the
+    # only versioned links to app.js/app.css — unlike those two, the document
+    # itself has no cache-busting query string. Without an explicit no-cache
+    # header a browser can keep serving a stale copy (old styles, old asset
+    # versions) indefinitely across normal reloads.
+    return FileResponse(str(FRONTEND_DIR / "index.html"), headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/favicon.svg", include_in_schema=False)

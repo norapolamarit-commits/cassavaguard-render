@@ -8,12 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "frontend"
 
 
-def test_english_is_the_default_language():
+def test_thai_is_the_default_language():
     index = (FRONTEND / "index.html").read_text(encoding="utf-8")
     store = (FRONTEND / "src" / "store.js").read_text(encoding="utf-8")
 
-    assert '<html lang="en"' in index
-    assert "localStorage.getItem('cg_lang') || 'en'" in store
+    assert '<html lang="th"' in index
+    assert "localStorage.getItem('cg_lang') || 'th'" in store
 
 
 def test_every_dictionary_entry_has_thai_and_english_text():
@@ -32,8 +32,10 @@ def test_every_dictionary_entry_has_thai_and_english_text():
     assert len(entries) == len(declared)
 
 
-def test_api_failure_message_is_bilingual():
+def test_auth_entry_message_is_bilingual():
     app = (FRONTEND / "src" / "App.jsx").read_text(encoding="utf-8")
+    auth = (FRONTEND / "src" / "pages" / "auth.jsx").read_text(encoding="utf-8")
 
-    assert "Unable to connect to the API" in app
-    assert "ไม่สามารถเชื่อมต่อ API" in app
+    assert "<P.Auth" in app
+    assert "Sign in to your dashboard" in auth
+    assert "เข้าสู่แดชบอร์ดของคุณ" in auth

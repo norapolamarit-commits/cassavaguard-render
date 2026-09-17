@@ -8,13 +8,14 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50: "#eefaf0", 100: "#d3f4da", 200: "#a8e8b8", 300: "#74d68f",
-          400: "#43c96e", 500: "#1ba24a", DEFAULT: "#1ba24a", 600: "#158a3f",
-          700: "#137a38", 800: "#0f5f2c", 900: "#0b4a23",
+          50: "#eef6ee", 100: "#d3e9d6", 200: "#a8d6ae", 300: "#7cc086",
+          400: "#5aa860", 500: "#3a8f4a", DEFAULT: "#3a8f4a", 600: "#2c7239",
+          700: "#255f30", 800: "#1f5228", 900: "#173d1e",
         },
-        /* Warm secondary (sun/soil). Kept under the historical "cyan2" key so
-           existing accent classes across pages recolor to the new warm tone. */
-        cyan2: { DEFAULT: "#f4a621", light: "#f6b84a" },
+        /* Warm secondary (terracotta/soil) — a true second primary now, not a
+           rare accent. Kept under the historical "cyan2" key so existing
+           accent classes across pages recolor to the new warm tone. */
+        cyan2: { DEFAULT: "#d9711f", light: "#e89a3c" },
         ink: { DEFAULT: "#0b1220", 800: "#111a2b", 700: "#18233b" },
       },
       fontFamily: {

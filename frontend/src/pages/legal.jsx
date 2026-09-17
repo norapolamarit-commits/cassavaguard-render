@@ -8,14 +8,14 @@
     const sections = th ? [
       ['privacy', 'ความเป็นส่วนตัว', 'ระบบรับข้อมูลแปลง พิกัด ภาพพืช และประวัติการวิเคราะห์เพื่อให้บริการตามที่ผู้ใช้ร้องขอ หลีกเลี่ยงการอัปโหลดใบหน้า เอกสาร ป้ายทะเบียน หรือข้อมูลส่วนบุคคลที่ไม่เกี่ยวข้อง'],
       ['database', 'การเก็บและลบข้อมูล', 'ผลวิเคราะห์และ metadata ถูกบันทึกในฐานข้อมูล ส่วนภาพอาจถูกเก็บในพื้นที่ไฟล์ ผู้ใช้สามารถลบผลและภาพที่เกี่ยวข้องจากเมนูประวัติ การสำรองข้อมูลอาจคงอยู่ตามรอบการสำรองของผู้ให้บริการ'],
-      ['users', 'การเข้าถึงในเวอร์ชันปัจจุบัน', 'ระบบไม่บังคับ Login ผู้ที่มี URL อาจเห็นและใช้งานข้อมูลชุดเดียวกัน จึงไม่ควรใส่ข้อมูลลับหรือข้อมูลส่วนบุคคลจนกว่าจะเปิดระบบบัญชีผู้ใช้'],
+      ['user', 'บัญชีผู้ใช้และการเข้าสู่ระบบ', 'ระบบต้องเข้าสู่ระบบก่อนใช้งาน แต่ละบัญชีเห็นเฉพาะข้อมูลของตนเอง บัญชีใหม่เริ่มต้นเป็นบทบาทเกษตรกร รหัสผ่านถูกเข้ารหัสก่อนบันทึก และไม่มีการแชร์รหัสผ่านให้บุคคลที่สาม'],
       ['alert', 'เงื่อนไขการใช้ AI', 'ผล AI เป็นการคัดกรอง ไม่ใช่การยืนยันจากห้องปฏิบัติการ ห้ามใช้เป็นเหตุผลเดียวในการถอนต้น ใช้สารเคมี หรือดำเนินการที่อาจสร้างความเสียหาย'],
       ['cloud', 'บริการภายนอก', 'ข้อมูลอากาศมาจาก Open-Meteo และข้อมูลดาวเทียมมาจาก Sentinel-2/Earth Search ข้อมูลอาจล่าช้า ไม่ครบ หรือไม่พร้อมใช้งานชั่วคราว'],
       ['mail', 'ติดต่อผู้ดูแล', 'หากต้องการแจ้งปัญหา ขอแก้ไข หรือลบข้อมูลเพิ่มเติม โปรดติดต่อผู้ดูแลผ่าน Repository: github.com/norapolamarit-commits/cassavaguard-render'],
     ] : [
       ['privacy', 'Privacy', 'The service processes field details, coordinates, crop photos, measured soil results and prediction history to provide requested features. Do not upload faces, documents, licence plates or unrelated personal data.'],
       ['database', 'Storage and deletion', 'Predictions and metadata are stored in the database, while images may be stored as files. Delete a result and its related images from History. Backups may remain according to the provider backup cycle.'],
-      ['users', 'Current access model', 'Login is not required. Anyone with the URL may access the same shared dataset, so do not enter confidential or personal information until user accounts are enabled.'],
+      ['user', 'Accounts and sign-in', 'Sign-in is required. Each account only sees its own data. New accounts start with the Farmer role, passwords are hashed before storage, and passwords are never shared with a third party.'],
       ['alert', 'AI terms', 'AI results are screening support, not laboratory confirmation. Never use them as the sole basis for roguing, chemical treatment or other potentially harmful action.'],
       ['cloud', 'External services', 'Weather is provided by Open-Meteo and satellite observations by Sentinel-2/Earth Search. Data can be delayed, incomplete or temporarily unavailable.'],
       ['mail', 'Contact', 'To report a problem or request further correction or deletion, contact the administrator through github.com/norapolamarit-commits/cassavaguard-render.'],

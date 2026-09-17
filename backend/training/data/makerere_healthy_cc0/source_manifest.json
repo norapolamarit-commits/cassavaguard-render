@@ -1,0 +1,42 @@
+{
+  "dataset_name": "Makerere University Cassava Image Dataset",
+  "source_url": "https://doi.org/10.7910/DVN/T4RB0B",
+  "repository_url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T4RB0B",
+  "doi": "10.7910/DVN/T4RB0B",
+  "publisher": "Harvard Dataverse",
+  "license": "CC0 1.0",
+  "subsets": [
+    {
+      "name": "healthy_001.rar",
+      "dataverse_file_id": 6419125,
+      "archive_bytes": 624762384,
+      "archive_md5": "4d7ba4ff37bbd04c94f9ced01d3b93d2",
+      "decoded_images": 597
+    },
+    {
+      "name": "healthy_002.rar",
+      "dataverse_file_id": 6419126,
+      "archive_bytes": 1752559441,
+      "archive_md5": "56a3f0c508c05f783602771a86c24786",
+      "decoded_images": 522
+    }
+  ],
+  "decoded_images_total": 1119,
+  "label_mapping": {
+    "healthy": "healthy"
+  },
+  "usage": "training_only",
+  "official_split_duplicate_audit": {
+    "accepted": 1119,
+    "exact_duplicates_removed": 0,
+    "perceptual_duplicates_removed": 0,
+    "official_effective_counts": {
+      "train": 5619,
+      "validation": 1875,
+      "test": 1873
+    },
+    "method": "decoded RGB SHA-256 plus identical dHash and pHash Hamming distance <= 3"
+  },
+  "downloaded_at": "2026-09-16",
+  "notes": "Field photographs from farmer gardens. External data must be deduplicated against every official split before training and must never be added to validation or test."
+}

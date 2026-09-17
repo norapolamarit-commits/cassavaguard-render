@@ -13,6 +13,8 @@
 | Embrapa PDDB, DOI `10.48432/XA1OVL` | CC BY-NC 4.0 | งานทดลองเท่านั้น | White Leaf Spot 115 ภาพ; CAD 1 ภาพ | `backend/training/data/extended_conditions/real/` |
 | CIAT/Wikimedia + Bugwood | CC BY-SA 2.0 / CC BY 3.0 ตาม manifest | seed reference เท่านั้น | Mealybug 3, nutrient deficiency 1 | `backend/training/data/extended_conditions/real/` |
 | Cassava Image Dataset3, DOI `10.6084/m9.figshare.21769070.v2` | CC BY 4.0 | external domain/train-only experiment ตาม run | 7,131 ภาพที่ pipeline รับหลัง audit | `backend/training/data/figshare_cassava_21769070_v2/` |
+| Makerere University Cassava Image Dataset, DOI `10.7910/DVN/T4RB0B` | CC0 1.0 | Healthy ภาคสนาม (train-only) | 1,119 ภาพจาก `healthy_001` และ `healthy_002`; เปิดได้ครบและรับผ่าน duplicate audit 1,119 ภาพ | `backend/training/data/makerere_healthy_cc0/` |
+| Plant Images from CRISPR/CBB study, DOI `10.6084/m9.figshare.22718680.v1` | CC BY 4.0 | research-only; **ไม่ใช้ฝึก classifier** | 14 ภาพ; เป็นภาพต้นทดลอง/สายพันธุ์และไม่มี disease label ระดับภาพ | `backend/training/data/figshare_cbb_research_only/` |
 
 แหล่งอ้างอิงหลัก:
 
@@ -21,6 +23,8 @@
 - <https://data.mendeley.com/datasets/5g38399z9p/3>
 - <https://doi.org/10.48432/XA1OVL>
 - <https://doi.org/10.6084/m9.figshare.21769070.v2>
+- <https://doi.org/10.7910/DVN/T4RB0B>
+- <https://doi.org/10.6084/m9.figshare.22718680.v1>
 
 ## วิธีใช้กับโมเดลหลักอย่างปลอดภัย
 
@@ -34,6 +38,7 @@ PYTHONPATH=. .venv-training/bin/python backend/training/train_cnn_torch.py \
   --balance-classes-and-sources \
   --extra-data-dir backend/training/data/figshare_cassava_21769070_v2 \
   --extra-data-dir backend/training/data/mendeley_india_3832tx2cb2_v1 \
+  --extra-data-dir backend/training/data/makerere_healthy_cc0 \
   --output-dir backend/training/candidates/multi_source_candidate
 ```
 
