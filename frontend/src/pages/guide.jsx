@@ -2,33 +2,35 @@
 (function () {
   const { Card, SectionTitle, Badge, Icon } = window.CG.UI;
 
-  // One unified 5-step timeline — replaces the old page's two overlapping
-  // step lists (a "3-minute quick start" grid duplicating most of a
-  // separate 5-item list) with a single clear sequence.
+  // One unified workflow from account sign-in through private history.
   const STEPS = {
     th: [
+      ['user', 'เข้าสู่ระบบ', 'สมัครบัญชีหรือเข้าสู่ระบบก่อนใช้งาน เพื่อให้รูปและผลวิเคราะห์ถูกบันทึกเป็นข้อมูลของคุณ'],
       ['camera', 'ถ่ายภาพให้ชัด', 'ใช้แสงธรรมชาติ ภาพไม่สั่น เห็นใบหรือต้นเต็มส่วนที่มีอาการ และหลีกเลี่ยงพื้นหลังรก'],
       ['brain', 'วิเคราะห์ด้วย AI', 'อัปโหลดภาพ JPG/PNG แล้วกด “วิเคราะห์” ระบบจำแนกเฉพาะ 5 คลาสหลัก'],
       ['check', 'ตรวจผลก่อนลงมือ', 'อ่านความมั่นใจและเหตุผลที่ต้องตรวจซ้ำ เปรียบเทียบกับอาการจริงก่อนดำเนินการ'],
-      ['history', 'ติดตามผล', 'บันทึกและเปรียบเทียบผลหลายครั้ง ไม่ตัดสินจากภาพเดียว'],
+      ['history', 'เปิดประวัติ', 'ดูภาพต้นฉบับ Heatmap ผลวิเคราะห์ และลบรายการที่ไม่ต้องการได้จากบัญชีของคุณ'],
     ],
     en: [
+      ['user', 'Sign in', 'Create an account or sign in first so photos and analyses are saved under your account.'],
       ['camera', 'Capture a clear photo', 'Use daylight, avoid blur, show the affected leaf or plant clearly and keep the background simple.'],
       ['brain', 'Run AI analysis', 'Upload JPG/PNG, then analyze one of the five primary classes.'],
       ['check', 'Review before acting', 'Check confidence and review reasons against the plant before taking action.'],
-      ['history', 'Monitor over time', 'Save and compare multiple results instead of relying on one photo.'],
+      ['history', 'Open History', 'Review the original photo, heatmap and result, or delete records you no longer need.'],
     ],
   };
 
   const FEATURES = {
     th: [
+      ['user', 'บัญชีผู้ใช้', 'แยกข้อมูล รูปภาพ และประวัติของผู้ใช้แต่ละบัญชีออกจากกัน'],
       ['brain', 'วิเคราะห์ด้วย AI', 'จำแนกเฉพาะ Healthy, CBB, CBSD, CMD และ CGM'],
-      ['history', 'ประวัติส่วนตัว', 'บันทึกผลของแต่ละบัญชีและส่งออก CSV/PDF'],
+      ['history', 'ประวัติส่วนตัว', 'เปิดดูภาพต้นฉบับ Heatmap ลบรายการ และส่งออก CSV/PDF'],
       ['cpu', 'ระบบและโมเดล', 'ตรวจสถานะเซิร์ฟเวอร์และผลวัดโมเดลหลัก 5 คลาส'],
     ],
     en: [
+      ['user', 'User account', 'Keeps each account’s data, photos and history separate.'],
       ['brain', 'AI Diagnosis', 'Restricted to Healthy, CBB, CBSD, CMD and CGM.'],
-      ['history', 'Private history', 'Stores results per account and exports CSV/PDF.'],
+      ['history', 'Private history', 'Review original photos and heatmaps, delete records, and export CSV/PDF.'],
       ['cpu', 'System and models', 'Inspect server health and measured metrics for the five primary classes.'],
     ],
   };
@@ -76,7 +78,7 @@
 
         {/* One unified step timeline (reuses the same vertical-rail pattern as the Analyze page). */}
         <Card className="animate-fadeup">
-          <SectionTitle icon="play" title={th ? 'ใช้งานให้ครบวงจรใน 4 ขั้นตอน' : 'The complete workflow in 4 steps'} />
+          <SectionTitle icon="play" title={th ? 'ใช้งานให้ครบวงจรใน 5 ขั้นตอน' : 'The complete workflow in 5 steps'} />
           <ol className="step-rail">
             {steps.map(([icon, title, body]) => (
               <li key={title} className="active">
@@ -87,6 +89,31 @@
           </ol>
           <p className="txt-dim text-xs mt-3 pt-3" style={{ borderTop: '1px solid var(--cg-border-soft)' }}>
             {th ? 'หากใช้งานบน Render Free หลังไม่มีผู้ใช้งาน ระบบอาจใช้เวลาประมาณหนึ่งนาทีในการเริ่มทำงานครั้งแรก ให้รอแล้วรีเฟรชอีกครั้ง' : 'On Render Free, the first request after inactivity can take about a minute. Wait and refresh once.'}
+          </p>
+        </Card>
+
+        <Card className="animate-fadeup">
+          <SectionTitle icon="database" title={th ? 'ระบบเก็บข้อมูลอย่างไร' : 'How your data is stored'} />
+          <div className="grid md:grid-cols-3 gap-3 text-sm">
+            {(th ? [
+              ['user', 'ผูกกับบัญชี', 'ทุกผลวิเคราะห์มีรหัสเจ้าของ บัญชีทั่วไปมองเห็นเฉพาะข้อมูลของตนเอง'],
+              ['database', 'ฐานข้อมูล', 'บัญชี เวลา ผลตรวจ ความมั่นใจ และโมเดลถูกเก็บใน PostgreSQL ของระบบ'],
+              ['camera', 'ไฟล์ภาพ', 'ภาพต้นฉบับและ Heatmap เก็บในพื้นที่ถาวร แยกโฟลเดอร์ตามบัญชี และเปิดผ่านลิงก์ชั่วคราว'],
+            ] : [
+              ['user', 'Account ownership', 'Every analysis records its owner; standard accounts can only see their own data.'],
+              ['database', 'Database', 'Account, time, diagnosis, confidence and model metadata are stored in PostgreSQL.'],
+              ['camera', 'Image files', 'Original photos and heatmaps use persistent storage, separated by account and served with short-lived links.'],
+            ]).map(([icon, title, body]) => (
+              <div key={title} className="rounded-2xl p-3.5" style={{ background: 'var(--cg-surface-2)' }}>
+                <div className="flex items-center gap-2 txt font-bold"><Icon name={icon} className="w-4 h-4 text-brand-500" />{title}</div>
+                <p className="txt-soft text-xs leading-relaxed mt-2">{body}</p>
+              </div>
+            ))}
+          </div>
+          <p className="txt-dim text-xs mt-3 leading-relaxed">
+            {th
+              ? 'เมื่อลบรายการจากหน้าประวัติ ระบบจะลบทั้งข้อมูลผลวิเคราะห์และไฟล์ภาพที่เกี่ยวข้อง หากต้องการลบบัญชีทั้งหมดให้ติดต่อผู้ดูแลระบบ'
+              : 'Deleting an item from History removes both its analysis record and related image files. Contact the administrator to request full account deletion.'}
           </p>
         </Card>
 
