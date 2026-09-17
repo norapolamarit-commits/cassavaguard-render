@@ -15,7 +15,6 @@ from sqlalchemy.orm import Session
 
 from backend.config import (
     ACTIVE_MODEL,
-    HEATMAP_DIR,
     MAX_CSV_ROWS,
     MAX_CSV_UPLOAD_BYTES,
     MAX_IMAGE_PIXELS,
@@ -220,7 +219,9 @@ def _validate_image(data: bytes, content_type: Optional[str]) -> None:
         raise HTTPException(422, "Could not decode a valid image")
 
 
-def _save_image_and_heatmap(image_bytes: bytes, result: dict, filename: str) -> tuple:
+def _save_image_and_heatmap(
+    image_bytes: bytes, result: dict, filename: str, user_id: int
+) -> tuple:
     """Persist the uploaded image + generated heatmap to disk (uploads/, uploads/heatmaps/)
     so history can retrieve them later. Returns (image_path, heatmap_path), either "" if
     not applicable (e.g. CSV predictions have no image/heatmap)."""
@@ -229,26 +230,36 @@ def _save_image_and_heatmap(image_bytes: bytes, result: dict, filename: str) -> 
     if ext not in (".jpg", ".jpeg", ".png", ".webp"):
         ext = ".jpg"
 
+    # Keep each account's artifacts in its own directory. Authorization still
+    # comes from the Prediction.user_id check and short-lived signed URLs; this
+    # layout adds filesystem-level separation and makes account export/deletion
+    # straightforward without relying on opaque filenames alone.
+    owner_dir = UPLOAD_DIR / "users" / str(user_id)
+    owner_heatmap_dir = owner_dir / "heatmaps"
+    owner_heatmap_dir.mkdir(parents=True, exist_ok=True)
+
     image_path = ""
     if image_bytes:
-        dest = UPLOAD_DIR / f"{uid}{ext}"
+        dest = owner_dir / f"{uid}{ext}"
         dest.write_bytes(image_bytes)
-        image_path = f"uploads/{dest.name}"
+        image_path = f"uploads/users/{user_id}/{dest.name}"
 
     heatmap_path = ""
     heatmap_data_url = result.get("heatmap")
     if heatmap_data_url and heatmap_data_url.startswith("data:image/png;base64,"):
         png_bytes = base64.b64decode(heatmap_data_url.split(",", 1)[1])
-        dest = HEATMAP_DIR / f"{uid}.png"
+        dest = owner_heatmap_dir / f"{uid}.png"
         dest.write_bytes(png_bytes)
-        heatmap_path = f"uploads/heatmaps/{dest.name}"
+        heatmap_path = f"uploads/users/{user_id}/heatmaps/{dest.name}"
 
     return image_path, heatmap_path
 
 
 def _persist(db: Session, result: dict, user_id, field_id, filename: str,
             image_bytes: bytes = b""):
-    image_path, heatmap_path = _save_image_and_heatmap(image_bytes, result, filename)
+    image_path, heatmap_path = _save_image_and_heatmap(
+        image_bytes, result, filename, int(user_id)
+    )
     p = Prediction(
         source=result.get("source", "leaf"), filename=filename,
         image_path=image_path, heatmap_path=heatmap_path,
@@ -262,7 +273,14 @@ def _persist(db: Session, result: dict, user_id, field_id, filename: str,
         model_id=result.get("model", {}).get("id", ACTIVE_MODEL["id"]),
         user_id=user_id, field_id=field_id,
     )
-    db.add(p); db.commit(); db.refresh(p)
+    try:
+        db.add(p); db.commit(); db.refresh(p)
+    except Exception:
+        db.rollback()
+        for value in (image_path, heatmap_path):
+            if value:
+                (UPLOAD_DIR.parent / value).unlink(missing_ok=True)
+        raise
 
     # auto-alert on confident disease / stress finding
     tk = result["top_class"]

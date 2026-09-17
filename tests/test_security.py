@@ -1,8 +1,13 @@
+import base64
+import io
 from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
+
+from PIL import Image
 
 from backend.config import UPLOAD_DIR
 from backend.core import security
 from backend.api import auth
+from backend.api import predict as predict_api
 from backend.database import SessionLocal
 from backend.models import Prediction, User
 
@@ -213,6 +218,87 @@ def test_prediction_history_and_assets_are_owner_scoped(client, farmer_headers):
     assert deleted.status_code == 204
     assert client.get(f"/api/history/predictions/{prediction_id}", headers=farmer_headers).status_code == 404
     assert not (UPLOAD_DIR / image_name).exists()
+
+
+def test_detected_photo_is_persisted_under_logged_in_account(client, monkeypatch):
+    email = "photo-owner@example.com"
+    password = "photo-owner-password"
+    registered = client.post("/api/auth/register", json={
+        "email": email,
+        "password": password,
+        "full_name": "Photo Owner",
+        "language": "th",
+    })
+    assert registered.status_code == 200, registered.text
+    owner_headers = {
+        "Authorization": f"Bearer {registered.json()['access_token']}"
+    }
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (24, 24), (50, 150, 70)).save(buffer, format="PNG")
+    photo = buffer.getvalue()
+    heatmap = "data:image/png;base64," + base64.b64encode(photo).decode()
+    fake_result = {
+        "source": "leaf",
+        "top_class": "healthy",
+        "confidence": 0.91,
+        "probs": {"healthy": 0.91, "cbb": 0.03, "cbsd": 0.02, "cgm": 0.02, "cmd": 0.02},
+        "top3": [
+            {"key": "healthy", "en": "Healthy", "th": "สุขภาพดี", "confidence": 0.91},
+            {"key": "cbb", "en": "CBB", "th": "CBB", "confidence": 0.03},
+            {"key": "cbsd", "en": "CBSD", "th": "CBSD", "confidence": 0.02},
+        ],
+        "auxiliary_findings": [],
+        "symptoms": [],
+        "feature_importance": [],
+        "explanation_en": "Test result",
+        "explanation_th": "ผลทดสอบ",
+        "inference_ms": 12.0,
+        "model": {"id": "test-model"},
+        "heatmap": heatmap,
+        "requires_review": False,
+        "review_reasons": [],
+    }
+    monkeypatch.setattr(predict_api.ai_engine, "predict_image", lambda *args, **kwargs: dict(fake_result))
+
+    detected = client.post(
+        "/api/predict/image",
+        headers=owner_headers,
+        files={"file": ("real-photo.png", photo, "image/png")},
+        data={"source": "leaf"},
+    )
+    assert detected.status_code == 200, detected.text
+    prediction_id = detected.json()["prediction_id"]
+
+    db = SessionLocal()
+    try:
+        owner = db.query(User).filter_by(email=email).one()
+        prediction = db.get(Prediction, prediction_id)
+        assert prediction.user_id == owner.id
+        assert prediction.image_path.startswith(f"uploads/users/{owner.id}/")
+        assert prediction.heatmap_path.startswith(f"uploads/users/{owner.id}/heatmaps/")
+        assert (UPLOAD_DIR.parent / prediction.image_path).read_bytes() == photo
+        assert (UPLOAD_DIR.parent / prediction.heatmap_path).read_bytes() == photo
+    finally:
+        db.close()
+
+    history = client.get("/api/history/predictions", headers=owner_headers)
+    row = next(item for item in history.json()["items"] if item["id"] == prediction_id)
+    assert client.get(row["image_url"]).content == photo
+
+    other = client.post("/api/auth/register", json={
+        "email": "photo-other@example.com",
+        "password": "photo-other-password",
+        "full_name": "Other User",
+        "language": "th",
+    })
+    assert other.status_code == 200, other.text
+    other_headers = {"Authorization": f"Bearer {other.json()['access_token']}"}
+    other_history = client.get("/api/history/predictions", headers=other_headers).json()
+    assert prediction_id not in {item["id"] for item in other_history["items"]}
+    assert client.get(
+        f"/api/history/predictions/{prediction_id}", headers=other_headers
+    ).status_code == 404
 
 
 def test_upload_type_and_security_headers(client, farmer_headers):
