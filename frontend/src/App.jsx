@@ -23,11 +23,21 @@
     const [menuOpen, setMenuOpen] = useState(false);
     const [preAuthView, setPreAuthView] = useState(null); // null | 'guide' | 'legal'
     const [welcomeOpen, setWelcomeOpen] = useState(false);
+    const [slowBoot, setSlowBoot] = useState(false);
     const label = (item) => lang === 'th' ? item.th : item.en;
     const go = useCallback((next, arg = null) => {
       setRoute(next); setRouteArg(arg); setMenuOpen(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
+
+    // The backend free-tier instance spins down when idle and can take up to
+    // a minute to wake on the next request. Only mention this once loading
+    // has actually run long, so a normal fast boot never shows it.
+    useEffect(() => {
+      if (booted) { setSlowBoot(false); return; }
+      const timer = setTimeout(() => setSlowBoot(true), 3000);
+      return () => clearTimeout(timer);
+    }, [booted]);
 
     useEffect(() => {
       if (!user) return;
@@ -43,7 +53,17 @@
       if (justLoggedIn) { setWelcomeOpen(true); clearJustLoggedIn(); }
     }, [justLoggedIn]);
 
-    if (!booted) return <div className="min-h-screen theme-bg grid place-items-center"><div className="brand-orbit"><Icon name="leaf" className="w-7 h-7" /></div></div>;
+    if (!booted) return (
+      <div className="min-h-screen theme-bg grid place-items-center text-center px-6">
+        <div><div className="brand-orbit mx-auto"><Icon name="leaf" className="w-7 h-7" /></div>
+          {slowBoot && <p className="txt-soft text-sm mt-5 max-w-xs mx-auto">
+            {lang === 'th'
+              ? 'กำลังปลุกเซิร์ฟเวอร์ อาจใช้เวลาถึง 1 นาทีสำหรับการโหลดครั้งแรก กรุณารอสักครู่'
+              : 'Waking up the server — the first load can take up to a minute. Please wait.'}
+          </p>}
+        </div>
+      </div>
+    );
     if (!user) {
       if (preAuthView) {
         return (
