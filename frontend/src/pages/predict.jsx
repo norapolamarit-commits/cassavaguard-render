@@ -355,7 +355,10 @@
                 </div>
               )}
               {r.requires_review ? (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-200 text-xs leading-relaxed">
+                <div
+                  className="rounded-xl border p-3 text-xs leading-relaxed"
+                  style={{ color: 'var(--cg-warm-ink)', background: 'var(--cg-warm-soft)', borderColor: 'rgba(239,157,19,.22)' }}
+                >
                   {lang === 'th'
                     ? `ผลนี้ต้องตรวจทานโดยผู้เชี่ยวชาญก่อนดำเนินการกับแปลง (${(r.review_reasons || []).join(', ')})`
                     : `Expert review is required before field action (${(r.review_reasons || []).join(', ')})`}
@@ -503,7 +506,10 @@
                     : 'Requires expert confirmation before field action and is not independently validated on Thai field photos.'}
                 </div>
                 {finding.model.evaluation_warning && (
-                  <div className="mt-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200">
+                  <div
+                    className="mt-2 rounded-lg border px-3 py-2 text-[11px]"
+                    style={{ color: 'var(--cg-warm-ink)', background: 'var(--cg-warm-soft)', borderColor: 'rgba(239,157,19,.22)' }}
+                  >
                     {lang === 'th'
                       ? 'คำเตือนคุณภาพ: ค่า mAP/recall เดิมอาจสูงเกินจริงจากการแบ่งข้อมูลแบบเก่า ต้องฝึกใหม่โดยแยกทั้ง acquisition run ก่อนใช้ภาคสนาม'
                       : 'Quality warning: legacy splitting may overstate mAP/recall. Retraining with whole acquisition-run groups is required before field use.'}
