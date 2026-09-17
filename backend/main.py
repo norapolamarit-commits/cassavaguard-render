@@ -14,12 +14,17 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import (
     APP_ENV,
     AI_SERVING_MODE,
+    ALLOW_GUEST_ACCESS,
+    AUTH_REQUIRED,
     CORS_ORIGINS,
     ENABLE_API_DOCS,
     ENVIRONMENTAL_DATA_MODE,
     FRONTEND_DIR,
+    DATABASE_URL,
+    DATA_DIR,
     LOG_RETENTION_ROWS,
     SEED_DEMO_DATA,
+    PUBLIC_REGISTRATION_ENABLED,
     USE_CNN,
 )
 from backend.core.rate_limit import rate_limit_middleware
@@ -28,7 +33,7 @@ from backend.database import SessionLocal
 from backend.models import LogEntry, User
 from backend.api import (admin, auth, chat, dashboard, fields, files, history, models,
                          notifications, predict, satellite, soil, weather)
-from backend.services import ml_classifier, seed
+from backend.services import email_service, ml_classifier, seed
 from backend.services.cnn_classifier import get_cnn_session
 
 
@@ -120,7 +125,13 @@ def health():
     return {"status": "ok", "service": "CassavaGuard AI", "version": "1.0.0",
             "environment": APP_ENV, "demo_mode": SEED_DEMO_DATA,
             "environmental_data_mode": ENVIRONMENTAL_DATA_MODE,
-            "ai_serving_mode": AI_SERVING_MODE}
+            "ai_serving_mode": AI_SERVING_MODE,
+            "auth_required": AUTH_REQUIRED,
+            "public_registration": PUBLIC_REGISTRATION_ENABLED,
+            "allow_guest_access": ALLOW_GUEST_ACCESS,
+            "password_reset_available": email_service.smtp_configured() or APP_ENV != "production",
+            "database_backend": "postgresql" if DATABASE_URL.startswith("postgresql") else "sqlite",
+            "persistent_upload_storage": APP_ENV != "production" or str(DATA_DIR) != str(FRONTEND_DIR.parent)}
 
 
 @app.get("/api/logs")

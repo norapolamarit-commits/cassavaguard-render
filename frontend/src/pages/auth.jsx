@@ -23,7 +23,13 @@
     const [busy, setBusy] = useState(false);
     const [modelStats, setModelStats] = useState(null);
     const [numClasses, setNumClasses] = useState(null);
-    const [publicConfig, setPublicConfig] = useState({ demo_mode: false, environmental_data_mode: 'synthetic' });
+    const [publicConfig, setPublicConfig] = useState({
+      demo_mode: false,
+      environmental_data_mode: 'synthetic',
+      public_registration: true,
+      allow_guest_access: false,
+      password_reset_available: false,
+    });
 
     useEffect(() => {
       // Public model metadata is shown without exposing operational logs or private data.
@@ -166,7 +172,7 @@
                 )}
                 {mode !== 'reset' && <Field icon="mail" label={t('email')} type="email" value={email} onChange={setEmail} required />}
                 {mode !== 'forgot' && <Field icon="lock" label={t('password')} type="password" value={pw} onChange={setPw} required minLength={mode === 'login' ? undefined : 10} />}
-                {mode === 'login' && <button type="button" onClick={() => setMode('forgot')} className="text-sm font-semibold hover:underline" style={{ color: 'var(--cg-brand-strong)' }}>{t('forgot_pw')}</button>}
+                {mode === 'login' && publicConfig.password_reset_available && <button type="button" onClick={() => setMode('forgot')} className="text-sm font-semibold hover:underline" style={{ color: 'var(--cg-brand-strong)' }}>{t('forgot_pw')}</button>}
 
                 {mode === 'register' && (
                   <p className="txt-dim text-xs leading-relaxed">
@@ -182,14 +188,14 @@
               </form>
 
               <div className="mt-5 text-center text-sm txt-soft">
-                {mode === 'login' ? (
+                {mode === 'login' && publicConfig.public_registration ? (
                   <>{t('no_account')} <button onClick={() => setMode('register')} className="font-semibold hover:underline" style={{ color: 'var(--cg-brand-strong)' }}>{t('register')}</button></>
                 ) : mode === 'register' || mode === 'forgot' ? (
                   <>{t('have_account')} <button onClick={() => setMode('login')} className="font-semibold hover:underline" style={{ color: 'var(--cg-brand-strong)' }}>{t('login')}</button></>
                 ) : null}
               </div>
 
-              {(mode === 'login' || mode === 'register') && (
+              {publicConfig.allow_guest_access && (mode === 'login' || mode === 'register') && (
                 <>
                   <div className="flex items-center gap-3 my-5">
                     <div className="flex-1 h-px" style={{ background: 'var(--cg-border)' }} />

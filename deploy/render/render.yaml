@@ -26,7 +26,15 @@ services:
       - key: SEED_DEMO_DATA
         value: "false"
       - key: AUTH_REQUIRED
+        value: "true"
+      - key: PUBLIC_REGISTRATION_ENABLED
+        value: "true"
+      - key: ALLOW_GUEST_ACCESS
         value: "false"
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        sync: false
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        sync: false
       - key: EXPOSE_RESET_TOKEN
         value: "false"
       - key: ENABLE_API_DOCS

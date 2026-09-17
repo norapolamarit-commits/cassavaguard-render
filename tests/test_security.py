@@ -2,6 +2,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
 from backend.config import UPLOAD_DIR
 from backend.core import security
+from backend.api import auth
 from backend.database import SessionLocal
 from backend.models import Prediction, User
 
@@ -43,6 +44,28 @@ def test_registration_cannot_self_assign_privileged_role(client):
     )
     assert response.status_code == 200, response.text
     assert response.json()["user"]["role"] == "farmer"
+
+
+def test_guest_registration_can_be_disabled(client, monkeypatch):
+    monkeypatch.setattr(auth, "ALLOW_GUEST_ACCESS", False)
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "email": "guest.blocked@cassavaguard.demo",
+            "password": "temporary-password-123",
+            "full_name": "Guest",
+            "language": "th",
+        },
+    )
+    assert response.status_code == 403
+
+
+def test_health_exposes_public_auth_and_storage_capabilities(client):
+    payload = client.get("/api/health").json()
+    assert payload["auth_required"] is True
+    assert payload["public_registration"] is True
+    assert payload["database_backend"] in {"sqlite", "postgresql"}
+    assert isinstance(payload["persistent_upload_storage"], bool)
 
 
 def test_roles_and_field_ownership_are_enforced(

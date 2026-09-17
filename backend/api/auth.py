@@ -1,9 +1,14 @@
 """Authentication routes: register, login, forgot/reset, profile."""
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from backend.config import EXPOSE_RESET_TOKEN
+from backend.config import (
+    ALLOW_GUEST_ACCESS,
+    EXPOSE_RESET_TOKEN,
+    PUBLIC_REGISTRATION_ENABLED,
+)
 from backend.core.security import (
     create_access_token,
     get_current_user,
@@ -30,11 +35,21 @@ def _public(u: User) -> dict:
 @router.post("/register", response_model=TokenOut)
 def register(body: RegisterIn, db: Session = Depends(get_db)):
     email = str(body.email).strip().lower()
+    if not PUBLIC_REGISTRATION_ENABLED:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Public registration is disabled")
+    if email.endswith("@cassavaguard.demo") and not ALLOW_GUEST_ACCESS:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Guest access is disabled")
     if db.query(User).filter_by(email=email).first():
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
     user = User(email=email, full_name=body.full_name.strip(), role="farmer",
                 language=body.language, hashed_password=hash_password(body.password))
-    db.add(user); db.commit(); db.refresh(user)
+    db.add(user)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
+    db.refresh(user)
     return {"access_token": create_access_token(user), "token_type": "bearer", "user": _public(user)}
 
 

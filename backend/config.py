@@ -64,7 +64,11 @@ if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 # Auth
-AUTH_REQUIRED = _env_bool("AUTH_REQUIRED", default=False)
+AUTH_REQUIRED = _env_bool("AUTH_REQUIRED", default=IS_PRODUCTION)
+PUBLIC_REGISTRATION_ENABLED = _env_bool("PUBLIC_REGISTRATION_ENABLED", default=True)
+ALLOW_GUEST_ACCESS = _env_bool("ALLOW_GUEST_ACCESS", default=not IS_PRODUCTION)
+if IS_PRODUCTION and not AUTH_REQUIRED:
+    raise RuntimeError("Production requires AUTH_REQUIRED=true to isolate user data.")
 _DEV_SECRET = "cassavaguard-dev-secret-change-in-production"
 SECRET_KEY = os.environ.get("SECRET_KEY", _DEV_SECRET)
 if IS_PRODUCTION and (SECRET_KEY == _DEV_SECRET or len(SECRET_KEY.encode()) < 32):

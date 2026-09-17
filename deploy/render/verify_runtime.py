@@ -13,6 +13,7 @@ from backend.config import (
     AI_FIELD_VALIDATED,
     AI_SERVING_MODE,
     APP_ENV,
+    AUTH_REQUIRED,
     ENABLE_AUXILIARY_MODELS,
     USE_CNN,
 )
@@ -33,6 +34,8 @@ def verify_runtime() -> dict:
     """
     if APP_ENV != "production":
         raise RuntimeError("Render bundle requires APP_ENV=production")
+    if not AUTH_REQUIRED:
+        raise RuntimeError("Render bundle requires AUTH_REQUIRED=true")
     if AI_SERVING_MODE != "review_only":
         raise RuntimeError("Render bundle requires AI_SERVING_MODE=review_only")
     if AI_FIELD_VALIDATED:

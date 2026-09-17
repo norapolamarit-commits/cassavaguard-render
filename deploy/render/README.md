@@ -102,12 +102,15 @@ Blueprint ใช้ `starter` Web Service, `basic-256mb` PostgreSQL และ pe
 https://YOUR-SERVICE.onrender.com/api/health
 ```
 
-ผลควรมี `environment=production`, `environmental_data_mode=live` และ
-`ai_serving_mode=review_only` แอปจะเปิดแดชบอร์ดทันทีโดยไม่ต้อง Login จากนั้นเปิด
+ผลควรมี `environment=production`, `environmental_data_mode=live`,
+`ai_serving_mode=review_only`, `auth_required=true`, `database_backend=postgresql`
+และ `persistent_upload_storage=true` จากนั้นสมัครบัญชีหรือ Login แล้วเปิด
 **ระบบ & โมเดล** เพื่อตรวจว่า CNN, Brown Leaf Spot, White Leaf Spot และ Whitefly พร้อม
 
-Blueprint กำหนด `AUTH_REQUIRED=false` และใช้บัญชีระบบร่วมกัน ผู้ที่เข้าถึง URL จะมี
-สิทธิ์ใช้งานข้อมูลเดียวกันทั้งหมด จึงควรจำกัด URL ที่ระดับ Render/เครือข่ายหากมีข้อมูลสำคัญ
+Blueprint กำหนด `AUTH_REQUIRED=true` และแยกข้อมูลแปลง/ประวัติภาพตามเจ้าของบัญชี
+โดยใช้ PostgreSQL และ persistent disk ของ Render ห้ามเปลี่ยนกลับเป็น no-login ใน production
+ตั้ง `BOOTSTRAP_ADMIN_EMAIL` และ `BOOTSTRAP_ADMIN_PASSWORD` ใน Render Secret Environment
+Variables เพื่อสร้างผู้ดูแลระบบครั้งแรก รหัสผ่านต้องยาวอย่างน้อย 10 ตัวอักษร
 
 API docs ถูกปิดใน production โดยตั้งใจ หากต้องใช้ชั่วคราวให้เปลี่ยน
 `ENABLE_API_DOCS=true` ใน Render แล้วปิดกลับเมื่อเสร็จ

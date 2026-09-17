@@ -59,6 +59,18 @@ def run() -> dict:
             db.commit()
             created["users"] += 1
 
+        if BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD:
+            bootstrap = db.query(User).filter_by(email=BOOTSTRAP_ADMIN_EMAIL).first()
+            if bootstrap is None:
+                db.add(User(
+                    email=BOOTSTRAP_ADMIN_EMAIL,
+                    full_name="System Administrator",
+                    role="admin",
+                    hashed_password=hash_password(BOOTSTRAP_ADMIN_PASSWORD),
+                ))
+                db.commit()
+                created["users"] += 1
+
         if db.query(User).count() == 0:
             if SEED_DEMO_DATA:
                 for email, name, role, pw in [
@@ -69,16 +81,6 @@ def run() -> dict:
                     db.add(User(email=email, full_name=name, role=role,
                                 hashed_password=hash_password(pw)))
                     created["users"] += 1
-            elif BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD:
-                if len(BOOTSTRAP_ADMIN_PASSWORD) < 10:
-                    raise RuntimeError("BOOTSTRAP_ADMIN_PASSWORD must be at least 10 characters")
-                db.add(User(
-                    email=BOOTSTRAP_ADMIN_EMAIL,
-                    full_name="System Administrator",
-                    role="admin",
-                    hashed_password=hash_password(BOOTSTRAP_ADMIN_PASSWORD),
-                ))
-                created["users"] = 1
             else:
                 message = (
                     "No users exist. Set BOOTSTRAP_ADMIN_EMAIL and "

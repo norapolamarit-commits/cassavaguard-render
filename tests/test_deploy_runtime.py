@@ -7,6 +7,7 @@ from deploy.render import verify_runtime as runtime_check
 
 def _valid_environment(monkeypatch):
     monkeypatch.setattr(runtime_check, "APP_ENV", "production")
+    monkeypatch.setattr(runtime_check, "AUTH_REQUIRED", True)
     monkeypatch.setattr(runtime_check, "AI_SERVING_MODE", "review_only")
     monkeypatch.setattr(runtime_check, "AI_FIELD_VALIDATED", False)
     monkeypatch.setattr(runtime_check, "USE_CNN", True)
@@ -32,4 +33,12 @@ def test_verify_runtime_remains_fail_closed(monkeypatch):
     monkeypatch.setattr(runtime_check, "get_cnn_session", lambda: None)
 
     with pytest.raises(RuntimeError, match="cnn_efficientnet_b3"):
+        runtime_check.verify_runtime()
+
+
+def test_verify_runtime_rejects_shared_no_login_mode(monkeypatch):
+    _valid_environment(monkeypatch)
+    monkeypatch.setattr(runtime_check, "AUTH_REQUIRED", False)
+
+    with pytest.raises(RuntimeError, match="AUTH_REQUIRED=true"):
         runtime_check.verify_runtime()
