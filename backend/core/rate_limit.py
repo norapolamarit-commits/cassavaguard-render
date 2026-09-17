@@ -10,15 +10,16 @@ from collections import defaultdict, deque
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from backend.config import TRUST_PROXY_HEADERS
+from backend.config import APP_ENV, TRUST_PROXY_HEADERS
 
 
-_LIMITS = {
+_LIMITS = {} if APP_ENV == "test" else {
     "/api/auth/login": (10, 300),
     "/api/auth/login-json": (10, 300),
     "/api/auth/register": (5, 3600),
     "/api/auth/forgot": (5, 3600),
     "/api/auth/reset": (10, 3600),
+    "/api/auth/change-password": (10, 3600),
     "/api/predict/image": (30, 60),
     "/api/predict/csv": (30, 60),
 }

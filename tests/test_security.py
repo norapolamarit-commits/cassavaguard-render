@@ -170,6 +170,49 @@ def test_reset_token_is_hashed_and_single_use(client):
     assert client.get("/api/auth/me", headers=old_headers).status_code == 401
 
 
+def test_change_password_requires_current_password_and_rotates_session(client):
+    email = "change-password@example.com"
+    old_password = "initial-password-123"
+    new_password = "updated-password-456"
+    register = client.post(
+        "/api/auth/register",
+        json={"email": email, "password": old_password, "full_name": "Change Password User", "language": "en"},
+    )
+    assert register.status_code == 200
+    old_headers = {"Authorization": f"Bearer {register.json()['access_token']}"}
+
+    wrong_current = client.post(
+        "/api/auth/change-password",
+        headers=old_headers,
+        json={"current_password": "not-the-real-password", "new_password": new_password},
+    )
+    assert wrong_current.status_code == 401
+    # A rejected attempt must not have touched the stored password.
+    assert client.post(
+        "/api/auth/login-json", json={"email": email, "password": old_password},
+    ).status_code == 200
+
+    changed = client.post(
+        "/api/auth/change-password",
+        headers=old_headers,
+        json={"current_password": old_password, "new_password": new_password},
+    )
+    assert changed.status_code == 200
+    new_headers = {"Authorization": f"Bearer {changed.json()['access_token']}"}
+
+    # The token that made the change request is itself invalidated by the
+    # auth_version bump, so the endpoint must hand back a fresh usable one.
+    assert client.get("/api/auth/me", headers=old_headers).status_code == 401
+    assert client.get("/api/auth/me", headers=new_headers).status_code == 200
+
+    assert client.post(
+        "/api/auth/login-json", json={"email": email, "password": old_password},
+    ).status_code == 401
+    assert client.post(
+        "/api/auth/login-json", json={"email": email, "password": new_password},
+    ).status_code == 200
+
+
 def test_prediction_history_and_assets_are_owner_scoped(client, farmer_headers):
     db = SessionLocal()
     try:

@@ -20,8 +20,8 @@ from backend.core.security import (
 )
 from backend.database import get_db
 from backend.models import User
-from backend.schemas import (ForgotIn, LoginIn, ProfileUpdate, RegisterIn,
-                             ResetIn, TokenOut)
+from backend.schemas import (ChangePasswordIn, ForgotIn, LoginIn, ProfileUpdate,
+                             RegisterIn, ResetIn, TokenOut)
 from backend.services import email_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -105,6 +105,19 @@ def reset(body: ResetIn, db: Session = Depends(get_db)):
     user.auth_version += 1
     db.commit()
     return {"ok": True, "message": "Password updated."}
+
+
+@router.post("/change-password", response_model=TokenOut)
+def change_password(body: ChangePasswordIn, user: User = Depends(get_current_user),
+                     db: Session = Depends(get_db)):
+    if not verify_password(body.current_password, user.hashed_password):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Current password is incorrect")
+    user.hashed_password = hash_password(body.new_password)
+    user.auth_version += 1
+    db.commit()
+    # auth_version just changed, so the token that authenticated this request is
+    # now invalid -- issue a fresh one so the caller isn't logged out by its own request.
+    return {"access_token": create_access_token(user), "token_type": "bearer", "user": _public(user)}
 
 
 @router.get("/me")
