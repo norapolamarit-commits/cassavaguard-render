@@ -122,7 +122,6 @@
                 {[
                   [modelStats && modelStats.accuracy != null ? (modelStats.accuracy * 100).toFixed(1) + '%' : '—', lang === 'th' ? 'ความแม่นยำ (จริง)' : 'Accuracy (real)'],
                   [numClasses != null ? String(numClasses) : '—', lang === 'th' ? 'คลาสโรค' : 'Classes'],
-                  ['8/13', lang === 'th' ? 'คลาสที่มีโมเดลทำงาน' : 'classes with executable models'],
                 ].map(([v, l], i) => (
                   <div key={i}><div className="grad-text text-3xl font-extrabold">{v}</div><div className="txt-dim text-xs mt-1 max-w-[9rem]">{l}</div></div>
                 ))}
