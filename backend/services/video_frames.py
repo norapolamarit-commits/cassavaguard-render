@@ -16,14 +16,20 @@ def runtime_status() -> dict:
 
 
 def _probe(path: Path) -> dict:
-    completed = subprocess.run([
-        "ffprobe", "-v", "error", "-select_streams", "v:0",
-        "-show_entries", "stream=width,height,duration:format=duration",
-        "-of", "json", str(path),
-    ], capture_output=True, text=True, timeout=30)
+    try:
+        completed = subprocess.run([
+            "ffprobe", "-v", "error", "-select_streams", "v:0",
+            "-show_entries", "stream=width,height,duration:format=duration",
+            "-of", "json", str(path),
+        ], capture_output=True, text=True, timeout=30)
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        raise ValueError("video could not be decoded because ffprobe is unavailable") from exc
     if completed.returncode:
         raise ValueError("video could not be decoded")
-    data = json.loads(completed.stdout)
+    try:
+        data = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise ValueError("video could not be decoded") from exc
     if not data.get("streams"):
         raise ValueError("video has no visual stream")
     stream = data["streams"][0]
