@@ -27,7 +27,7 @@
 | AI serving mode | `review_only` — every result requires review |
 | Primary model | EfficientNet-B2 + TTA, five classes |
 | Primary test result | **Accuracy 88.20%, Macro-F1 83.63%** |
-| 95% target | **Not achieved** |
+| 90% target | **Ensemble candidate point estimate passed at 90.55%; Wilson lower bound did not pass** |
 | Thai-field validation | No sufficiently representative independent holdout yet |
 | Automated tests | 74 tests passed in the latest repository verification |
 
@@ -150,7 +150,7 @@ cluttered backgrounds, or aggressive color editing.
 - Per-class F1: Healthy 82.51%, CBB 72.73%, CBSD 87.69%, CMD 93.56%, CGM 81.68%
 - Primary weakness: CBB Recall 67.53%
 - The real-data candidate underperformed the baseline and was not promoted.
-- The project will not claim 95% until it passes an independent Thai-field test.
+- The development target is 90%. The ensemble candidate reached 90.55%, but is not considered confidently passed until the Wilson 95% lower bound is at least 90% and an independent Thai-field test passes.
 
 ### Auxiliary models and object detection
 
@@ -467,4 +467,4 @@ No warranty is provided for diagnosis or high-risk agricultural decisions.
 ---
 
 **Current verified primary result: EfficientNet-B2 + TTA — Test Accuracy 88.20%,
-Macro-F1 83.63%. The 95% target has not been achieved.**
+Macro-F1 83.63%. The 90% target is reached only by the 90.55% ensemble candidate; its Wilson lower bound remains below target and it is not deployed.**

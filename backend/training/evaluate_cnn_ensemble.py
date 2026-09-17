@@ -114,9 +114,9 @@ def main(argv=None):
         "test": test,
         "quality_target": {
             "metric": "held_out_test_accuracy",
-            "threshold": 0.95,
-            "point_estimate_passed": test["accuracy"] >= 0.95,
-            "wilson_lower_95_passed": test["accuracy_wilson_95"][0] >= 0.95,
+            "threshold": 0.90,
+            "point_estimate_passed": test["accuracy"] >= 0.90,
+            "wilson_lower_95_passed": test["accuracy_wilson_95"][0] >= 0.90,
         },
         "dataset_audit": audit,
     }

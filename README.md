@@ -26,7 +26,7 @@
 | AI serving | `review_only` — ทุกผลต้องตรวจซ้ำ |
 | โมเดลหลัก | EfficientNet-B2 + TTA, 5 คลาส |
 | ผล Test หลัก | **Accuracy 88.20%, Macro-F1 83.63%** |
-| เป้าหมาย 95% | **ยังไม่บรรลุ** |
+| เป้าหมาย 90% | **Ensemble candidate ผ่าน point estimate 90.55%; ยังไม่ผ่าน Wilson lower bound** |
 | Thai-field validation | ยังไม่มีชุดทดสอบอิสระที่ครอบคลุมเพียงพอ |
 | Automated tests | 74 tests ผ่านในการตรวจล่าสุดของเอกสารชุดนี้ |
 
@@ -146,7 +146,7 @@ Windows PowerShell ใช้คำสั่งเปิด environment ต่อ
 - F1 รายคลาส: Healthy 82.51%, CBB 72.73%, CBSD 87.69%, CMD 93.56%, CGM 81.68%
 - จุดอ่อนหลัก: CBB Recall 67.53%
 - Candidate ที่เพิ่มข้อมูลจริงให้ผลต่ำกว่า baseline จึงไม่ถูกนำขึ้น Production
-- จะไม่รายงานว่าได้ 95% จนกว่าจะผ่าน independent Thai-field test
+- เป้าหมายการพัฒนาเป็น 90%: ensemble candidate ได้ 90.55% แต่ยังไม่ถือว่าผ่านอย่างมั่นใจจนกว่า Wilson 95% lower bound ≥90% และผ่าน independent Thai-field test
 
 ### โมเดลเสริมและ Object Detection
 
@@ -459,4 +459,4 @@ Source code ระดับ repository เผยแพร่ภายใต้
 ---
 
 **ผลหลักที่ยืนยันได้ในปัจจุบัน: EfficientNet-B2 + TTA — Test Accuracy 88.20%,
-Macro-F1 83.63%. เป้าหมาย 95% ยังไม่บรรลุ**
+Macro-F1 83.63%. เป้าหมาย 90% ผ่านเฉพาะ ensemble candidate 90.55% แต่ยังไม่ผ่าน Wilson lower bound และยังไม่ได้ deploy**

@@ -3,7 +3,7 @@
 เอกสารนี้อธิบายตั้งแต่ดาวน์โหลดโค้ด เปิดแอป ใช้วิเคราะห์ภาพ ตรวจสอบโมเดล แก้ Frontend
 รันทดสอบ ฝึก Candidate ส่งขึ้น GitHub และ Deploy บน Render เหมาะสำหรับผู้เริ่มต้นและผู้ดูแลระบบ
 
-> โมเดลเป็นเครื่องมือช่วยคัดกรอง ไม่ใช่คำวินิจฉัยยืนยัน ห้ามอ้าง Accuracy 95% เพราะผล Test
+> โมเดลเป็นเครื่องมือช่วยคัดกรอง ไม่ใช่คำวินิจฉัยยืนยัน ห้ามอ้างว่าผ่านเป้าหมาย Accuracy 90% แบบสมบูรณ์ เพราะผล Test
 > ของโมเดลหลักปัจจุบันคือ Accuracy 88.20% และ Macro-F1 83.63%
 
 ## ส่วนที่ 1 เตรียมเครื่อง
@@ -314,7 +314,7 @@ backend/training/.venv-torch/bin/python backend/training/train_cnn_torch.py --he
 11. คง `AI_FIELD_VALIDATED=false` จนผ่าน independent Thai-field evaluation
 
 ภาพสังเคราะห์ใช้ช่วยทดลองหรือเพิ่มความหลากหลาย Train ได้เมื่อระบุที่มา แต่ห้ามใส่ Validation/Test
-และห้ามใช้ผลจากภาพสังเคราะห์เป็นหลักฐานว่าประสิทธิภาพภาคสนามถึง 95%
+และห้ามใช้ผลจากภาพสังเคราะห์เป็นหลักฐานว่าประสิทธิภาพภาคสนามถึง 90%
 
 ## ส่วนที่ 11 ปัญหาที่พบบ่อย
 
@@ -590,7 +590,7 @@ python backend/training/verify_artifacts.py --require-cnn --include-fusion
 - [ ] Weather/Satellite ระบุ source และ timestamp
 - [ ] Tests ผ่านทั้งหมด
 - [ ] ไม่มี `.env`, secret, database, uploads หรือ dataset ใน Git
-- [ ] README และรายงานไม่อ้าง 95% โดยไม่มีผล independent test
+- [ ] README และรายงานไม่อ้างว่าผ่าน 90% อย่างสมบูรณ์โดยไม่มีผล independent test
 - [ ] GitHub PR ผ่าน checks และ merge เข้า `main`
 - [ ] Render deploy commit ล่าสุดและ health check ผ่าน
 

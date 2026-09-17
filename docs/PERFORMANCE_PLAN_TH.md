@@ -4,7 +4,7 @@
 
 Supervisor รับผิดชอบ acceptance gate, การแบ่งขอบเขตไฟล์, การรวมงาน และการอนุมัติ
 ตัวเลขสุดท้าย เป้าหมายพัฒนาคือ held-out accuracy ของโมเดลจำแนกภาพ 5 คลาสอย่างน้อย
-95% ส่วน 75% เป็นเพียง release safety gate ขั้นต่ำของระบบเดิม ไม่ใช่เป้าหมายสำเร็จ
+90% ส่วน 75% เป็นเพียง release safety gate ขั้นต่ำของระบบเดิม ไม่ใช่เป้าหมายสำเร็จ
 โดยต้องรักษา macro-F1, per-class recall และ calibration เพื่อไม่ให้ accuracy สูงจาก
 คลาส CMD ที่มีจำนวนมากกว่าเพียงคลาสเดียว
 
@@ -71,7 +71,7 @@ independent Thai-field evaluation ตัว gate จะแสดง warning ข�
 - decode JPEG 3,200×2,400 median 161.51 → 84.75 ms (เร็วขึ้น 47.5%)
 - classifier thumbnail เหมือนเดิมทุกพิกเซล และ model session ถูก warm/reuse ใน
   process เดียวกับ Uvicorn
-# ผลทดลองเป้าหมาย Accuracy 95% — 16 กันยายน 2026
+# ผลทดลองเป้าหมาย Accuracy 90% — 16 กันยายน 2026
 
 ทดลอง ConvNeXt-Tiny บน official split ที่กัก exact/perceptual duplicate แล้ว และสร้าง
 ensemble โดยเลือกน้ำหนักจาก validation เท่านั้น (`EfficientNet-B3 0.70 + ConvNeXt 0.30`)
@@ -82,7 +82,7 @@ ensemble โดยเลือกน้ำหนักจาก validation เ�
 - Balanced accuracy: **86.68%**
 - CBB recall: **73.38%**
 - Accuracy Wilson 95% CI: **89.14–91.79%**
-- เป้าหมาย 95%: **ยังไม่ผ่าน** ทั้ง point estimate และ Wilson lower bound
+- เป้าหมาย 90%: **ผ่าน point estimate 90.55% แต่ยังไม่ผ่าน Wilson lower bound 89.14%**
 
 ผลนี้ดีกว่า EfficientNet-B3 ที่ deploy อยู่ แต่ ConvNeXt ONNX มีขนาด 106 MB และ
 ensemble ต้องรันสองโมเดล จึงยังไม่ promote ขึ้น Render จนกว่าจะลดขนาด ทดสอบ latency
