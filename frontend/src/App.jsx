@@ -72,10 +72,16 @@
               <button onClick={() => setPreAuthView(null)} className="utility-button"><Icon name="chevron" className="w-4 h-4 rotate-180" />{lang === 'th' ? 'กลับไปเข้าสู่ระบบ' : 'Back to sign in'}</button>
             </header>
             <main className="max-w-4xl mx-auto w-full px-3 sm:px-6 py-6">{preAuthView === 'legal' ? <P.Legal /> : <P.Guide />}</main>
+            <ToastHost />
           </div>
         );
       }
-      return <P.Auth onGuide={() => setPreAuthView('guide')} onPrivacy={() => setPreAuthView('legal')} />;
+      return (
+        <>
+          <P.Auth onGuide={() => setPreAuthView('guide')} onPrivacy={() => setPreAuthView('legal')} />
+          <ToastHost />
+        </>
+      );
     }
 
     const renderPage = () => {
