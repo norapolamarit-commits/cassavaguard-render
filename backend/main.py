@@ -155,6 +155,7 @@ for r in (auth, admin, chat, dashboard, fields, files, predict, satellite, weath
 # ----- serve pre-built frontend -------------------------------------------- #
 app.mount("/vendor", StaticFiles(directory=str(FRONTEND_DIR / "vendor")), name="vendor")
 app.mount("/dist", StaticFiles(directory=str(FRONTEND_DIR / "dist")), name="dist")
+app.mount("/icons", StaticFiles(directory=str(FRONTEND_DIR / "icons")), name="icons")
 
 
 @app.get("/")
@@ -170,3 +171,22 @@ def index():
 @app.get("/favicon.svg", include_in_schema=False)
 def favicon():
     return FileResponse(str(FRONTEND_DIR / "favicon.svg"), media_type="image/svg+xml")
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def manifest():
+    return FileResponse(
+        str(FRONTEND_DIR / "manifest.webmanifest"),
+        media_type="application/manifest+json",
+    )
+
+
+@app.get("/sw.js", include_in_schema=False)
+def service_worker():
+    # Served from the root scope (not /dist) so its default scope covers the
+    # whole app — a scoped-down service worker wouldn't control "/".
+    return FileResponse(
+        str(FRONTEND_DIR / "sw.js"),
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"},
+    )

@@ -12,3 +12,4 @@ import "./pages/guide.jsx";
 import "./pages/legal.jsx";
 import "./App.jsx";
 import "./main.jsx";
+import "./pwa.js";

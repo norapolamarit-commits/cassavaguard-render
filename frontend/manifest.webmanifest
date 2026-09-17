@@ -1,0 +1,17 @@
+{
+  "name": "CassavaGuard AI",
+  "short_name": "CassavaGuard",
+  "description": "ถ่ายหรืออัปโหลดรูปใบมันสำปะหลังเพื่อวิเคราะห์สุขภาพด้วย AI พร้อมคำแนะนำที่เข้าใจง่าย",
+  "lang": "th",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#faf3e6",
+  "theme_color": "#3a8f4a",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
