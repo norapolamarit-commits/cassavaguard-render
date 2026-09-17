@@ -1,13 +1,13 @@
 // CassavaGuard AI service worker — caches the static app shell so the
 // installed PWA still opens (with a stale UI) when the phone is offline.
 // API calls and everything else always go to the network.
-const CACHE_NAME = "cassavaguard-shell-v5";
+const CACHE_NAME = "cassavaguard-shell-v6";
 const SHELL_ASSETS = [
   "/",
   "/manifest.webmanifest",
   "/favicon.svg",
-  "/dist/app.css?v=20260917-weightfix",
-  "/dist/app.js?v=20260917-weightfix",
+  "/dist/app.css?v=20260917-nocapture",
+  "/dist/app.js?v=20260917-nocapture",
   "/vendor/react.js",
   "/vendor/prop-types.js",
   "/vendor/react-dom.js",

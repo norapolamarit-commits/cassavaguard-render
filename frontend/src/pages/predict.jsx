@@ -341,8 +341,6 @@
             </div>
           )}
 
-          {r.capture_context && <CaptureTimeCard context={r.capture_context} />}
-
           <div className="flex items-center gap-4">
             <ProgressRing value={top.confidence * 100} size={84} label={t('confidence')} />
             <div className="flex-1 min-w-0">
@@ -562,28 +560,6 @@
         </>}
       </>
     );
-  }
-
-  function CaptureTimeCard({ context }) {
-    const { lang } = window.CG.Store.useStore();
-    const actual = context.is_actual_capture_time;
-    const captured = new Date(context.captured_at);
-    const shown = Number.isNaN(captured.getTime()) ? context.captured_at : captured.toLocaleString(lang === 'th' ? 'th-TH' : 'en-GB');
-    const cropDays = context.crop_timing?.days_after_planting_at_capture;
-    return <div className="mb-3 rounded-xl border border-sky-500/25 bg-sky-500/[.07] p-3">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="txt text-xs font-semibold flex items-center gap-1.5"><Icon name="history" className="w-4 h-4 text-sky-300" />{lang === 'th' ? 'วิเคราะห์ช่วงเวลาถ่าย' : 'Capture-time analysis'}</div>
-        <Badge tone={actual ? 'low' : 'medium'}>{actual ? (lang === 'th' ? 'เวลาจาก EXIF' : 'EXIF time') : (lang === 'th' ? 'เวลาทดแทน' : 'Fallback time')}</Badge>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
-        <div><div className="txt-dim text-[10px]">{lang === 'th' ? 'วันและเวลา' : 'Date & time'}</div><div className="txt font-semibold mt-0.5">{shown}</div></div>
-        <div><div className="txt-dim text-[10px]">{lang === 'th' ? 'ช่วงวัน' : 'Day period'}</div><div className="txt font-semibold mt-0.5">{lang === 'th' ? context.period_of_day.th : context.period_of_day.en}</div></div>
-        <div><div className="txt-dim text-[10px]">{lang === 'th' ? 'ช่วงฤดู' : 'Season'}</div><div className="txt font-semibold mt-0.5">{lang === 'th' ? context.season.th : context.season.en}</div></div>
-        <div><div className="txt-dim text-[10px]">{lang === 'th' ? 'อายุแปลง ณ ตอนถ่าย' : 'Crop age at capture'}</div><div className="txt font-semibold mt-0.5">{Number.isFinite(cropDays) && cropDays >= 0 ? (lang === 'th' ? `${cropDays} วัน` : `${cropDays} days`) : '—'}</div></div>
-      </div>
-      {!actual && <p className="text-amber-300 text-[10px] mt-2 leading-relaxed">{lang === 'th' ? context.warnings?.[0]?.th : context.warnings?.[0]?.en}</p>}
-      <p className="txt-dim text-[10px] mt-1">{lang === 'th' ? 'ข้อมูลเวลาช่วยอธิบายบริบทเท่านั้น ไม่เปลี่ยนค่าความน่าจะเป็นโรคของโมเดล' : 'Time adds context only and does not alter model disease probabilities.'}</p>
-    </div>;
   }
 
   function CassavaPlantModel({ result }) {
