@@ -26,8 +26,40 @@
     const [slowBoot, setSlowBoot] = useState(false);
     const label = (item) => lang === 'th' ? item.th : item.en;
     const go = useCallback((next, arg = null) => {
+      if (next !== route || arg !== routeArg) {
+        window.history.pushState(
+          { ...(window.history.state || {}), cassavaGuardRoute: next, cassavaGuardRouteArg: arg },
+          '',
+          window.location.href,
+        );
+      }
       setRoute(next); setRouteArg(arg); setMenuOpen(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [route, routeArg]);
+
+    // Let browser back and the Android hardware-back button move through the
+    // app's screens instead of exiting immediately from every page.
+    useEffect(() => {
+      const state = window.history.state;
+      if (state?.cassavaGuardRoute) {
+        setRoute(state.cassavaGuardRoute);
+        setRouteArg(state.cassavaGuardRouteArg ?? null);
+      } else {
+        window.history.replaceState(
+          { ...(state || {}), cassavaGuardRoute: 'predict', cassavaGuardRouteArg: null },
+          '',
+          window.location.href,
+        );
+      }
+      const handleBack = (event) => {
+        const next = event.state?.cassavaGuardRoute || 'predict';
+        setRoute(next);
+        setRouteArg(event.state?.cassavaGuardRouteArg ?? null);
+        setMenuOpen(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      window.addEventListener('popstate', handleBack);
+      return () => window.removeEventListener('popstate', handleBack);
     }, []);
 
     // The backend free-tier instance spins down when idle and can take up to

@@ -44,7 +44,9 @@
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url; anchor.download = 'cassavaguard_predictions.csv'; anchor.click();
-        URL.revokeObjectURL(url);
+        // Mobile Safari can start consuming the object URL after the click
+        // handler returns; revoke it later so the saved export is not empty.
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
       } catch (error) {
         toast(error.message, 'error');
       }
@@ -53,6 +55,12 @@
     const exportPdf = () => {
       if (!rows || !rows.length) { toast(t('no_data'), 'warn'); return; }
       const w = window.open('', '_blank');
+      if (!w) {
+        toast(lang === 'th'
+          ? 'เบราว์เซอร์บล็อกหน้าพิมพ์ กรุณาอนุญาตป๊อปอัปแล้วลองอีกครั้ง'
+          : 'The browser blocked the print window. Allow pop-ups and try again.', 'warn');
+        return;
+      }
       const rowsHtml = rows.map((r) => `<tr><td>${r.id}</td><td>${escapeHtml(r.created_at.replace('T', ' ').slice(0, 16))}</td><td>${escapeHtml(r.source)}</td><td>${escapeHtml(r.top_class)}</td><td>${(r.confidence * 100).toFixed(1)}%</td></tr>`).join('');
       w.document.write(`<html><head><title>CassavaGuard Prediction Report</title>
         <style>body{font-family:Inter,Arial,sans-serif;padding:32px;color:#0b1a2b}h1{color:#059669}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}th,td{border:1px solid #e2e8f0;padding:8px;text-align:left}th{background:#ecfdf5}</style>

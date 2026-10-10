@@ -20,6 +20,7 @@
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const inputRef = useRef(null);
     const plantInputRef = useRef(null);
+    const cameraFallbackRef = useRef(null);
     const uploaderRef = useRef(null);
 
     const pick = (f, kind = 'file_selected') => {
@@ -119,6 +120,12 @@
                 </button>
               </div>
             )}
+            <input ref={cameraFallbackRef} type="file" className="hidden" accept="image/*" capture="environment"
+              onChange={(event) => {
+                const selected = event.target.files?.[0];
+                if (selected) pick(selected, 'camera_capture');
+                event.target.value = '';
+              }} />
 
             {source === 'leaf' && file && <div className="evidence-panel mt-4">
               <div className="flex items-center justify-between gap-3">
@@ -200,31 +207,34 @@
         </div>}
 
         <CameraModal open={camOpen} onClose={() => setCamOpen(false)}
+          onFallback={() => cameraFallbackRef.current?.click()}
           onCapture={(f) => { pick(f, 'camera_capture'); setCamOpen(false); }} />
       </div>
     );
   }
 
-  function CameraModal({ open, onClose, onCapture }) {
-    const { t, lang, toast } = window.CG.Store.useStore();
+  function CameraModal({ open, onClose, onCapture, onFallback }) {
+    const { t, lang } = window.CG.Store.useStore();
     const videoRef = useRef(null);
     const streamRef = useRef(null);
     const [ready, setReady] = useState(false);
     const [shot, setShot] = useState(null);        // captured data URL preview
     const [facing, setFacing] = useState('environment');
+    const [cameraError, setCameraError] = useState(false);
 
     const stop = () => {
       if (streamRef.current) { streamRef.current.getTracks().forEach((tr) => tr.stop()); streamRef.current = null; }
     };
 
     const start = async (mode) => {
-      stop(); setReady(false); setShot(null);
+      stop(); setReady(false); setShot(null); setCameraError(false);
+      if (!navigator.mediaDevices?.getUserMedia) { setCameraError(true); return; }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
         streamRef.current = stream;
         if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); setReady(true); }
-      } catch (e) { toast(t('cam_error'), 'error'); onClose(); }
+      } catch (e) { setCameraError(true); }
     };
 
     useEffect(() => {
@@ -257,7 +267,17 @@
           <video ref={videoRef} playsInline muted
                  className={`w-full h-full object-cover ${shot ? 'hidden' : ''}`} style={{ transform: facing === 'user' ? 'scaleX(-1)' : 'none' }} />
           {shot && <img src={shot} alt="capture" className="w-full h-full object-cover" />}
-          {!ready && !shot && (
+          {cameraError && !shot ? (
+            <div className="absolute inset-0 grid place-items-center bg-black/75 p-5 text-center text-white">
+              <div>
+                <Icon name="camera" className="w-8 h-8 mx-auto mb-3" />
+                <p className="text-sm mb-4">{lang === 'th' ? 'เปิดกล้องในแอปไม่ได้ ลองใช้กล้องของอุปกรณ์แทน' : 'The in-app camera is unavailable. Use your device camera instead.'}</p>
+                <button type="button" onClick={() => { stop(); onClose(); onFallback?.(); }} className="grad-brand rounded-xl px-4 py-3 font-bold">
+                  {lang === 'th' ? 'เปิดกล้อง/เลือกรูป' : 'Open camera / choose photo'}
+                </button>
+              </div>
+            </div>
+          ) : !ready && !shot && (
             <div className="absolute inset-0 grid place-items-center bg-black/40">
               <div className="flex flex-col items-center gap-2 text-white/80">
                 <Spinner className="w-6 h-6" /><span className="text-sm">{t('cam_starting')}</span>
@@ -269,7 +289,12 @@
         </div>
 
         <div className="flex items-center justify-center gap-3 mt-4">
-          {!shot ? (
+          {cameraError ? (
+            <button type="button" onClick={onClose}
+              className="glass rounded-xl px-5 py-3 txt-soft font-medium">
+              {lang === 'th' ? 'ปิด' : 'Close'}
+            </button>
+          ) : !shot ? (
             <>
               <button onClick={flip} title={t('switch_cam')}
                 className="glass rounded-xl w-12 h-12 grid place-items-center txt-soft hover:txt">
