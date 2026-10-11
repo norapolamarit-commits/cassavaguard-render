@@ -14,6 +14,7 @@ fi
 
 test -s frontend/dist/app.js
 test -s frontend/dist/app.css
+test -s frontend/dist/ort/ort-wasm-simd-threaded.wasm
 
 # Fail the deploy if a committed runtime model is missing, tampered with, or has
 # an incompatible ONNX/sklearn contract. Training data and training environments

@@ -1,8 +1,10 @@
 """Model registry / system status routes."""
 import datetime as dt
+import json
 import os
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 
 from backend.config import (
     AI_FIELD_VALIDATED,
@@ -38,6 +40,46 @@ from backend.services.whitefly_detector import (
 )
 
 router = APIRouter(prefix="/api/models", tags=["models"])
+
+
+@router.get("/offline-info")
+def offline_model_info():
+    """Public metadata for the opt-in, review-only on-device image model."""
+    model_path = BASE_DIR / "backend" / "ml_models" / "cnn_primary.onnx"
+    metrics_path = BASE_DIR / "backend" / "ml_models" / "cnn_metrics.json"
+    if not model_path.is_file() or not metrics_path.is_file():
+        raise HTTPException(status_code=503, detail="Offline model is unavailable")
+    meta = json.loads(metrics_path.read_text(encoding="utf-8"))
+    artifact = meta.get("artifacts", {}).get("onnx", {})
+    return {
+        "model_id": meta["model_id"],
+        "version": meta["trained_at"][:10],
+        "classes": meta["classes"],
+        "img_size": meta["img_size"],
+        "input_name": meta.get("input_name", "image"),
+        "input_layout": meta.get("input_layout", "NCHW"),
+        "temperature": meta.get("temperature", 1.0),
+        "pipeline": meta.get("training", {}).get("pipeline", "none"),
+        "sha256": artifact.get("sha256"),
+        "size_bytes": model_path.stat().st_size,
+        "release_scope": meta.get("release_scope", "review_only"),
+        "production_eligible": meta.get("production_eligible", False),
+        "url": "/api/models/offline-model",
+    }
+
+
+@router.get("/offline-model", include_in_schema=False)
+def offline_model_file():
+    """Serve the public ONNX artifact for user-requested on-device caching."""
+    model_path = BASE_DIR / "backend" / "ml_models" / "cnn_primary.onnx"
+    if not model_path.is_file():
+        raise HTTPException(status_code=503, detail="Offline model is unavailable")
+    return FileResponse(
+        model_path,
+        media_type="application/octet-stream",
+        filename="cassavaguard-cnn-effiB3.onnx",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 _START = dt.datetime.now(dt.UTC)
 

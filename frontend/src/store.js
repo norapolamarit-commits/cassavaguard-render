@@ -27,12 +27,18 @@
       document.documentElement.lang = lang;
     }, [lang]);
 
-    // Resume a saved session (if any) instead of always wiping the token on
-    // every reload. A missing/expired token still resolves to "signed out"
-    // rather than an error — the auth page then handles sign-in/sign-up.
+    // Resume the server session. When disconnected, allow local review-only
+    // access only if both the model and runtime were explicitly cached before.
     useEffect(() => {
       const API = window.CG.API_CLIENT;
-      API.me().then(setUser).catch(() => { API.setToken(''); setUser(null); }).finally(() => setBooted(true));
+      API.me().then(setUser).catch(async (error) => {
+        if (error.status === 401) API.setToken('');
+        if (navigator.onLine === false && await window.CG.OfflineCNN.isReady().catch(() => false)) {
+          setUser({ id: null, full_name: 'Offline review', email: '', role: 'offline', offline: true });
+        } else {
+          setUser(null);
+        }
+      }).finally(() => setBooted(true));
     }, []);
 
     // A 401 from any request (e.g. an expired token) drops the session so the

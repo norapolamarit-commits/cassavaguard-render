@@ -296,5 +296,10 @@
   <div id="root" class="theme-bg"></div>
 
   <script src="./dist/app.js?v=20261011-mobile-parity"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+    }
+  </script>
 </body>
 </html>

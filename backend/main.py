@@ -178,6 +178,7 @@ def manifest():
     return FileResponse(
         str(FRONTEND_DIR / "manifest.webmanifest"),
         media_type="application/manifest+json",
+        headers={"Cache-Control": "no-cache"},
     )
 
 

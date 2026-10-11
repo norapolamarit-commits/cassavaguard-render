@@ -117,6 +117,7 @@
     }
 
     const renderPage = () => {
+      if (user.offline && !['predict', 'guide', 'legal'].includes(route)) return <P.Predict />;
       switch (route) {
         case 'predict': return <P.Predict />;
         case 'history': return <P.History />;
@@ -126,7 +127,9 @@
         default: return <P.Predict />;
       }
     };
-    const current = ALL_NAV.find((item) => item.key === route);
+    const availableNav = user.offline ? ALL_NAV.filter((item) => ['predict', 'guide', 'legal'].includes(item.key)) : ALL_NAV;
+    const availablePrimary = user.offline ? PRIMARY.filter((item) => ['predict', 'guide'].includes(item.key)) : PRIMARY;
+    const current = availableNav.find((item) => item.key === route);
     const pageDescriptions = {
       history: { th: 'ย้อนดูผลวิเคราะห์และติดตามการเปลี่ยนแปลง', en: 'Review analyses and track changes over time' },
       system: { th: 'ข้อมูลโมเดล คุณภาพ และความพร้อมของระบบ', en: 'Model quality, evidence, and system readiness' },
@@ -145,12 +148,15 @@
             <span className="side-brand-mark brand-mark"><Icon name="leaf" className="w-5 h-5" /></span>
             <span className="txt font-extrabold text-base">CassavaGuard</span>
           </button>
-          {ALL_NAV.map((item) => (
+          {availableNav.map((item) => (
             <button key={item.key} onClick={() => go(item.key)} className={`side-item ${route === item.key ? 'active' : ''}`}>
               <Icon name={item.icon} className="side-item-icon" /><span>{label(item)}</span>
             </button>
           ))}
           <div className="side-rail-spacer" />
+          {user.offline && <div className="mx-3 my-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-200 text-xs leading-relaxed">
+            {lang === 'th' ? 'โหมดออฟไลน์ในเครื่อง: ใช้คัดกรองภาพใบเท่านั้น ไม่มีบัญชี ประวัติ หรือการบันทึกผล' : 'Local offline mode: leaf screening only; account, history, and saving are unavailable.'}
+          </div>}
           <div className="side-foot">
             <button onClick={toggleLang} className="utility-button" aria-label={lang === 'th' ? 'เปลี่ยนเป็นภาษาอังกฤษ' : 'Switch to Thai'}><Icon name="globe" className="w-4 h-4" />{lang === 'th' ? 'เปลี่ยนเป็น English' : 'Switch to Thai'}</button>
             <button onClick={toggleTheme} className="utility-button" aria-label={lang === 'th' ? 'เปลี่ยนธีม' : 'Change theme'}><Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" />{theme === 'dark' ? (lang === 'th' ? 'โหมดสว่าง' : 'Light mode') : (lang === 'th' ? 'โหมดมืด' : 'Dark mode')}</button>
@@ -177,22 +183,22 @@
 
         {/* Mobile: floating pill nav instead of a card-grid dock. */}
         <nav className="mobile-pill-nav md:hidden" aria-label={lang === 'th' ? 'เมนูหลัก' : 'Main navigation'}>
-          {PRIMARY.map((item) => <PillButton key={item.key} item={item} active={route === item.key} label={label(item)} onClick={() => go(item.key)} />)}
+          {availablePrimary.map((item) => <PillButton key={item.key} item={item} active={route === item.key} label={label(item)} onClick={() => go(item.key)} />)}
           <PillButton item={{ icon: 'menu' }} active={MORE.some((m) => m.key === route)} label={lang === 'th' ? 'เมนู' : 'Menu'} cta onClick={() => setMenuOpen(true)} />
         </nav>
 
         <Modal open={menuOpen} onClose={() => setMenuOpen(false)} title={lang === 'th' ? 'เมนูทั้งหมด' : 'All features'}>
           <div className="flex items-center gap-3 mb-4 p-3 rounded-2xl" style={{ background: 'var(--cg-surface-2)' }}>
             <span className="brand-mark shrink-0" style={{ width: 40, height: 40 }}><Icon name="leaf" className="w-5 h-5" /></span>
-            <div className="min-w-0 flex-1"><div className="txt font-bold text-sm truncate">{user.full_name || user.email}</div><div className="txt-soft text-xs truncate">{user.email}</div></div>
+            <div className="min-w-0 flex-1"><div className="txt font-bold text-sm truncate">{user.full_name || user.email}</div><div className="txt-soft text-xs truncate">{user.offline ? (lang === 'th' ? 'ใช้งานเฉพาะในเครื่อง' : 'On this device only') : user.email}</div></div>
             <button onClick={logout} className="utility-button square shrink-0" aria-label={lang === 'th' ? 'ออกจากระบบ' : 'Log out'}><Icon name="logout" className="w-4 h-4" /></button>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {ALL_NAV.map((item) => <button key={item.key} onClick={() => go(item.key)} className={`menu-tile ${route === item.key ? 'active' : ''}`}><span className="menu-tile-icon"><Icon name={item.icon} className="w-5 h-5" /></span><span>{label(item)}</span></button>)}
+            {availableNav.map((item) => <button key={item.key} onClick={() => go(item.key)} className={`menu-tile ${route === item.key ? 'active' : ''}`}><span className="menu-tile-icon"><Icon name={item.icon} className="w-5 h-5" /></span><span>{label(item)}</span></button>)}
           </div>
         </Modal>
         <WelcomeGuideModal open={welcomeOpen} onClose={() => setWelcomeOpen(false)} lang={lang} go={go} userName={user.full_name} />
-        <AdviceChatbot lang={lang} />
+        {!user.offline && <AdviceChatbot lang={lang} />}
         <ToastHost />
       </div>
     );

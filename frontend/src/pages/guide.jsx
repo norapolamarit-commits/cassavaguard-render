@@ -170,6 +170,11 @@
               <div className="rounded-2xl p-3.5 txt-soft" style={{ background: 'var(--cg-surface-2)' }}>
                 {th ? 'CAD, SED, Mealybug, Water Stress และ Nutrient Deficiency ยังมีข้อมูลติดป้ายไม่พอ จึงไม่สร้างผลวินิจฉัยจากภาพแบบปลอม' : 'CAD, SED, Mealybug, Water Stress and Nutrient Deficiency lack sufficient labelled data, so the app does not fabricate image diagnoses.'}
               </div>
+              <div className="rounded-2xl p-3.5 txt-soft" style={{ background: 'var(--cg-surface-2)' }}>
+                {th
+                  ? 'ออฟไลน์: ขณะต่ออินเทอร์เน็ต ให้เลือกชนิดภาพ “ภาพใบ” ในตัวเลือกขั้นสูง แล้วกดดาวน์โหลดโมเดล (~43 MB) และ runtime (~14 MB) หลังขึ้น “พร้อมใช้ออฟไลน์” จึงทดสอบโหมดเครื่องบินได้ ใช้ได้เฉพาะภาพใบระยะใกล้ ผลเพื่อทบทวนเท่านั้น ไม่บันทึก ไม่มี heatmap/คำแนะนำ/น้ำหนักผลผลิต และอาจต่างจากผลออนไลน์เล็กน้อย'
+                  : 'Offline: while online, select “Leaf” under Advanced options and download the model (~43 MB) plus runtime (~14 MB). Once marked ready, test in airplane mode. It supports close-up leaf photos only; results are review-only, not saved, have no heatmap/recommendations/yield estimate, and may differ slightly from online results.'}
+              </div>
             </div>
           </Card>
         </div>

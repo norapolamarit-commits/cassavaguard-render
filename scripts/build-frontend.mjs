@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdir } from "node:fs/promises";
+import { copyFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
@@ -8,6 +8,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const frontend = path.join(root, "frontend");
 const dist = path.join(frontend, "dist");
 await mkdir(dist, { recursive: true });
+const ortDist = path.join(root, "node_modules", "onnxruntime-web", "dist");
+const ortOutput = path.join(dist, "ort");
+await mkdir(ortOutput, { recursive: true });
+await copyFile(
+  path.join(ortDist, "ort-wasm-simd-threaded.wasm"),
+  path.join(ortOutput, "ort-wasm-simd-threaded.wasm"),
+);
 
 await build({
   entryPoints: [path.join(frontend, "src", "entry.js")],
@@ -15,6 +22,7 @@ await build({
   format: "iife",
   platform: "browser",
   target: ["es2020"],
+  conditions: ["onnxruntime-web-use-extern-wasm"],
   jsx: "transform",
   jsxFactory: "React.createElement",
   jsxFragment: "React.Fragment",

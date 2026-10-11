@@ -3,7 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "node scripts/build-frontend.mjs"
+    "build": "node scripts/build-frontend.mjs",
+    "test:offline-model": "node scripts/test-offline-model.mjs"
+  },
+  "dependencies": {
+    "onnxruntime-web": "1.30.0"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.0",

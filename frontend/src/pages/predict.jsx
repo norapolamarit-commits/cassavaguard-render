@@ -6,7 +6,7 @@
 
   function PredictPage() {
     const { t, lang, toast, user } = window.CG.Store.useStore();
-    const [source, setSource] = useState('plant');
+    const [source, setSource] = useState(() => user?.offline ? 'leaf' : 'plant');
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [plantFile, setPlantFile] = useState(null);
@@ -18,6 +18,8 @@
     const [drag, setDrag] = useState(false);
     const [camOpen, setCamOpen] = useState(false);
     const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [offlineModel, setOfflineModel] = useState({ ready: false, busy: false, progress: 0 });
+    const progressRef = useRef(0);
     const inputRef = useRef(null);
     const plantInputRef = useRef(null);
     const cameraFallbackRef = useRef(null);
@@ -37,6 +39,29 @@
       uploaderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
+    useEffect(() => {
+      window.CG.OfflineCNN.isReady().then((ready) => setOfflineModel((state) => ({ ...state, ready }))).catch(() => {});
+    }, []);
+
+    const prepareOfflineModel = async () => {
+      setOfflineModel((state) => ({ ...state, busy: true, progress: 0 }));
+      progressRef.current = 0;
+      try {
+        await window.CG.OfflineCNN.prepare((value) => {
+          const percent = Math.floor(value * 100);
+          if (percent === 100 || percent >= progressRef.current + 3) {
+            progressRef.current = percent;
+            setOfflineModel((state) => ({ ...state, progress: percent }));
+          }
+        });
+        setOfflineModel({ ready: true, busy: false, progress: 100 });
+        toast(lang === 'th' ? 'บันทึกโมเดลออฟไลน์ในเครื่องแล้ว' : 'Offline model saved on this device', 'success');
+      } catch (error) {
+        setOfflineModel((state) => ({ ...state, busy: false }));
+        toast(error.message || (lang === 'th' ? 'เตรียมโมเดลออฟไลน์ไม่สำเร็จ' : 'Could not prepare offline model'), 'error');
+      }
+    };
+
     const run = async () => {
       if (!file) { toast(lang === 'th' ? 'กรุณาเลือกไฟล์' : 'Please choose a file', 'warn'); return; }
       const isCsv = source === 'csv' || file.name.toLowerCase().endsWith('.csv');
@@ -50,7 +75,31 @@
                           : await window.CG.API_CLIENT.predictImage(file, source, null, observedAt, timestampKind);
         setResult(r);
         toast(lang === 'th' ? 'วิเคราะห์สำเร็จ' : 'Analysis complete', 'success');
-      } catch (e) { toast(e.message, 'error'); }
+      } catch (e) {
+        const canFallback = source === 'leaf' && !isCsv && !plantFile
+          && (navigator.onLine === false || !e.status || e.status >= 500);
+        if (canFallback) {
+          try {
+            const offlineResult = await window.CG.OfflineCNN.predict(file, (value) => {
+              const percent = Math.floor(value * 100);
+              if (percent === 100 || percent >= progressRef.current + 3) {
+                progressRef.current = percent;
+                setOfflineModel((state) => ({ ...state, progress: percent }));
+              }
+            });
+            setOfflineModel((state) => ({ ...state, ready: true }));
+            setResult(offlineResult);
+            toast(lang === 'th' ? 'คัดกรองออฟไลน์แล้ว — ผลต้องให้ผู้เชี่ยวชาญตรวจทาน' : 'Offline screening complete — expert review required', 'warn');
+          } catch (offlineError) {
+            const message = offlineError.message || (lang === 'th'
+              ? 'ไม่มีโมเดลออฟไลน์ในเครื่อง เชื่อมต่ออินเทอร์เน็ตแล้วกดเตรียมโมเดลก่อนใช้งานออฟไลน์'
+              : 'No offline model is stored on this device. Connect to the internet and prepare it before going offline.');
+            toast(message, 'error');
+          }
+        } else {
+          toast(e.message, 'error');
+        }
+      }
       finally { setBusy(false); }
     };
 
@@ -58,14 +107,16 @@
       if (file && source !== 'csv' && !busy && !result) run();
     }, [file]);
 
-    const SRC = [
+    const SRC = user?.offline ? [
+      { value: 'leaf', label: t('src_leaf') },
+    ] : [
       { value: 'leaf', label: t('src_leaf') }, { value: 'plant', label: t('src_plant') },
       { value: 'canopy', label: t('src_canopy') }, { value: 'csv', label: t('src_csv') },
     ];
     const workflowStep = result ? 3 : (file || busy) ? 2 : 1;
 
     const steps = [
-      [1, 'camera', lang === 'th' ? 'เลือกรูป' : 'Add photo', lang === 'th' ? 'ถ่ายหรืออัปโหลดภาพทั้งต้น' : 'Capture or upload the whole plant'],
+      [1, 'camera', lang === 'th' ? 'เลือกรูป' : 'Add photo', user?.offline ? (lang === 'th' ? 'ถ่ายหรืออัปโหลดภาพใบระยะใกล้' : 'Capture or upload a close-up leaf photo') : (lang === 'th' ? 'ถ่ายหรืออัปโหลดภาพทั้งต้น' : 'Capture or upload the whole plant')],
       [2, 'brain', lang === 'th' ? 'ประมวลผลอัตโนมัติ' : 'Auto analyze', lang === 'th' ? 'AI อ่านภาพให้ทันที' : 'The AI reads it instantly'],
       [3, 'leaf', lang === 'th' ? 'ดูผลวิเคราะห์' : 'See results', lang === 'th' ? 'ดูโรค ความมั่นใจ และคำแนะนำ' : 'See disease, confidence, and guidance'],
     ];
@@ -81,7 +132,7 @@
               <div>
                 <span className="diagnosis-kicker"><Icon name="leaf" className="w-4 h-4" /> CASSAVAGUARD VISION</span>
                 <div className="txt font-extrabold text-2xl sm:text-3xl mt-2 leading-tight">{file ? (lang === 'th' ? 'ตรวจสอบรูปภาพ' : 'Check your photo') : (lang === 'th' ? 'ตรวจสุขภาพจากภาพเดียว' : 'Understand health from one photo')}</div>
-                <div className="txt-soft text-sm mt-1.5 max-w-md">{file ? (lang === 'th' ? 'JPG หรือ PNG • ใช้ภาพต้นฉบับที่ไม่ผ่านฟิลเตอร์' : 'JPG or PNG • use an original, unfiltered photo') : (lang === 'th' ? 'ถ่ายภาพทั้งต้นในแปลง ระบบวิเคราะห์สุขภาพและประเมินผลผลิตโดยไม่ต้องขุดหัว' : 'Photograph the standing plant — analyze health and estimate yield with no digging.')}</div>
+                <div className="txt-soft text-sm mt-1.5 max-w-md">{file ? (lang === 'th' ? 'JPG หรือ PNG • ใช้ภาพต้นฉบับที่ไม่ผ่านฟิลเตอร์' : 'JPG or PNG • use an original, unfiltered photo') : user?.offline ? (lang === 'th' ? 'โหมดออฟไลน์รองรับภาพใบระยะใกล้เท่านั้น' : 'Offline mode supports close-up leaf photos only.') : (lang === 'th' ? 'ถ่ายภาพทั้งต้นในแปลง ระบบวิเคราะห์สุขภาพและประเมินผลผลิตโดยไม่ต้องขุดหัว' : 'Photograph the standing plant — analyze health and estimate yield with no digging.')}</div>
               </div>
               <Badge tone="green" className="shrink-0">1 {lang === 'th' ? 'รูป' : 'photo'}</Badge>
             </div>
@@ -99,7 +150,7 @@
               ) : (
                 <div className="txt-dim">
                   <div className="capture-orb"><Icon name="camera" className="w-9 h-9" /><span className="capture-orb-ring" /></div>
-                  <div className="txt text-xl font-extrabold">{lang === 'th' ? 'แตะเพื่อเลือกรูปทั้งต้น' : 'Tap to choose a whole-plant photo'}</div>
+                  <div className="txt text-xl font-extrabold">{user?.offline ? (lang === 'th' ? 'แตะเพื่อเลือกรูปใบมันสำปะหลัง' : 'Tap to choose a cassava leaf photo') : (lang === 'th' ? 'แตะเพื่อเลือกรูปทั้งต้น' : 'Tap to choose a whole-plant photo')}</div>
                   <div className="txt-dim text-sm mt-2">{lang === 'th' ? 'หรือลากรูปมาวางตรงนี้' : 'or drag and drop it here'}</div>
                 </div>
               )}
@@ -126,6 +177,27 @@
                 if (selected) pick(selected, 'camera_capture');
                 event.target.value = '';
               }} />
+
+            {source !== 'csv' && <div className="mt-4 rounded-2xl border border-amber-500/25 bg-amber-500/[.06] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="txt text-sm font-bold">{lang === 'th' ? 'เตรียม AI สำหรับใช้ออฟไลน์' : 'Prepare AI for offline use'}</div>
+                  <p className="txt-dim text-xs mt-1">{lang === 'th' ? 'ดาวน์โหลดโมเดล 5 คลาส (~43 MB) และ runtime (~14 MB) ไว้ในเครื่องครั้งเดียว หากออฟไลน์ให้เลือก “ภาพใบ” และถ่ายใบระยะใกล้' : 'Download the 5-class model (~43 MB) and runtime (~14 MB) once. Offline use requires “Leaf” and a close-up leaf photo.'}</p>
+                </div>
+                <button type="button" disabled={offlineModel.busy || offlineModel.ready} onClick={prepareOfflineModel}
+                  className="secondary-action disabled:opacity-60">
+                  {offlineModel.busy
+                    ? `${lang === 'th' ? 'กำลังดาวน์โหลด' : 'Downloading'} ${offlineModel.progress}%`
+                    : offlineModel.ready
+                      ? (lang === 'th' ? 'พร้อมใช้ออฟไลน์' : 'Ready offline')
+                      : (lang === 'th' ? 'ดาวน์โหลดโมเดล' : 'Download model')}
+                </button>
+              </div>
+              {offlineModel.busy && <div className="mt-3 h-2 rounded-full bg-black/10 overflow-hidden" role="progressbar" aria-valuenow={offlineModel.progress} aria-valuemin="0" aria-valuemax="100">
+                <div className="h-full bg-amber-500 transition-all" style={{ width: `${offlineModel.progress}%` }} />
+              </div>}
+              <p className="text-amber-700 dark:text-amber-300 text-[11px] mt-2">{lang === 'th' ? 'โหมดออฟไลน์เป็นผลคัดกรองเพื่อทบทวนเท่านั้น ภาพต้องเป็นภาพใบระยะใกล้ ผลอาจต่างจากเซิร์ฟเวอร์เล็กน้อย ไม่บันทึกเข้าบัญชี ไม่มีแผนที่จุดสนใจ และต้องให้ผู้เชี่ยวชาญยืนยัน' : 'Offline mode is review-only and requires a close-up leaf photo. Results may differ slightly from the server, are not saved, have no heatmap, and require expert confirmation.'}</p>
+            </div>}
 
             {source === 'leaf' && file && <div className="evidence-panel mt-4">
               <div className="flex items-center justify-between gap-3">
@@ -335,7 +407,7 @@
   function ImageResult({ r, preview, onRetake }) {
     const { t, lang } = window.CG.Store.useStore();
     const top = r.top3[0];
-    const [visualMode, setVisualMode] = useState('heat');
+    const [visualMode, setVisualMode] = useState(r.heatmap ? 'heat' : 'original');
     const [detailsOpen, setDetailsOpen] = useState(false);
     const whiteflyFinding = r.auxiliary_findings?.find((item) => item.key === 'whitefly');
 
@@ -345,6 +417,7 @@
         <Card className="animate-fadeup">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <Badge tone={top.key} dot>{lang === 'th' ? top.th : top.en}</Badge>
+            {r.inference_mode === 'offline_review_only' && <Badge tone="medium">{lang === 'th' ? 'ออฟไลน์ · ตรวจทานเท่านั้น' : 'Offline · Review only'}</Badge>}
             {r.model_basis && (
               <Badge tone={r.model_basis[top.key] === 'trained_ml' ? 'low' : 'info'}>
                 {r.model_basis[top.key] === 'trained_ml'
@@ -377,7 +450,13 @@
                   <span className="txt-dim text-[11px]">{lang === 'th' ? r.health_score.note_th : r.health_score.note_en}</span>
                 </div>
               )}
-              {r.requires_review ? (
+              {r.inference_mode === 'offline_review_only' ? (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-200 text-xs leading-relaxed">
+                  {lang === 'th'
+                    ? 'ผลคัดกรองจากโมเดลบนเครื่อง ไม่มีข้อมูลแปลงหรือคำแนะนำจากเซิร์ฟเวอร์ และไม่ได้บันทึกประวัติ โปรดเชื่อมต่ออินเทอร์เน็ตเพื่อวิเคราะห์และบันทึกผลออนไลน์ หรือให้ผู้เชี่ยวชาญตรวจยืนยัน'
+                    : 'On-device screening only. Field context and server recommendations are unavailable, and this result is not saved. Connect to analyze and save online, or ask an expert to confirm.'}
+                </div>
+              ) : r.requires_review ? (
                 <div
                   className="rounded-xl border p-3 text-xs leading-relaxed"
                   style={{ color: 'var(--cg-warm-ink)', background: 'var(--cg-warm-soft)', borderColor: 'rgba(239,157,19,.22)' }}
@@ -403,7 +482,12 @@
           </button>
         </Card>
 
-        <CassavaPlantModel result={r} />
+        {r.inference_mode === 'offline_review_only' ? (
+          <Card className="animate-fadeup border border-amber-500/30">
+            <div className="txt text-sm font-bold">{lang === 'th' ? 'โมเดลต้นและผลผลิตไม่แสดงในโหมดออฟไลน์' : 'Plant and yield estimates are unavailable offline'}</div>
+            <p className="txt-dim text-xs mt-1">{lang === 'th' ? 'ผลออฟไลน์จำกัดเฉพาะการคัดกรอง 5 คลาสจากภาพใบ ไม่มีการประเมินน้ำหนักหรือผลผลิต' : 'Offline mode only screens the five leaf classes; it does not estimate root weight or yield.'}</p>
+          </Card>
+        ) : <CassavaPlantModel result={r} />}
 
         {/* Advanced Details: attribution map, auxiliary findings, symptoms, feature importance, full distribution */}
         <button onClick={() => setDetailsOpen((v) => !v)}
@@ -444,7 +528,7 @@
                 )}
                 <div className="absolute bottom-2 right-2 flex gap-1">
                   <button onClick={() => setVisualMode('original')} className={`text-[11px] px-2 py-1 rounded-lg ${visualMode === 'original' ? 'grad-brand text-white' : 'glass-strong txt-soft'}`}>Original</button>
-                  <button onClick={() => setVisualMode('heat')} className={`text-[11px] px-2 py-1 rounded-lg ${visualMode === 'heat' ? 'grad-brand text-white' : 'glass-strong txt-soft'}`}>{lang === 'th' ? 'จุดสำคัญ' : 'Attribution'}</button>
+                  {r.heatmap && <button onClick={() => setVisualMode('heat')} className={`text-[11px] px-2 py-1 rounded-lg ${visualMode === 'heat' ? 'grad-brand text-white' : 'glass-strong txt-soft'}`}>{lang === 'th' ? 'จุดสำคัญ' : 'Attribution'}</button>}
                   {whiteflyFinding && (
                     <button onClick={() => setVisualMode('whitefly')} className={`text-[11px] px-2 py-1 rounded-lg ${visualMode === 'whitefly' ? 'bg-amber-500 text-white' : 'glass-strong txt-soft'}`}>
                       {lang === 'th' ? `กรอบแมลง ${whiteflyFinding.count}` : `Whitefly boxes ${whiteflyFinding.count}`}

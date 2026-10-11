@@ -1,5 +1,6 @@
 import "./bootstrap.js";
 import "./api.js";
+import "./offline_cnn.js";
 import "./i18n.js";
 import "./store.js";
 import "./ui.jsx";
