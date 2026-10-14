@@ -505,6 +505,21 @@
               </div>
               <div className="relative rounded-xl overflow-hidden bg-black/20 grid place-items-center min-h-[220px]">
                 <img src={visualMode === 'heat' ? r.heatmap : preview} alt="analysis" className="w-full object-contain max-h-[260px]" />
+                {visualMode === 'regions' && r.attribution_regions?.length > 0 && r.image_size && (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${r.image_size.width} ${r.image_size.height}`} preserveAspectRatio="xMidYMid meet" aria-label="Possible symptom focus regions">
+                    {r.attribution_regions.map((region, index) => (
+                      <g key={index}>
+                        <rect x={region.x} y={region.y} width={region.width} height={region.height}
+                          rx={Math.max(2, r.image_size.width / 100)} fill="rgba(255, 75, 45, .20)"
+                          stroke="#ff3b30" strokeWidth={Math.max(2, r.image_size.width / 110)} strokeDasharray="5 3" />
+                        <circle cx={region.x + r.image_size.width / 24} cy={region.y + r.image_size.height / 18}
+                          r={r.image_size.width / 32} fill="#ff3b30" />
+                        <text x={region.x + r.image_size.width / 24} y={region.y + r.image_size.height / 18}
+                          textAnchor="middle" dominantBaseline="central" fill="white" fontSize={r.image_size.width / 40} fontWeight="700">{index + 1}</text>
+                      </g>
+                    ))}
+                  </svg>
+                )}
                 {visualMode === 'whitefly' && whiteflyFinding?.image_size && (
                   <svg
                     className="absolute inset-0 w-full h-full pointer-events-none"
@@ -529,6 +544,7 @@
                 <div className="absolute bottom-2 right-2 flex gap-1">
                   <button onClick={() => setVisualMode('original')} className={`text-[11px] px-2 py-1 rounded-lg ${visualMode === 'original' ? 'grad-brand text-white' : 'glass-strong txt-soft'}`}>Original</button>
                   {r.heatmap && <button onClick={() => setVisualMode('heat')} className={`text-[11px] px-2 py-1 rounded-lg ${visualMode === 'heat' ? 'grad-brand text-white' : 'glass-strong txt-soft'}`}>{lang === 'th' ? 'จุดสำคัญ' : 'Attribution'}</button>}
+                  {r.attribution_regions?.length > 0 && <button onClick={() => setVisualMode('regions')} className={`text-[11px] px-2 py-1 rounded-lg ${visualMode === 'regions' ? 'bg-red-500 text-white' : 'glass-strong txt-soft'}`}>{lang === 'th' ? 'บริเวณน่าสงสัย' : 'Possible areas'}</button>}
                   {whiteflyFinding && (
                     <button onClick={() => setVisualMode('whitefly')} className={`text-[11px] px-2 py-1 rounded-lg ${visualMode === 'whitefly' ? 'bg-amber-500 text-white' : 'glass-strong txt-soft'}`}>
                       {lang === 'th' ? `กรอบแมลง ${whiteflyFinding.count}` : `Whitefly boxes ${whiteflyFinding.count}`}
@@ -537,6 +553,8 @@
                 </div>
               </div>
               <p className="txt-dim text-[11px] mt-2 flex items-center gap-1.5"><Icon name="brain" className="w-3.5 h-3.5" />{t('attention')} · {r.inference_ms} ms</p>
+              <p className="txt-dim text-[10px] mt-1 leading-relaxed">{lang === 'th' ? 'สีแสดงบริเวณที่มีผลต่อคะแนน AI เมื่อปิดบังภาพทีละส่วน ไม่ใช่ขอบเขตโรคที่ยืนยันแล้ว' : 'Colours show regions that influenced the AI score when image areas were masked. They are not confirmed disease boundaries.'}</p>
+              {visualMode === 'regions' && <p className="text-red-600 dark:text-red-300 text-[10px] mt-1 leading-relaxed">{lang === 'th' ? 'กรอบหมายเลขคือบริเวณที่โมเดลให้ความสำคัญ ควรตรวจใบจริงหรือให้ผู้เชี่ยวชาญยืนยัน ไม่ใช่ตำแหน่งโรคที่รับรองแล้ว' : 'Numbered boxes mark regions the model focused on. Inspect the leaf or ask an expert; these are not verified lesion locations.'}</p>}
             </div>
 
             <div className="flex flex-col">

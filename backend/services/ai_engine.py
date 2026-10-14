@@ -703,6 +703,31 @@ def _cnn_occlusion_grid(img: Image.Image, top_key: str, base_prob: float, grid: 
     return sens
 
 
+def _attribution_regions(grid_arr: np.ndarray, image_shape: tuple, limit: int = 3) -> list:
+    """Return coarse boxes for high model-influence cells, not confirmed lesion masks."""
+    values = np.asarray(grid_arr, dtype=np.float32)
+    if values.ndim != 2 or not np.isfinite(values).all() or float(values.max()) <= 1e-9:
+        return []
+    lo, hi = np.percentile(values, [5, 95])
+    if float(hi - lo) <= 1e-9:
+        return []
+    relative = np.clip((values - lo) / (hi - lo), 0.0, 1.0)
+    h, w = image_shape
+    rows, cols = values.shape
+    order = np.argsort(relative.ravel())[::-1]
+    regions = []
+    for flat_index in order:
+        score = float(relative.flat[flat_index])
+        if score < 0.65 or len(regions) >= limit:
+            break
+        row, col = divmod(int(flat_index), cols)
+        x0, y0 = round(col * w / cols), round(row * h / rows)
+        x1, y1 = round((col + 1) * w / cols), round((row + 1) * h / rows)
+        regions.append({"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0,
+                        "relative_influence": round(score, 2)})
+    return regions
+
+
 def _heatmap(img: Image.Image, f: dict, top_key: str, basis: str, top_conf: float,
             clf=None, extra_features: list = None, ml_source: str = None,
             cnn_grid: np.ndarray = None) -> str:
@@ -921,10 +946,12 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
     cnn_used = ml_source == "cnn"
 
     cnn_grid = None
+    attribution_regions = []
     if cnn_used:
         cnn_grid = _cnn_occlusion_grid(img, top_key, top_conf)
         heatmap = _heatmap(img, feats, top_key, basis[top_key], top_conf,
                            ml_source="cnn", cnn_grid=cnn_grid)
+        attribution_regions = _attribution_regions(cnn_grid, (img.height, img.width))
     else:
         heatmap_clf = get_fusion_classifier() if fusion_used else None
         heatmap = _heatmap(img, feats, top_key, basis[top_key], top_conf,
@@ -997,6 +1024,8 @@ def predict_image(image_bytes: bytes, source: str = "leaf", field=None) -> dict:
         "severity": severity,
         "health_score": health_score,
         "feature_importance": importance,
+        "image_size": {"width": img.width, "height": img.height},
+        "attribution_regions": attribution_regions,
         "raw_features": clean_feats,
         "explanation_en": en,
         "explanation_th": th,
